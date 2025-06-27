@@ -1,7 +1,36 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+REGION_CHOICES = [
+    ('cairo', 'Cairo'),
+    ('giza', 'Giza'),
+    ('alexandria', 'Alexandria'),
+    ('delta', 'Delta'),
+    ('upper_egypt', 'Upper Egypt'),
+    ('canal_cities', 'Canal Cities'),
+    ('border', 'Border Governorates'),
+]
+
+DEGREE_CHOICES = [
+    ('high_school', 'High School'),
+    ('diploma', 'Diploma'),
+    ('bachelor', 'Bachelor'),
+    ('master', 'Master'),
+    ('phd', 'PhD'),
+]
+
+FIELD_CHOICES = [
+    ('engineering', 'Engineering'),
+    ('medicine', 'Medicine'),
+    ('science', 'Science'),
+    ('arts', 'Arts'),
+    ('commerce', 'Commerce'),
+    ('law', 'Law'),
+    ('education', 'Education'),
+]
+
 class BasicInfo(models.Model):
+    profile_image = models.ImageField(upload_to='profile_images/',default='profile_images/default.jpg')
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20)
     username = models.CharField(max_length=150, blank=True)
@@ -45,13 +74,15 @@ class Skill(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
-    cv_image = models.ImageField(upload_to='cvs/')
+    cv_image = models.ImageField(upload_to='cvs/',default='cvs/default.jpg')
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.SET_NULL, null=True)
-    region = models.CharField(max_length=100)
-    highest_education_degree = models.CharField(max_length=100)
-    highest_education_field = models.CharField(max_length=100)
+    
+    region = models.CharField(max_length=100, choices=REGION_CHOICES)
+    highest_education_degree = models.CharField(max_length=100, choices=DEGREE_CHOICES)
+    highest_education_field = models.CharField(max_length=100, choices=FIELD_CHOICES)
+    
     years_of_experience = models.IntegerField()
     had_leadership_role = models.BooleanField()
     percentage_of_matching_skills = models.FloatField()
