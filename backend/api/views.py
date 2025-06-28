@@ -82,7 +82,7 @@ class AdminInviteHRViewSet(ModelViewSet):
             return Response({'error': 'User with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
         
         password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-        user = User.objects.create_user(username=email, email=email, password=password)
+        user = User.objects.create_user(username=email, password=password)
 
         HR.objects.create(
             user=user,
@@ -95,7 +95,7 @@ class AdminInviteHRViewSet(ModelViewSet):
         BasicInfo.objects.create(
         user=user,
         role='HR',
-        username=email,
+        username=email.split("@")[0]  
         )
         
         send_mail(
@@ -261,6 +261,13 @@ class PublicApplicantsViewSet(ModelViewSet):
             )
 
             employee.skills.set(employee_skills)
+
+            BasicInfo.objects.create(
+            user=user,
+            role='employee',
+            username=email.split("@")[0]  
+            )
+
 
         return Response({"detail": "Application submitted successfully."}, status=status.HTTP_201_CREATED)
 
