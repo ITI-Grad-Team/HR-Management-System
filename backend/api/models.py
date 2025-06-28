@@ -135,6 +135,7 @@ class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     is_submitted = models.BooleanField(default=False)
+    submission_time = models.DateTimeField(null=True, blank=True)
     is_refused = models.BooleanField(default=False)
     is_accepted = models.BooleanField(default=False)
     rating = models.FloatField(null=True, blank=True)
@@ -143,7 +144,7 @@ class Task(models.Model):
 
 
 class File(models.Model):
-    file = models.FileField(upload_to='tasks/')
+    file = models.FileField(upload_to='task_files/')
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
 
 
