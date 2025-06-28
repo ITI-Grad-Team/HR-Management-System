@@ -72,7 +72,7 @@ class Skill(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
-    cv_image = models.ImageField(upload_to='cvs/',default='cvs/default.jpg')
+    cv = models.FileField(upload_to='cvs/', default='cvs/default.pdf')
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.SET_NULL, null=True)
