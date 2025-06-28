@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
         'USER': 'postgres.jdfshcpcxiefhgsgjcne',
-        'PASSWORD': 'As123456HR',
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
         'HOST': 'aws-0-eu-north-1.pooler.supabase.com',
         'PORT': '6543',
     }
@@ -151,5 +151,5 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'tempohr44@gmail.com'
-EMAIL_HOST_PASSWORD = 'hnzz tfxy qcds blld'
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'noreply@HRTempo.com'
