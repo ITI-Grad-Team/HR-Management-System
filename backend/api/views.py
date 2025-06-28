@@ -52,7 +52,7 @@ from .serializers import (
     FileSerializer,
     PositionSerializer,
     ReportSerializer,
-
+    EmployeeDataSerializer,
 )
 from rest_framework.response import Response
 from rest_framework import status
@@ -442,3 +442,9 @@ class SystemAutomationViewSet(ModelViewSet):
     """
     queryset = User.objects.none()  # Not model-based
     serializer_class = None
+
+class EmployeeDataViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeDataSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+    http_method_names = ['get', 'put', 'patch']
