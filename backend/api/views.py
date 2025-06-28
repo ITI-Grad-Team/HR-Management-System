@@ -1,6 +1,27 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
 from .models import User, BasicInfo, HR, Employee, ApplicationLink, Skill, InterviewQuestion, OvertimeClaim, Task, File, Position, Report
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from .models import Employee
+from .serializers import EmployeeSerializer
+from .permissions import IsHR,IsAdmin,IsHRorAdmin,IsEmployee
+from .serializers import (
+    UserSerializer,
+    BasicInfoSerializer,
+    HRSerializer,
+    EmployeeSerializer,
+    ApplicationLinkSerializer,
+    SkillSerializer,
+    InterviewQuestionSerializer,
+    OvertimeClaimSerializer,
+    TaskSerializer,
+    FileSerializer,
+    PositionSerializer,
+    ReportSerializer,
+)
+
 
 class AdminInviteHRViewSet(ModelViewSet):
     """
@@ -13,6 +34,24 @@ class AdminInviteHRViewSet(ModelViewSet):
     queryset = User.objects.none()  # Will be customized in get_queryset
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+
+
+class AdminViewHRsViewSet(ModelViewSet):
+    queryset = HR.objects.all()
+    serializer_class = HRSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [SearchFilter]
+    search_fields = ['user__username', 'user__email']
+
+
+class AdminViewEmployeesViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['region', 'position', 'is_coordinator']
+    search_fields = ['user__username', 'phone']
 
 class AdminViewUsersViewSet(ModelViewSet):
     """
@@ -55,7 +94,10 @@ class HRViewEmployeesViewSet(ModelViewSet):
     """
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsHR]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['region', 'position', 'is_coordinator']
+    search_fields = ['user__username', 'phone']
 
 class HRViewApplicantsViewSet(ModelViewSet):
     """
@@ -133,7 +175,8 @@ class HRRejectApplicantViewSet(ModelViewSet):
         # 1. Send rejection email
         # 2. Delete User+Employee records
         # 3. Return 204
-        return Response(status=204)
+        # return Response(status=204)
+        pass
 
 class HROvertimeApprovalViewSet(ModelViewSet):
     """
