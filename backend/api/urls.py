@@ -1,14 +1,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet
+from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-
 
 router = DefaultRouter()
 
 # HR views
 router.register(r'hr/employees', HRViewEmployeesViewSet, basename='hr-employees')
+router.register(r'hr/application-links', HRManageApplicationLinksViewSet, basename='hr-application-links')
+router.register(r'hr/skills', HRManageSkillsViewSet, basename='hr-manage-skills')
+router.register(r'hr/positions', HRManagePositionsViewSet, basename='hr-manage-positions')
+
 
 
 # Admin views

@@ -21,6 +21,8 @@ from .serializers import (
     PositionSerializer,
     ReportSerializer,
 )
+from django.conf import settings
+
 
 
 class AdminInviteHRViewSet(ModelViewSet):
@@ -76,7 +78,7 @@ class AdminPromoteEmployeeViewSet(ModelViewSet):
 
 
 
-class HRGenerateApplicationLinkViewSet(ModelViewSet):
+class HRManageApplicationLinksViewSet(ModelViewSet):
     """
     Allows HR to generate application links
     - Creates unique link with position, skills, role, max applicants
@@ -84,7 +86,23 @@ class HRGenerateApplicationLinkViewSet(ModelViewSet):
     """
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsHR]
+    # in frontend, the URL will be constructed based on "distinction_name"
+    # ex. if "junior-frontend-2025", then: "http://localhost:3000/apply/junior-frontend-2025/" → shown in a non-editable field
+
+    # skills and position will be passed as FKs (fetched from DB — name shown in a list, value submitted as the FK)
+    # new skill/position? there is an api to create one (button side by side to the dd list in front)
+
+class HRManageSkillsViewSet(ModelViewSet):
+    queryset = Skill.objects.all()
+    serializer_class = SkillSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+
+
+class HRManagePositionsViewSet(ModelViewSet):
+    queryset = Position.objects.all()
+    serializer_class = PositionSerializer
+    permission_classes = [IsAuthenticated, IsHR]
 
 class HRViewEmployeesViewSet(ModelViewSet):
     """
