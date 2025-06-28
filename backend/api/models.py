@@ -1,33 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-REGION_CHOICES = [
-    ('cairo', 'Cairo'),
-    ('giza', 'Giza'),
-    ('alexandria', 'Alexandria'),
-    ('delta', 'Delta'),
-    ('upper_egypt', 'Upper Egypt'),
-    ('canal_cities', 'Canal Cities'),
-    ('border', 'Border Governorates'),
-]
-
-DEGREE_CHOICES = [
-    ('high_school', 'High School'),
-    ('diploma', 'Diploma'),
-    ('bachelor', 'Bachelor'),
-    ('master', 'Master'),
-    ('phd', 'PhD'),
-]
-
-FIELD_CHOICES = [
-    ('engineering', 'Engineering'),
-    ('medicine', 'Medicine'),
-    ('science', 'Science'),
-    ('arts', 'Arts'),
-    ('commerce', 'Commerce'),
-    ('law', 'Law'),
-    ('education', 'Education'),
-]
 
 class BasicInfo(models.Model):
     profile_image = models.ImageField(upload_to='profile_images/',default='profile_images/default.jpg')
@@ -68,6 +41,23 @@ class Skill(models.Model):
     def __str__(self):
         return self.name
 
+class EducationField(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name    
+
+class EducationDegree(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name  
+
+class Region(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name  
 
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -76,11 +66,11 @@ class Employee(models.Model):
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.SET_NULL, null=True)
-    
-    region = models.CharField(max_length=100, choices=REGION_CHOICES)
-    highest_education_degree = models.CharField(max_length=100, choices=DEGREE_CHOICES)
-    highest_education_field = models.CharField(max_length=100, choices=FIELD_CHOICES)
-    
+
+    region = models.ForeignKey('Region', on_delete=models.SET_NULL, null=True)
+    highest_education_degree = models.ForeignKey('EducationDegree', on_delete=models.SET_NULL, null=True)
+    highest_education_field = models.ForeignKey('EducationField', on_delete=models.SET_NULL, null=True)
+
     years_of_experience = models.IntegerField()
     had_leadership_role = models.BooleanField()
     percentage_of_matching_skills = models.FloatField()
