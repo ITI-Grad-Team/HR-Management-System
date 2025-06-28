@@ -93,6 +93,13 @@ class HRManageApplicationLinksViewSet(ModelViewSet):
     # skills and position will be passed as FKs (fetched from DB — name shown in a list, value submitted as the FK)
     # new skill/position? there is an api to create one (button side by side to the dd list in front)
 
+
+class publicApplicantsViewSet(ModelViewSet):
+
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    
+
 class HRManageSkillsViewSet(ModelViewSet):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer

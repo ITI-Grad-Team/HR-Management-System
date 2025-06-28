@@ -171,7 +171,23 @@ class HoliOrOnlineDayYearday(models.Model):
     day = models.IntegerField()
     employees = models.ManyToManyField(Employee)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['month', 'day'], name='unique_month_day')
+        ]
+
+
+WEEKDAYS = [
+    ("Monday", "Monday"),
+    ("Tuesday", "Tuesday"),
+    ("Wednesday", "Wednesday"),
+    ("Thursday", "Thursday"),
+    ("Friday", "Friday"),
+    ("Saturday", "Saturday"),
+    ("Sunday", "Sunday"),
+]
 
 class HoliOrOnlineDayWeekday(models.Model):
-    weekday = models.CharField(max_length=10)
+    weekday = models.CharField(max_length=10, choices=WEEKDAYS,unique=True)
     employees = models.ManyToManyField(Employee)
+
