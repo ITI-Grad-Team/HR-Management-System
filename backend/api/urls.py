@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet
+from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,AdminInviteHRViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
@@ -14,6 +14,7 @@ router.register(r'hr/employees', HRViewEmployeesViewSet, basename='hr-employees'
 # Admin views
 router.register(r'admin/hrs', AdminViewHRsViewSet, basename='admin-hrs')
 router.register(r'admin/employees', AdminViewEmployeesViewSet, basename='admin-employees')
+router.register(r'admin/invite-hr', AdminInviteHRViewSet, basename='admin-invite-hr')
 
 urlpatterns = [
     path('', include(router.urls)),  

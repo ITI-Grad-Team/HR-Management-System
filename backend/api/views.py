@@ -21,6 +21,11 @@ from .serializers import (
     PositionSerializer,
     ReportSerializer,
 )
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.mail import send_mail
+import random
+import string
 
 
 class AdminInviteHRViewSet(ModelViewSet):
@@ -33,9 +38,42 @@ class AdminInviteHRViewSet(ModelViewSet):
     """
     queryset = User.objects.none()  # Will be customized in get_queryset
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
+    def create(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(username=email).exists():
+            return Response({'error': 'User with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        user = User.objects.create_user(username=email, email=email, password=password)
 
+        HR.objects.create(
+            user=user,
+            accepted_employees_avg_task_rating=0,
+            accepted_employees_avg_time_remaining=0,
+            accepted_employees_avg_lateness_hrs=0,
+            accepted_employees_avg_absence_days=0,
+            )
+        
+        BasicInfo.objects.create(
+        user=user,
+        role='HR',
+        username=email,
+        )
+        
+        send_mail(
+            subject='Invitation to join HR Portal',
+            message=f"Your account has been created.\nUsername: {email}\nPassword: {password}",
+            from_email='tempohr44@gmail.com',
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        return Response({'message': 'Invitation sent successfully.'}, status=status.HTTP_201_CREATED)
 
 class AdminViewHRsViewSet(ModelViewSet):
     queryset = HR.objects.all()
