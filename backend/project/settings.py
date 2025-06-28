@@ -145,6 +145,7 @@ REST_FRAMEWORK = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+FRONTEND_BASE_URL = "http://localhost:3000"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

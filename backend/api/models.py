@@ -47,7 +47,7 @@ class HR(models.Model):
 
 
 class Position(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
@@ -63,7 +63,7 @@ class ApplicationLink(models.Model):
 
 
 class Skill(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
@@ -72,7 +72,7 @@ class Skill(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
-    cv_image = models.ImageField(upload_to='cvs/',default='cvs/default.jpg')
+    cv = models.FileField(upload_to='cvs/', default='cvs/default.pdf')
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.SET_NULL, null=True)
@@ -171,7 +171,23 @@ class HoliOrOnlineDayYearday(models.Model):
     day = models.IntegerField()
     employees = models.ManyToManyField(Employee)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['month', 'day'], name='unique_month_day')
+        ]
+
+
+WEEKDAYS = [
+    ("Monday", "Monday"),
+    ("Tuesday", "Tuesday"),
+    ("Wednesday", "Wednesday"),
+    ("Thursday", "Thursday"),
+    ("Friday", "Friday"),
+    ("Saturday", "Saturday"),
+    ("Sunday", "Sunday"),
+]
 
 class HoliOrOnlineDayWeekday(models.Model):
-    weekday = models.CharField(max_length=10)
+    weekday = models.CharField(max_length=10, choices=WEEKDAYS,unique=True)
     employees = models.ManyToManyField(Employee)
+
