@@ -1,5 +1,37 @@
 from rest_framework.viewsets import ModelViewSet
-from .models import User, BasicInfo, HR, Employee, ApplicationLink, Skill, InterviewQuestion, OvertimeClaim, Task, File, Position, Report
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.models import User
+from django.db import transaction
+from .models import Employee, ApplicationLink, Skill
+from .serializers import EmployeeSerializer
+
+
+# utils/llm_utils.py (testing mock)
+def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
+    # This is a mock implementation for testing purposes
+    return {
+        "region": region_choices[0] if region_choices else "Unknown",
+        "degree": degree_choices[0] if degree_choices else "Unknown",
+        "field": field_choices[0] if field_choices else "Unknown",
+        "experience": 3,
+        "had_leadership": True,
+        "skills": skills_choices[:2],  # return first two as matched
+        "has_position_related_high_education": True
+    }
+
+# region_distance_map.py (testing mock)
+REGION_DISTANCE_MAP = {
+    "Cairo": 10.0,
+    "Giza": 15.0,
+    "Alexandria": 25.0,
+    "Aswan": 100.0,
+    "Unknown": 0.0
+}
+
+
+from .models import User, BasicInfo, HR, Employee, ApplicationLink, Skill,EducationDegree,Region,EducationField, InterviewQuestion, OvertimeClaim, Task, File, Position, Report
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -20,6 +52,7 @@ from .serializers import (
     FileSerializer,
     PositionSerializer,
     ReportSerializer,
+
 )
 from rest_framework.response import Response
 from rest_framework import status
@@ -130,10 +163,107 @@ class HRManageApplicationLinksViewSet(ModelViewSet):
     # new skill/position? there is an api to create one (button side by side to the dd list in front)
 
 
-class publicApplicantsViewSet(ModelViewSet):
 
+
+class PublicApplicantsViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
+    http_method_names = ['post']
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        email = data.get("email")
+        phone = data.get("phone")
+        cv = data.get("cv")
+        distinction_name = data.get("distinction_name")
+        is_coordinator = data.get("is_coordinator", False)
+
+        if not all([email, phone, cv, distinction_name]):
+            return Response({"detail": "Missing required fields."}, status=400)
+
+        # 1. Get ApplicationLink
+        try:
+            application_link = ApplicationLink.objects.get(distinction_name=distinction_name)
+        except ApplicationLink.DoesNotExist:
+            return Response({"detail": "Invalid distinction name."}, status=400)
+
+        if User.objects.filter(username=email).exists():
+            return Response({"detail": "User already exists."}, status=400)
+
+        # 2. Extract info from CV
+        all_skills = list(Skill.objects.values_list("name", flat=True))
+        degree_choices = list(EducationDegree.objects.values_list("name", flat=True))
+        region_choices = list(Region.objects.values_list("name", flat=True))
+        field_choices = list(EducationField.objects.values_list("name", flat=True))
+        cv_info = extract_info_from_cv(
+            cv,
+            skills_choices=all_skills,
+            degree_choices=degree_choices,
+            region_choices=region_choices,
+            field_choices=field_choices
+        )  # This returns a dict
+
+        try:
+            region_name = cv_info["region"]
+            degree_name = cv_info["degree"]
+            experience = cv_info["experience"]
+            had_leadership = cv_info["had_leadership"]
+            emp_skill_names = cv_info["skills"]
+            has_relevant_edu = cv_info["has_position_related_high_education"]
+            field_name = cv_info["field"]
+        except KeyError as e:
+            return Response({"detail": f"Missing LLM-extracted field: {str(e)}"}, status=400)
+
+        # 3. Calculate percentage of matching skills
+        required_skills = application_link.skills.all()
+        employee_skills = Skill.objects.filter(name__in=emp_skill_names)
+        relevant_emp_skills = employee_skills.filter(id__in=required_skills)
+        match_count = relevant_emp_skills.count()
+        percentage = (match_count / required_skills.count()) * 100 if required_skills.exists() else 0
+
+        # 4. Distance to work
+        distance = REGION_DISTANCE_MAP.get(region_name, 0.0)
+
+        # 5. Create or get foreign key instances
+        try:
+            region = Region.objects.get(name=region_name)
+            degree = EducationDegree.objects.get(name=degree_name)
+            field = EducationField.objects.get(name=field_name)
+        except (Region.DoesNotExist, EducationDegree.DoesNotExist, EducationField.DoesNotExist) as e:
+            return Response({"detail": f"Missing FK object: {str(e)}"}, status=400)
+
+        # 6. Create User & Employee
+        with transaction.atomic():
+            user = User.objects.create(username=email)
+            user.set_unusable_password()
+            user.save()
+
+            employee = Employee.objects.create(
+                user=user,
+                phone=phone,
+                cv=cv,
+                position=application_link.position,
+                is_coordinator=is_coordinator,
+                application_link=application_link,
+                region=region,
+                highest_education_degree=degree,
+                highest_education_field=field,
+                years_of_experience=experience,
+                had_leadership_role=had_leadership,
+                percentage_of_matching_skills=percentage,
+                has_position_related_high_education=has_relevant_edu,
+                distance_to_work=distance,
+                predicted_avg_task_rating=0,
+                predicted_avg_time_remaining_before_deadline=0,
+                predicted_avg_attendance_lateness_hrs=0,
+                predicted_avg_absence_days=0,
+            )
+
+            employee.skills.set(employee_skills)
+
+        return Response({"detail": "Application submitted successfully."}, status=status.HTTP_201_CREATED)
+
     
 
 class HRManageSkillsViewSet(ModelViewSet):
