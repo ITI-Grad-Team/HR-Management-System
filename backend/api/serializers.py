@@ -83,7 +83,6 @@ class EmployeeDataSerializer(serializers.ModelSerializer):
     yeardays = serializers.ListField(
         child=serializers.DictField(child=serializers.IntegerField()), write_only=True, required=False
     )
-    password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = Employee
