@@ -1,11 +1,24 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.viewsets import ModelViewSet
+from .models import Task
+from .serializers import TaskSerializer
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Employee, ApplicationLink, Skill
 from .serializers import EmployeeSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from .models import Task
+from .serializers import TaskSerializer
 from .cv_processing.LLM_utils import TogetherCVProcessor
 
 # # utils/llm_utils.py (testing mock)
@@ -20,6 +33,20 @@ from .cv_processing.LLM_utils import TogetherCVProcessor
 #         "skills": skills_choices[:2],  # return first two as matched
 #         "has_position_related_high_education": True
 #     }
+
+
+# utils/llm_utils.py (testing mock)
+def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
+    # This is a mock implementation for testing purposes
+    return {
+        "region": region_choices[0] if region_choices else "Unknown",
+        "degree": degree_choices[0] if degree_choices else "Unknown",
+        "field": field_choices[0] if field_choices else "Unknown",
+        "experience": 3,
+        "had_leadership": True,
+        "skills": skills_choices[:2],  # return first two as matched
+        "has_position_related_high_education": True
+    }
 
 # region_distance_map.py (testing mock)
 REGION_DISTANCE_MAP = {
@@ -511,3 +538,58 @@ class SubmitTaskView(APIView):
             'message': 'Task submitted successfully.',
             'task': TaskSerializer(task).data
         }, status=200)
+
+
+class TaskViewSet(ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        task = get_object_or_404(Task, pk=pk)
+        if task.created_by.user != request.user:
+            return Response({"error": "You are not authorized to accept this task."}, status=403)
+        if task.is_accepted:
+            return Response({"error": "Task already accepted."}, status=400)
+        if task.is_refused:
+            return Response({"error": "Task has already been refused."}, status=400)
+        if not task.submission_time:
+            return Response({"error": "Task has not been submitted yet."}, status=400)
+
+        time_remaining = (task.deadline - task.submission_time).total_seconds() / 3600
+        task.is_accepted = True
+        task.rating = request.data.get("rating")  # assuming rating is passed
+        task.time_remaining_before_deadline_when_accepted = time_remaining
+        task.save()
+
+        return Response({
+            "message": "Task accepted successfully.",
+            "remaining_time_in_hours": round(time_remaining, 2),
+            "task": TaskSerializer(task).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def refuse(self, request, pk=None):
+        task = get_object_or_404(Task, pk=pk)
+        if task.created_by.user != request.user:
+            return Response({"error": "You are not authorized to refuse this task."}, status=403)
+        if task.is_refused:
+            return Response({"error": "Task already refused."}, status=400)
+        if task.is_accepted:
+            return Response({"error": "Task has already been accepted."}, status=400)
+        if not task.submission_time:
+            return Response({"error": "Task has not been submitted yet."}, status=400)
+
+        reason = request.data.get("reason")
+        if not reason:
+            return Response({"error": "Reason is required for refusing the task."}, status=400)
+
+        task.is_refused = True
+        task.refuse_reason = reason
+        task.save()
+
+        return Response({
+            "message": "Task refused successfully.",
+            "refuse_reason": reason,
+            "task": TaskSerializer(task).data
+        })
