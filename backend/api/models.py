@@ -55,6 +55,7 @@ class EducationDegree(models.Model):
 
 class Region(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    distance_to_work = models.IntegerField()
 
     def __str__(self):
         return self.name  
@@ -65,21 +66,23 @@ class Employee(models.Model):
     cv = models.FileField(upload_to='cvs/', default='cvs/default.pdf')
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
-    application_link = models.ForeignKey(ApplicationLink, on_delete=models.SET_NULL, null=True)
+    application_link = models.ForeignKey(ApplicationLink, on_delete=models.CASCADE)
 
     region = models.ForeignKey('Region', on_delete=models.SET_NULL, null=True)
     highest_education_degree = models.ForeignKey('EducationDegree', on_delete=models.SET_NULL, null=True)
     highest_education_field = models.ForeignKey('EducationField', on_delete=models.SET_NULL, null=True)
 
-    years_of_experience = models.IntegerField()
-    had_leadership_role = models.BooleanField()
-    percentage_of_matching_skills = models.FloatField()
-    has_position_related_high_education = models.BooleanField()
-    distance_to_work = models.FloatField()
-    predicted_avg_task_rating = models.FloatField()
-    predicted_avg_time_remaining_before_deadline = models.FloatField()
-    predicted_avg_attendance_lateness_hrs = models.FloatField()
-    predicted_avg_absence_days = models.FloatField()
+    years_of_experience = models.IntegerField(null=True, blank=True)
+    had_leadership_role = models.BooleanField(null=True, blank=True)
+    percentage_of_matching_skills = models.FloatField(null=True, blank=True)
+    has_position_related_high_education = models.BooleanField(null=True, blank=True)
+
+
+    predicted_avg_task_rating = models.FloatField(null=True, blank=True)
+    predicted_avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True)
+    predicted_avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
+    predicted_avg_absence_days = models.FloatField(null=True, blank=True)
+
     interview_datetime = models.DateTimeField(null=True, blank=True)
     interview_state = models.CharField(max_length=50, default='pending')
     interviewer = models.ForeignKey(HR, on_delete=models.SET_NULL, null=True)

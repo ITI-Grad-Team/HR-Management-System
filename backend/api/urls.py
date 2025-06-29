@@ -17,7 +17,7 @@ router.register(r'hr/employees', HRViewEmployeesViewSet, basename='hr-employees'
 router.register(r'hr/application-links', HRManageApplicationLinksViewSet, basename='hr-application-links')
 router.register(r'hr/skills', HRManageSkillsViewSet, basename='hr-manage-skills')
 router.register(r'hr/positions', HRManagePositionsViewSet, basename='hr-manage-positions')
-router.register(r'hr/employees-data', EmployeeDataViewSet, basename='hr-employees-data')
+# router.register(r'hr/employees-data', EmployeeDataViewSet, basename='hr-employees-data')
 
 
 

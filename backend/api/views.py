@@ -167,9 +167,6 @@ class HRManageApplicationLinksViewSet(ModelViewSet):
     # skills and position will be passed as FKs (fetched from DB — name shown in a list, value submitted as the FK)
     # new skill/position? there is an api to create one (button side by side to the dd list in front)
 
-
-
-
 class PublicApplicantsViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -203,6 +200,10 @@ class PublicApplicantsViewSet(ModelViewSet):
         field_choices = list(EducationField.objects.values_list("name", flat=True))
 
         processor = TogetherCVProcessor()
+        
+        llm_success = False
+        cv_info = {}
+
         try:
             cv_info = processor.extract_info(
                 cv_file=cv,
@@ -214,76 +215,86 @@ class PublicApplicantsViewSet(ModelViewSet):
                 },
                 position=application_link.position
             )
+            print(cv_info)
+            llm_success = True
         except ValueError as e:
-            return Response({"detail": str(e)}, status=400)
+            print(f"⚠️ CV processing failed: {e}")
 
+        # Initialize all optional fields
+        region = None
+        degree = None
+        field = None
+        experience = None
+        had_leadership = None
+        skills_list = []
+        percentage = None
+        has_relevant_edu = None
+        distance = None
 
-        try:
-            region_name = cv_info["region"]
-            degree_name = cv_info["degree"]
-            experience = cv_info["experience"]
-            had_leadership = cv_info["had_leadership"]
+        # 3. Extract fields only if present
+        if "skills" in cv_info:
             emp_skill_names = cv_info["skills"]
-            has_relevant_edu = cv_info["has_position_related_high_education"]
-            field_name = cv_info["field"]
-        except KeyError as e:
-            return Response({"detail": f"Missing LLM-extracted field: {str(e)}"}, status=400)
+            skills_list = Skill.objects.filter(name__in=emp_skill_names)
+            required_skills = application_link.skills.all()
+            relevant_emp_skills = skills_list.filter(id__in=required_skills)
+            percentage = (relevant_emp_skills.count() / required_skills.count()) * 100 if required_skills.exists() else 0
 
-        # 3. Calculate percentage of matching skills
-        required_skills = application_link.skills.all()
-        employee_skills = Skill.objects.filter(name__in=emp_skill_names)
-        relevant_emp_skills = employee_skills.filter(id__in=required_skills)
-        match_count = relevant_emp_skills.count()
-        percentage = (match_count / required_skills.count()) * 100 if required_skills.exists() else 0
-
-        # 4. Distance to work
-        distance = REGION_DISTANCE_MAP.get(region_name, 0.0)
-
-        # 5. Create or get foreign key instances
-        try:
+        if "region" in cv_info:
+            region_name = cv_info["region"]
             region = Region.objects.get(name=region_name)
-            degree = EducationDegree.objects.get(name=degree_name)
-            field = EducationField.objects.get(name=field_name)
-        except (Region.DoesNotExist, EducationDegree.DoesNotExist, EducationField.DoesNotExist) as e:
-            return Response({"detail": f"Missing FK object: {str(e)}"}, status=400)
 
-        # 6. Create User & Employee
+        if "degree" in cv_info:
+            degree = EducationDegree.objects.get(name=cv_info["degree"])
+
+        if "field" in cv_info:
+            field = EducationField.objects.get(name=cv_info["field"])
+
+        experience = cv_info.get("experience")
+        had_leadership = cv_info.get("had_leadership")
+        has_relevant_edu = cv_info.get("has_position_related_high_education")
+
+        # 4. Create User & Employee
         with transaction.atomic():
             user = User.objects.create(username=email)
             user.set_unusable_password()
             user.save()
 
-            employee = Employee.objects.create(
-                user=user,
-                phone=phone,
-                cv=cv,
-                position=application_link.position,
-                is_coordinator=is_coordinator,
-                application_link=application_link,
-                region=region,
-                highest_education_degree=degree,
-                highest_education_field=field,
-                years_of_experience=experience,
-                had_leadership_role=had_leadership,
-                percentage_of_matching_skills=percentage,
-                has_position_related_high_education=has_relevant_edu,
-                distance_to_work=distance,
-                predicted_avg_task_rating=0,
-                predicted_avg_time_remaining_before_deadline=0,
-                predicted_avg_attendance_lateness_hrs=0,
-                predicted_avg_absence_days=0,
-            )
+            employee_data = {
+                "user": user,
+                "phone": phone,
+                "cv": cv,
+                "position": application_link.position,
+                "is_coordinator": is_coordinator,
+                "application_link": application_link
+            }
 
-            employee.skills.set(employee_skills)
+            # Optional fields
+            if region: employee_data["region"] = region
+            if degree: employee_data["highest_education_degree"] = degree
+            if field: employee_data["highest_education_field"] = field
+            if experience is not None: employee_data["years_of_experience"] = experience
+            if had_leadership is not None: employee_data["had_leadership_role"] = had_leadership
+            if percentage is not None: employee_data["percentage_of_matching_skills"] = percentage
+            if has_relevant_edu is not None: employee_data["has_position_related_high_education"] = has_relevant_edu
+
+            employee = Employee.objects.create(**employee_data)
+
+            if skills_list:
+                employee.skills.set(skills_list)
 
             BasicInfo.objects.create(
-            user=user,
-            role='employee',
-            username=email.split("@")[0]  
+                user=user,
+                role='employee',
+                username=email.split("@")[0]
             )
+        message = "Application submitted successfully."
+        if not llm_success:
+            message += " (Note: CV parsing failed, submitted with required data only.)"
 
-
-        return Response({"detail": "Application submitted successfully."}, status=status.HTTP_201_CREATED)
+        return Response({
+            "detail": message,
+            "llm_success": llm_success
+        }, status=status.HTTP_201_CREATED)
 
     
 
