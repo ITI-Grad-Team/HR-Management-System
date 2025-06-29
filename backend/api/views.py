@@ -6,20 +6,20 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Employee, ApplicationLink, Skill
 from .serializers import EmployeeSerializer
+from .cv_processing.LLM_utils import TogetherCVProcessor
 
-
-# utils/llm_utils.py (testing mock)
-def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
-    # This is a mock implementation for testing purposes
-    return {
-        "region": region_choices[0] if region_choices else "Unknown",
-        "degree": degree_choices[0] if degree_choices else "Unknown",
-        "field": field_choices[0] if field_choices else "Unknown",
-        "experience": 3,
-        "had_leadership": True,
-        "skills": skills_choices[:2],  # return first two as matched
-        "has_position_related_high_education": True
-    }
+# # utils/llm_utils.py (testing mock)
+# def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
+#     # This is a mock implementation for testing purposes
+#     return {
+#         "region": region_choices[0] if region_choices else "Unknown",
+#         "degree": degree_choices[0] if degree_choices else "Unknown",
+#         "field": field_choices[0] if field_choices else "Unknown",
+#         "experience": 3,
+#         "had_leadership": True,
+#         "skills": skills_choices[:2],  # return first two as matched
+#         "has_position_related_high_education": True
+#     }
 
 # region_distance_map.py (testing mock)
 REGION_DISTANCE_MAP = {
@@ -196,13 +196,22 @@ class PublicApplicantsViewSet(ModelViewSet):
         degree_choices = list(EducationDegree.objects.values_list("name", flat=True))
         region_choices = list(Region.objects.values_list("name", flat=True))
         field_choices = list(EducationField.objects.values_list("name", flat=True))
-        cv_info = extract_info_from_cv(
-            cv,
-            skills_choices=all_skills,
-            degree_choices=degree_choices,
-            region_choices=region_choices,
-            field_choices=field_choices
-        )  # This returns a dict
+
+        processor = TogetherCVProcessor()
+        try:
+            cv_info = processor.extract_info(
+                cv_file=cv,
+                choices={
+                    'skills': all_skills,
+                    'degrees': degree_choices,
+                    'regions': region_choices,
+                    'fields': field_choices
+                },
+                position=application_link.position
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=400)
+
 
         try:
             region_name = cv_info["region"]
