@@ -1,5 +1,13 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.viewsets import ModelViewSet
+from .models import Task
+from .serializers import TaskSerializer
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -521,35 +529,25 @@ class SubmitTaskView(APIView):
         }, status=200)
 
 
+class TaskViewSet(ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
 
-class AcceptTaskView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        task_id = request.data.get("task_id")
-        rating = request.data.get("rating")
-
-        if not task_id or rating is None:
-            return Response({"error": "Task ID and rating are required."}, status=400)
-
-        task = get_object_or_404(Task, id=task_id)
-
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        task = get_object_or_404(Task, pk=pk)
         if task.created_by.user != request.user:
             return Response({"error": "You are not authorized to accept this task."}, status=403)
-
         if task.is_accepted:
             return Response({"error": "Task already accepted."}, status=400)
-
         if task.is_refused:
             return Response({"error": "Task has already been refused."}, status=400)
-
         if not task.submission_time:
             return Response({"error": "Task has not been submitted yet."}, status=400)
 
         time_remaining = (task.deadline - task.submission_time).total_seconds() / 3600
-
         task.is_accepted = True
-        task.rating = rating
+        task.rating = request.data.get("rating")  # assuming rating is passed
         task.time_remaining_before_deadline_when_accepted = time_remaining
         task.save()
 
@@ -559,29 +557,21 @@ class AcceptTaskView(APIView):
             "task": TaskSerializer(task).data
         })
 
-class RefuseTaskView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        task_id = request.data.get("task_id")
-        reason = request.data.get("reason")
-
-        if not task_id or not reason:
-            return Response({"error": "Task ID and reason are required."}, status=400)
-
-        task = get_object_or_404(Task, id=task_id)
-
+    @action(detail=True, methods=['post'])
+    def refuse(self, request, pk=None):
+        task = get_object_or_404(Task, pk=pk)
         if task.created_by.user != request.user:
             return Response({"error": "You are not authorized to refuse this task."}, status=403)
-
         if task.is_refused:
             return Response({"error": "Task already refused."}, status=400)
-
         if task.is_accepted:
             return Response({"error": "Task has already been accepted."}, status=400)
-
         if not task.submission_time:
             return Response({"error": "Task has not been submitted yet."}, status=400)
+
+        reason = request.data.get("reason")
+        if not reason:
+            return Response({"error": "Reason is required for refusing the task."}, status=400)
 
         task.is_refused = True
         task.refuse_reason = reason
