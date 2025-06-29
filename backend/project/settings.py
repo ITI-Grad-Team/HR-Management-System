@@ -16,6 +16,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,6 +48,7 @@ INSTALLED_APPS = [
     'api',
     'django_extensions',
     'rest_framework',
+    'rest_framework_simplejwt',
     'django_filters',
 
 
@@ -94,6 +98,7 @@ DATABASES = {
     }
 }
 
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 
 

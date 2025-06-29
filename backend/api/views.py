@@ -37,7 +37,12 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .models import Employee
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import EmployeeSerializer
+from django.utils import timezone
+from .permissions import IsEmployee
+from django.shortcuts import get_object_or_404
 from .permissions import IsHR,IsAdmin,IsHRorAdmin,IsEmployee
 from .serializers import (
     UserSerializer,
@@ -464,3 +469,34 @@ class EmployeeDataViewSet(ModelViewSet):
     serializer_class = EmployeeDataSerializer
     permission_classes = [IsAuthenticated, IsHR]
     http_method_names = ['get', 'put', 'patch']
+class SubmitTaskView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    #permission_classes = [IsAuthenticated, IsEmployee]
+
+    def post(self, request, *args, **kwargs):
+        task_id = request.data.get("task_id")
+        task = get_object_or_404(Task, id=task_id)
+
+        if task.assigned_to.user != request.user:
+            return Response({'detail': 'You are not authorized to submit this task.'}, status=403)
+
+        if task.is_submitted:
+            return Response({'detail': 'Task already submitted.'}, status=400)
+
+        # upload files
+        files = request.FILES.getlist("file")
+        if not files:
+            return Response({'detail': 'No files uploaded.'}, status=400)
+
+        for f in files:
+            File.objects.create(task=task, file=f)
+
+        # update task status
+        task.is_submitted = True
+        task.submission_time = timezone.now()
+        task.save()
+
+        return Response({
+            'message': 'Task submitted successfully.',
+            'task': TaskSerializer(task).data
+        }, status=200)
