@@ -1,10 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet,EmployeeTaskViewSet,SubmitTaskView 
+from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet,EmployeeTaskViewSet, RefuseTaskView,SubmitTaskView 
 
 from .views import PublicApplicantsViewSet,HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import AcceptTaskView
+from .views import EmployeeDataViewSet
 
 router = DefaultRouter()
 
@@ -36,5 +38,8 @@ urlpatterns = [
     path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('submit-task/', SubmitTaskView.as_view(), name='submit-task'),
+    path('custom/tasks/accept/', AcceptTaskView.as_view(), name='accept-task'),
+    path('custom/tasks/refuse/', RefuseTaskView.as_view(), name='refuse-task'),
+
 
 ]

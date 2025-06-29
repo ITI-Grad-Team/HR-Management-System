@@ -6,6 +6,11 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Employee, ApplicationLink, Skill
 from .serializers import EmployeeSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from .models import Task
+from .serializers import TaskSerializer
 
 
 # utils/llm_utils.py (testing mock)
@@ -491,3 +496,76 @@ class SubmitTaskView(APIView):
             'message': 'Task submitted successfully.',
             'task': TaskSerializer(task).data
         }, status=200)
+
+
+
+class AcceptTaskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        task_id = request.data.get("task_id")
+        rating = request.data.get("rating")
+
+        if not task_id or rating is None:
+            return Response({"error": "Task ID and rating are required."}, status=400)
+
+        task = get_object_or_404(Task, id=task_id)
+
+        if task.created_by.user != request.user:
+            return Response({"error": "You are not authorized to accept this task."}, status=403)
+
+        if task.is_accepted:
+            return Response({"error": "Task already accepted."}, status=400)
+
+        if task.is_refused:
+            return Response({"error": "Task has already been refused."}, status=400)
+
+        if not task.submission_time:
+            return Response({"error": "Task has not been submitted yet."}, status=400)
+
+        time_remaining = (task.deadline - task.submission_time).total_seconds() / 3600
+
+        task.is_accepted = True
+        task.rating = rating
+        task.time_remaining_before_deadline_when_accepted = time_remaining
+        task.save()
+
+        return Response({
+            "message": "Task accepted successfully.",
+            "remaining_time_in_hours": round(time_remaining, 2),
+            "task": TaskSerializer(task).data
+        })
+
+class RefuseTaskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        task_id = request.data.get("task_id")
+        reason = request.data.get("reason")
+
+        if not task_id or not reason:
+            return Response({"error": "Task ID and reason are required."}, status=400)
+
+        task = get_object_or_404(Task, id=task_id)
+
+        if task.created_by.user != request.user:
+            return Response({"error": "You are not authorized to refuse this task."}, status=403)
+
+        if task.is_refused:
+            return Response({"error": "Task already refused."}, status=400)
+
+        if task.is_accepted:
+            return Response({"error": "Task has already been accepted."}, status=400)
+
+        if not task.submission_time:
+            return Response({"error": "Task has not been submitted yet."}, status=400)
+
+        task.is_refused = True
+        task.refuse_reason = reason
+        task.save()
+
+        return Response({
+            "message": "Task refused successfully.",
+            "refuse_reason": reason,
+            "task": TaskSerializer(task).data
+        })
