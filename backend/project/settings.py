@@ -162,3 +162,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'tempohr44@gmail.com'
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'noreply@HRTempo.com'
+TOGETHER_API_KEY = os.environ.get('OPENAI_API_KEY')
+
