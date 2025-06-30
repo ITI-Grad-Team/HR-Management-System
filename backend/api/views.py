@@ -20,6 +20,11 @@ from django.shortcuts import get_object_or_404
 from .models import Task
 from .serializers import TaskSerializer
 from .cv_processing.LLM_utils import TogetherCVProcessor
+from django.db.models import Avg
+def recalculate_interview_avg_grade(employee):
+    avg = InterviewQuestion.objects.filter(employee=employee).aggregate(Avg('grade'))['grade__avg']
+    employee.interview_questions_avg_grade = avg
+    employee.save(update_fields=['interview_questions_avg_grade'])
 
 # # utils/llm_utils.py (testing mock)
 # def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
@@ -348,6 +353,198 @@ class HRViewEmployeesViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['region', 'position', 'is_coordinator']
     search_fields = ['user__username', 'phone']
+
+    @action(detail=True, methods=['patch'], url_path='schedule-interview')
+    def schedule_interview(self, request, pk=None):
+        # a field right in the frontend record! .. this should sent the employee an email 
+        # the main purpose is to indicate that the interview is scheduled
+        # it should send the employee an email btw!!!!!!
+        employee = self.get_object()
+
+        interview_datetime_str = request.data.get("interview_datetime")
+        if not interview_datetime_str:
+            return Response({"detail": "Missing interview_datetime."}, status=400)
+
+        interview_datetime = parse_datetime(interview_datetime_str)
+        if not interview_datetime:
+            return Response({"detail": "Invalid datetime format. Use ISO format like 2025-07-01T14:00:00"}, status=400)
+
+
+        employee.interview_datetime = interview_datetime
+        employee.interview_state = "scheduled"
+        employee.save()
+
+        return Response({"detail": "Interview scheduled successfully."})
+
+    @action(detail=True, methods=['patch'], url_path='take_interviewee')
+    def start_interview_now(self, request, pk=None):
+        # this is just interviewer field setting, it can happen by whoever hr, whenever possible
+        # there should be a button directing to a react page with the emp id, so it is fetched and manipulated there
+        # in that page there should be a button to [take interviewee], it doesnt check time. it just checks the user (hr)
+
+        employee = self.get_object()
+
+        if employee.interviewer is not None:
+            return Response({"detail": "This interviewee has already been taken by another HR."}, status=400)
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Current user is not an HR."}, status=403)
+
+        employee.interviewer = hr
+        employee.save()
+
+        return Response({"detail": "Interviewee taken successfully."})
+    
+    @action(detail=True, methods=['post'], url_path='add-question')
+    def add_interview_question(self, request, pk=None):
+        """
+        Adds an interview question and its grade. 
+        Only the HR assigned as the interviewer can perform this.
+        """
+        employee = self.get_object()
+
+        if employee.interview_state == 'done':
+            return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can add interview questions."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the interviewer assigned to this employee."}, status=status.HTTP_403_FORBIDDEN)
+
+        text = request.data.get("text")
+        grade = 0
+
+        if not text :
+            return Response({"detail": "Missing text"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        InterviewQuestion.objects.create(
+            text=text,
+            grade=grade,
+            employee=employee
+        )
+
+        recalculate_interview_avg_grade(employee)
+
+        return Response({"detail": "Interview question added successfully."}, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['patch'], url_path='update-question-grade')
+    def update_question_grade(self, request, pk=None):
+        """
+        In front, questions for the emp in that page are fetched with him/her and rendered,
+        there should be an option for each question to update its grade (knowing the id).
+
+        Update the grade of a specific interview question.
+        Only the HR assigned to this employee can perform this.
+        """
+        employee = self.get_object()
+
+        if employee.interview_state == 'done':
+            return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can perform this action."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer."}, status=status.HTTP_403_FORBIDDEN)
+
+        question_id = request.data.get("question_id")
+        grade = request.data.get("grade")
+
+        if not (0 <= grade <= 100):
+            return Response({"detail": "Grade must be between 0 and 100."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+        if question_id is None or grade is None:
+            return Response({"detail": "Missing 'question_id' or 'grade'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            question = InterviewQuestion.objects.get(id=question_id, employee=employee)
+        except InterviewQuestion.DoesNotExist:
+            return Response({"detail": "Question not found for this employee."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            grade = float(grade)
+        except ValueError:
+            return Response({"detail": "Grade must be a number."}, status=status.HTTP_400_BAD_REQUEST)
+
+        question.grade = grade
+        question.save()
+        recalculate_interview_avg_grade(employee)
+
+        return Response({"detail": "Question grade updated successfully."})
+    
+    @action(detail=True, methods=['patch'], url_path='rate-interviewee')
+    def rate_interviewee(self, request, pk=None):
+        """
+        Allows the assigned HR interviewer to rate the interviewee.
+        """
+        employee = self.get_object()
+
+        if employee.interview_state == 'done':
+            return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can rate interviewees."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer for this employee."}, status=status.HTTP_403_FORBIDDEN)
+
+        rating = request.data.get("rating")
+
+        if rating is None:
+            return Response({"detail": "Missing 'rating' value."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            rating = float(rating)
+        except ValueError:
+            return Response({"detail": "Rating must be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not (0 <= rating <= 100):
+            return Response({"detail": "Rating must be between 0 and 100."}, status=status.HTTP_400_BAD_REQUEST)
+
+        employee.interviewer_rating = rating
+        employee.save(update_fields=['interviewer_rating'])
+
+        return Response({"detail": "Interviewee rated successfully."}, status=status.HTTP_200_OK)
+        
+
+
+    @action(detail=True, methods=['patch'], url_path='submit-interview')
+    def submit_interview(self, request, pk=None):
+        """
+        Marks the interview as 'done'. Only the assigned HR can do this.
+        The only highlighted button in the page
+        """
+        employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can perform this action."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interview_state == 'done':
+            return Response({"detail": "Interview is already submitted."}, status=status.HTTP_400_BAD_REQUEST)
+
+        employee.interview_state = 'done'
+        employee.save(update_fields=["interview_state"])
+
+        return Response({"detail": "Interview submitted successfully."})
+
+
 
 class HRViewApplicantsViewSet(ModelViewSet):
     """

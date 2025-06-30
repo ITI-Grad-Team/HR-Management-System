@@ -21,9 +21,16 @@ class BasicInfoSerializer(serializers.ModelSerializer):
         model = BasicInfo
         fields = '__all__'
 
+class InterviewQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InterviewQuestion
+        fields = ['id', 'text', 'grade']
+
+
 class EmployeeSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     basicinfo = BasicInfoSerializer(read_only=True, source='user.basicinfo')
+    interview_questions = InterviewQuestionSerializer(source='interviewquestion_set', many=True, read_only=True)
 
     class Meta:
         model = Employee
