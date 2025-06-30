@@ -116,17 +116,17 @@ class EmployeeDataSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-
+        instance.interview_state = 'accepted'  
         instance.join_date = timezone.now()
         instance.save()
 
         
 
         send_mail(
-            subject='Welcome to Tempohr',
+            subject='Welcome to HR',
             message=f"Your account has been created.\nUsername: {user.username}\nPassword: {password}",
             from_email='tempohr44@gmail.com',
-            recipient_list=[user.email],
+            recipient_list=[user.username],
             fail_silently=False,
         )
 

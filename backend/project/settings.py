@@ -15,10 +15,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -150,6 +147,16 @@ REST_FRAMEWORK = {
     ],
 }
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=160),  
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),   
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -162,5 +169,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'tempohr44@gmail.com'
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'noreply@HRTempo.com'
-TOGETHER_API_KEY = os.environ.get('OPENAI_API_KEY')
-
+TOGETHER_API_KEY = os.environ.get('TOGETHER_API_KEY')

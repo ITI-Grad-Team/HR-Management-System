@@ -5,20 +5,19 @@ from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployees
 
 from .views import PublicApplicantsViewSet,HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import EmployeeDataViewSet
+from .views import HRAcceptEmployeeViewSet
 
 router = DefaultRouter()
 
 # Public
 router.register(r'apply', PublicApplicantsViewSet, basename='public-apply')
 
-
 # HR views
 router.register(r'hr/employees', HRViewEmployeesViewSet, basename='hr-employees')
 router.register(r'hr/application-links', HRManageApplicationLinksViewSet, basename='hr-application-links')
 router.register(r'hr/skills', HRManageSkillsViewSet, basename='hr-manage-skills')
 router.register(r'hr/positions', HRManagePositionsViewSet, basename='hr-manage-positions')
-# router.register(r'hr/employees-data', EmployeeDataViewSet, basename='hr-employees-data')
+router.register(r'hr/employee-accept', HRAcceptEmployeeViewSet, basename='hr-employees-accept')
 
 # Admin views
 router.register(r'admin/hrs', AdminViewHRsViewSet, basename='admin-hrs')
@@ -27,7 +26,6 @@ router.register(r'admin/invite-hr', AdminInviteHRViewSet, basename='admin-invite
 
 #tasks
 router.register(r'tasks', TaskViewSet, basename='tasks')
-
 
 urlpatterns = [
     path('', include(router.urls)),  

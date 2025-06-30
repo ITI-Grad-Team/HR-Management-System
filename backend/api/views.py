@@ -20,11 +20,16 @@ from django.shortcuts import get_object_or_404
 from .models import Task
 from .serializers import TaskSerializer
 from .cv_processing.LLM_utils import TogetherCVProcessor
+from django.utils.dateparse import parse_datetime
 from django.db.models import Avg
 def recalculate_interview_avg_grade(employee):
     avg = InterviewQuestion.objects.filter(employee=employee).aggregate(Avg('grade'))['grade__avg']
     employee.interview_questions_avg_grade = avg
     employee.save(update_fields=['interview_questions_avg_grade'])
+from django.utils.dateformat import format as django_format
+from django.utils.timezone import localtime,make_aware, is_naive
+
+
 
 # # utils/llm_utils.py (testing mock)
 # def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
@@ -131,7 +136,7 @@ class AdminInviteHRViewSet(ModelViewSet):
         
         BasicInfo.objects.create(
         user=user,
-        role='HR',
+        role='hr',
         username=email.split("@")[0]  
         )
         
@@ -354,6 +359,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
     filterset_fields = ['region', 'position', 'is_coordinator']
     search_fields = ['user__username', 'phone']
 
+
     @action(detail=True, methods=['patch'], url_path='schedule-interview')
     def schedule_interview(self, request, pk=None):
         # a field right in the frontend record! .. this should sent the employee an email 
@@ -369,14 +375,29 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if not interview_datetime:
             return Response({"detail": "Invalid datetime format. Use ISO format like 2025-07-01T14:00:00"}, status=400)
 
+        # Ensure datetime is timezone-aware
+        if is_naive(interview_datetime):
+            interview_datetime = make_aware(interview_datetime)
 
         employee.interview_datetime = interview_datetime
         employee.interview_state = "scheduled"
         employee.save()
 
-        return Response({"detail": "Interview scheduled successfully."})
+        # Format for email
+        formatted_dt = django_format(localtime(interview_datetime), "l, F j, Y \\a\\t h:i A")
 
-    @action(detail=True, methods=['patch'], url_path='take_interviewee')
+        send_mail(
+            subject='Interview Scheduled',
+            message=f"Your interview has been scheduled for {formatted_dt}.\n\nPlease be on time.\n\nBest regards,\nHR Team",
+            from_email='tempohr44@gmail.com',
+            recipient_list=[employee.user.username],
+            fail_silently=False,
+        )
+
+        return Response({"detail": "Interview scheduled and email sent successfully."})
+
+
+    @action(detail=True, methods=['patch'], url_path='take-interviewee')
     def start_interview_now(self, request, pk=None):
         # this is just interviewer field setting, it can happen by whoever hr, whenever possible
         # there should be a button directing to a react page with the emp id, so it is fetched and manipulated there
@@ -385,7 +406,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         employee = self.get_object()
 
         if employee.interviewer is not None:
-            return Response({"detail": "This interviewee has already been taken by another HR."}, status=400)
+            return Response({"detail": "This interviewee has already been taken"}, status=400)
 
         try:
             hr = HR.objects.get(user=request.user)
@@ -405,7 +426,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         """
         employee = self.get_object()
 
-        if employee.interview_state == 'done':
+        if employee.interview_state == 'done' or employee.interview_state == 'accepted':
             return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -444,7 +465,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         """
         employee = self.get_object()
 
-        if employee.interview_state == 'done':
+        if employee.interview_state == 'done' or employee.interview_state == 'accepted':
             return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -489,7 +510,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         """
         employee = self.get_object()
 
-        if employee.interview_state == 'done':
+        if employee.interview_state == 'done' or employee.interview_state == 'accepted':
             return Response({"detail": "Interview is already completed. You cannot modify it."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
@@ -536,7 +557,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if employee.interviewer != hr:
             return Response({"detail": "You are not the assigned interviewer."}, status=status.HTTP_403_FORBIDDEN)
 
-        if employee.interview_state == 'done':
+        if employee.interview_state == 'done' or employee.interview_state == 'accepted':
             return Response({"detail": "Interview is already submitted."}, status=status.HTTP_400_BAD_REQUEST)
 
         employee.interview_state = 'done'
@@ -587,16 +608,6 @@ class PublicApplicationViewSet(ModelViewSet):
         # Steps:
         pass
 
-class HRAcceptApplicantViewSet(ModelViewSet):
-    """
-    Converts applicant to active employee by:
-    - Setting password (generated/time-based)
-    - Sending welcome email with credentials
-    - Does NOT require additional fields
-    """
-    queryset = Employee.objects.filter(join_date__isnull=True)
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
 
     def update(self, request, pk=None):
         # Steps:
@@ -699,11 +710,29 @@ class SystemAutomationViewSet(ModelViewSet):
     queryset = User.objects.none()  # Not model-based
     serializer_class = None
 
-class EmployeeDataViewSet(ModelViewSet):
+class HRAcceptEmployeeViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeDataSerializer
     permission_classes = [IsAuthenticated, IsHR]
-    http_method_names = ['get', 'put', 'patch']
+    http_method_names = ['patch']
+
+    def partial_update(self, request, *args, **kwargs):
+        employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can perform this action."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer for this employee."}, status=status.HTTP_403_FORBIDDEN)
+
+        if employee.interview_state != 'done':
+            return Response({"detail": f"Cannot accept employee with current interview status: '{employee.interview_state}'."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        return super().partial_update(request, *args, **kwargs)
+
 class SubmitTaskView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     #permission_classes = [IsAuthenticated, IsEmployee]

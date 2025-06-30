@@ -9,7 +9,8 @@ from typing import List, Dict, Any
 
 class TogetherCVProcessor:
     def __init__(self):
-        together.api_key = settings.TOGETHER_API_KEY
+    #     together.api_key = settings.TOGETHER_API_KEY  # i hash this and it still works hmmmmm... maybe done internally
+
         self.model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
         self.max_retries = 1
 
