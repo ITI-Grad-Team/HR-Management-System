@@ -85,7 +85,7 @@ class ReportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class EmployeeDataSerializer(serializers.ModelSerializer):
+class EmployeeAcceptingSerializer(serializers.ModelSerializer):
     weekdays = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
     yeardays = serializers.ListField(
         child=serializers.DictField(child=serializers.IntegerField()), write_only=True, required=False
@@ -142,3 +142,8 @@ class EmployeeDataSerializer(serializers.ModelSerializer):
                 day_obj.employees.add(instance)
 
         return instance
+    
+class EmployeeRejectingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = []

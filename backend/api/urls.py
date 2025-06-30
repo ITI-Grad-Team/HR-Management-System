@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet,EmployeeTaskViewSet,SubmitTaskView ,TaskViewSet
+from .views import HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet,SubmitTaskView ,TaskViewSet
 
-from .views import PublicApplicantsViewSet,HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet
+from .views import HRRejectEmployeeViewSet,PublicApplicantsViewSet,HRViewEmployeesViewSet,AdminViewHRsViewSet,AdminViewEmployeesViewSet,HRManageApplicationLinksViewSet,HRManageSkillsViewSet,HRManagePositionsViewSet,AdminInviteHRViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import HRAcceptEmployeeViewSet
 
@@ -17,7 +17,8 @@ router.register(r'hr/employees', HRViewEmployeesViewSet, basename='hr-employees'
 router.register(r'hr/application-links', HRManageApplicationLinksViewSet, basename='hr-application-links')
 router.register(r'hr/skills', HRManageSkillsViewSet, basename='hr-manage-skills')
 router.register(r'hr/positions', HRManagePositionsViewSet, basename='hr-manage-positions')
-router.register(r'hr/employee-accept', HRAcceptEmployeeViewSet, basename='hr-employees-accept')
+router.register(r'hr/accept-employee', HRAcceptEmployeeViewSet, basename='hr-employees-accept')
+router.register(r'hr/reject-employee', HRRejectEmployeeViewSet, basename='hr-reject-employee')
 
 # Admin views
 router.register(r'admin/hrs', AdminViewHRsViewSet, basename='admin-hrs')

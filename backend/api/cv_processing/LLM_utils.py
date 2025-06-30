@@ -126,6 +126,8 @@ class TogetherCVProcessor:
             prompt = self.build_prompt(text, choices, position)
             result = self.call_together_ai(prompt)
 
+            result = json.loads(json.dumps(result).replace("\\", ""))
+
             print("✅ Parsed JSON from Together AI:", result)
 
             info = {}

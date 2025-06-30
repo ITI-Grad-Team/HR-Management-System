@@ -1,5 +1,4 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,7 +12,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Employee, ApplicationLink, Skill
-from .serializers import EmployeeSerializer
+from .serializers import EmployeeSerializer,EmployeeRejectingSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -94,7 +93,7 @@ from .serializers import (
     FileSerializer,
     PositionSerializer,
     ReportSerializer,
-    EmployeeDataSerializer,
+    EmployeeAcceptingSerializer,
 )
 from rest_framework.response import Response
 from rest_framework import status
@@ -252,7 +251,7 @@ class PublicApplicantsViewSet(ModelViewSet):
                 },
                 position=application_link.position
             )
-            print(cv_info)
+            print("✅✅ final used:",cv_info)
             llm_success = True
         except ValueError as e:
             print(f"⚠️ CV processing failed: {e}")
@@ -330,7 +329,8 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         return Response({
             "detail": message,
-            "llm_success": llm_success
+            "llm_success": llm_success,
+            "employee_id":employee.id
         }, status=status.HTTP_201_CREATED)
 
     
@@ -567,74 +567,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
 
 
-class HRViewApplicantsViewSet(ModelViewSet):
-    """
-    Shows applicants for a specific application link
-    - Displays in table format with all applicant details
-    - Only accessible by HR role
-    """
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class HRInterviewViewSet(ModelViewSet):
-    """
-    Manages interview process
-    - Set interview datetime (triggers email)
-    - Add questions (with AI suggestions)
-    - Score questions and calculate average
-    - Mark as pending acceptance/rejection
-    - Only accessible by HR role
-    """
-    queryset = InterviewQuestion.objects.all()
-    serializer_class = InterviewQuestionSerializer
-    permission_classes = [IsAuthenticated]
-
-class PublicApplicationViewSet(ModelViewSet):
-    """
-    Handles job applications through public links
-    - Creates employee record with:
-      * email, phone, CV (from form)
-      * position, is_coordinator (from ApplicationLink)
-      * Extracted CV data (region, education, etc.)
-      * Predicted performance metrics
-    - Decrements application link count
-    """
-    queryset = Employee.objects.none()
-    serializer_class = EmployeeSerializer
-
-    def create(self, request, unique_name=None):
-        # Steps:
-        pass
-
-
-    def update(self, request, pk=None):
-        # Steps:
-        # 1. Generate password
-        # 2. Set join_date=now()
-        # 3. Send email with credentials
-        # 4. Return 200
-        pass
-
-
-class HRRejectApplicantViewSet(ModelViewSet):
-    """
-    Permanently deletes applicant record
-    - Sends rejection email first
-    - Complete deletion from DB
-    """
-    queryset = Employee.objects.filter(join_date__isnull=True)
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
-
-    def destroy(self, request, pk=None):
-        # Steps:
-        # 1. Send rejection email
-        # 2. Delete User+Employee records
-        # 3. Return 204
-        # return Response(status=204)
-        pass
 
 class HROvertimeApprovalViewSet(ModelViewSet):
     """
@@ -668,16 +600,7 @@ class EmployeeCheckInOutViewSet(ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
 
-class EmployeeTaskViewSet(ModelViewSet):
-    """
-    Manages task workflow for employees
-    - Task submitters: view assigned tasks, submit work
-    - Task receivers: view all submitter employees, assign tasks, review submissions
-    - Access controlled by is_coordinator flag
-    """
-    queryset = Task.objects.all()
-    serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+
 
 class EmployeeOvertimeClaimViewSet(ModelViewSet):
     """
@@ -689,15 +612,6 @@ class EmployeeOvertimeClaimViewSet(ModelViewSet):
     serializer_class = OvertimeClaimSerializer
     permission_classes = [IsAuthenticated]
 
-class ApplicationLinkPublicViewSet(ModelViewSet):
-    """
-    Public endpoint for job application links
-    - Shows application form if limit not reached
-    - Processes applications with CV parsing and ATS filtering
-    - No authentication required
-    """
-    queryset = ApplicationLink.objects.all()
-    serializer_class = ApplicationLinkSerializer
 
 class SystemAutomationViewSet(ModelViewSet):
     """
@@ -712,7 +626,7 @@ class SystemAutomationViewSet(ModelViewSet):
 
 class HRAcceptEmployeeViewSet(ModelViewSet):
     queryset = Employee.objects.all()
-    serializer_class = EmployeeDataSerializer
+    serializer_class = EmployeeAcceptingSerializer
     permission_classes = [IsAuthenticated, IsHR]
     http_method_names = ['patch']
 
@@ -732,6 +646,48 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         return super().partial_update(request, *args, **kwargs)
+    
+
+class HRRejectEmployeeViewSet(ModelViewSet):
+    """
+    Permanently deletes applicant record
+    - Sends rejection email first
+    - Complete deletion from DB
+    """
+    queryset = Employee.objects.exclude(interview_state='accepted')
+    serializer_class = EmployeeRejectingSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+    http_method_names = ['delete']
+
+    def destroy(self, request, pk=None):
+        employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can perform this action."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Only interviewer can reject
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer for this employee."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        send_mail(
+            subject='Application Status – Not Selected',
+            message=f"Dear {employee.user.basicinfo.username},\n\nThank you for your interest in the position. "
+                    f"Unfortunately, we will not be moving forward with you.\n\nBest regards,\nHR Team",
+            from_email='tempohr44@gmail.com',
+            recipient_list=[employee.user.username],
+            fail_silently=False,
+        )
+
+        # ✅ Delete: User → BasicInfo → Employee
+        user = employee.user
+        employee.delete()
+        user.delete()  # This will cascade and delete BasicInfo due to OneToOne
+
+        return Response({"detail":"applicant deleted"},status=status.HTTP_204_NO_CONTENT)
+
 
 class SubmitTaskView(APIView):
     parser_classes = [MultiPartParser, FormParser]
