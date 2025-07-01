@@ -64,10 +64,18 @@ class OvertimeClaimSerializer(serializers.ModelSerializer):
         model = OvertimeClaim
         fields = '__all__'
 
+
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = '__all__'
+        read_only_fields = ('created_by', 'is_submitted', 'is_accepted', 'is_refused')  # All auto-managed fields
+
+    def validate(self, data):
+        # Manual validation for business logic
+        if 'deadline' in data and data['deadline'] < timezone.now():
+            raise serializers.ValidationError("Deadline must be in the future")
+        return data
 
 class FileSerializer(serializers.ModelSerializer):
     class Meta:

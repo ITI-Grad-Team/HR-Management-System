@@ -79,7 +79,7 @@ from .serializers import EmployeeSerializer
 from django.utils import timezone
 from .permissions import IsEmployee
 from django.shortcuts import get_object_or_404
-from .permissions import IsHR,IsAdmin,IsHRorAdmin,IsEmployee
+from .permissions import IsHR,IsAdmin,IsHRorAdmin,IsEmployee,IsCoordinator
 from .serializers import (
     UserSerializer,
     BasicInfoSerializer,
@@ -689,89 +689,211 @@ class HRRejectEmployeeViewSet(ModelViewSet):
         return Response({"detail":"applicant deleted"},status=status.HTTP_204_NO_CONTENT)
 
 
-class SubmitTaskView(APIView):
-    parser_classes = [MultiPartParser, FormParser]
-    #permission_classes = [IsAuthenticated, IsEmployee]
-
-    def post(self, request, *args, **kwargs):
-        task_id = request.data.get("task_id")
-        task = get_object_or_404(Task, id=task_id)
-
-        if task.assigned_to.user != request.user:
-            return Response({'detail': 'You are not authorized to submit this task.'}, status=403)
-
-        if task.is_submitted:
-            return Response({'detail': 'Task already submitted.'}, status=400)
-
-        # upload files
-        files = request.FILES.getlist("file")
-        if not files:
-            return Response({'detail': 'No files uploaded.'}, status=400)
-
-        for f in files:
-            File.objects.create(task=task, file=f)
-
-        # update task status
-        task.is_submitted = True
-        task.submission_time = timezone.now()
-        task.save()
-
-        return Response({
-            'message': 'Task submitted successfully.',
-            'task': TaskSerializer(task).data
-        }, status=200)
-
-
 class TaskViewSet(ModelViewSet):
+    
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
+    # Create Task (by coordinator)
+    def create(self, request, *args, **kwargs):
+        # 1. Verify coordinator status with existence check
+        try:
+            if not request.user.employee.is_coordinator:
+                return Response(
+                    {"error": "Only coordinators can create tasks"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except AttributeError:
+            return Response(
+                {"error": "User has no associated employee profile"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. Create task instance directly (bypassing serializer for creation)
+        try:
+            task = Task.objects.create(
+                created_by=request.user.employee,
+                assigned_to_id=request.data['assigned_to'],
+                title=request.data['title'],
+                description=request.data['description'],
+                deadline=request.data['deadline'],
+                is_submitted=False,
+                is_accepted=False,
+                is_refused=False
+            )
+            
+            # 3. Return serialized data
+            serializer = self.get_serializer(task)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except KeyError as e:
+            return Response(
+                {"error": f"Missing required field: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    # Submit Task (by assigned employee)
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        task = get_object_or_404(Task, pk=pk)
+        
+        # Check 1: Must be the assigned employee
+        if task.assigned_to.user != request.user:
+            return Response(
+                {"error": "Only the assigned employee can submit this task."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check 2: Task must not already be submitted
+        if task.is_submitted:
+            return Response(
+                {"error": "Task is already submitted."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if request.FILES:
+            for file in request.FILES.getlist('files'):
+                File.objects.create(
+                    file=file,
+                    task=task 
+                )
+        else: 
+            return Response({"error": "At least one file is required for submission."},
+            status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update task status
+        task.is_submitted = True
+        task.submission_time = timezone.now()
+        task.is_refused = False  # Reset refusal if resubmitted
+        task.save()
+        
+        return Response(
+            {"message": "Task submitted successfully."},
+            status=status.HTTP_200_OK
+        )
+
+    # Accept Task (by creator/coordinator)
     @action(detail=True, methods=['post'])
     def accept(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
+        
+        # Check 1: Must be the creator
         if task.created_by.user != request.user:
-            return Response({"error": "You are not authorized to accept this task."}, status=403)
+            return Response(
+                {"error": "Only the task creator can accept this task."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check 2: Must be submitted and not already accepted/refused
+        if not task.is_submitted:
+            return Response(
+                {"error": "Task must be submitted before acceptance."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         if task.is_accepted:
-            return Response({"error": "Task already accepted."}, status=400)
-        if task.is_refused:
-            return Response({"error": "Task has already been refused."}, status=400)
-        if not task.submission_time:
-            return Response({"error": "Task has not been submitted yet."}, status=400)
-
+            return Response(
+                {"error": "Task is already accepted."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get rating from request
+        rating = request.data.get('rating')
+        if rating is None:
+            return Response(
+                {"error": "Rating is required for acceptance."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            rating = float(rating)
+            if not (0 <= rating <= 100):
+                raise ValueError
+        except ValueError:
+            return Response(
+                {"error": "Rating must be a number between 0 and 100."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Calculate time remaining (in hours)
         time_remaining = (task.deadline - task.submission_time).total_seconds() / 3600
+        
+        # Update task
         task.is_accepted = True
-        task.rating = request.data.get("rating")  # assuming rating is passed
+        task.is_refused = False  # In case it was previously refused and the creator changed their mind
+        task.rating = rating
         task.time_remaining_before_deadline_when_accepted = time_remaining
         task.save()
+        
+        return Response(
+            {
+                "message": "Task accepted successfully.",
+                "time_remaining_hours": round(time_remaining, 2),
+                "rating": rating
+            },
+            status=status.HTTP_200_OK
+        )
 
-        return Response({
-            "message": "Task accepted successfully.",
-            "remaining_time_in_hours": round(time_remaining, 2),
-            "task": TaskSerializer(task).data
-        })
-
+    # Refuse Task (by creator/coordinator)
     @action(detail=True, methods=['post'])
     def refuse(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
+        
+        # Check 1: Must be the creator
         if task.created_by.user != request.user:
-            return Response({"error": "You are not authorized to refuse this task."}, status=403)
-        if task.is_refused:
-            return Response({"error": "Task already refused."}, status=400)
+            return Response(
+                {"error": "Only the task creator can refuse this task."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check 2: Must be submitted and not already accepted
+        if not task.is_submitted:
+            return Response(
+                {"error": "Task must be submitted before refusal."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         if task.is_accepted:
-            return Response({"error": "Task has already been accepted."}, status=400)
-        if not task.submission_time:
-            return Response({"error": "Task has not been submitted yet."}, status=400)
-
-        reason = request.data.get("reason")
+            return Response(
+                {"error": "Task is already accepted and cannot be refused."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get refusal reason
+        reason = request.data.get('reason')
         if not reason:
-            return Response({"error": "Reason is required for refusing the task."}, status=400)
-
+            return Response(
+                {"error": "Reason is required for refusal."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update task
+        task.is_submitted = False  # Reset submission
         task.is_refused = True
         task.refuse_reason = reason
         task.save()
+        
+        return Response(
+            {"message": "Task refused successfully.", "reason": reason},
+            status=status.HTTP_200_OK
+        )
 
-        return Response({
-            "message": "Task refused successfully.",
-            "refuse_reason": reason,
-            "task": TaskSerializer(task).data
-        })
+    @action(detail=False, methods=['get'])
+    def my_created_tasks(self, request):
+        tasks = Task.objects.filter(created_by=request.user.employee)
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def my_assigned_tasks(self, request):
+        tasks = Task.objects.filter(assigned_to=request.user.employee)
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+##
