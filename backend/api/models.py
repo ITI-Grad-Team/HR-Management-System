@@ -42,6 +42,7 @@ class AttendanceRecord(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date = models.DateField()
     check_in_time = models.TimeField(null=True, blank=True)
+    check_in_datetime = models.DateTimeField(null=True, blank=True)
     check_out_time = models.TimeField(null=True, blank=True)
     attendance_type = models.CharField(max_length=10, choices=ATTENDANCE_TYPE_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)

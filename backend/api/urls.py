@@ -12,7 +12,6 @@ from .views import (
     TaskViewSet,
 )
 from .views_attendance import AttendanceViewSet
-from .views_salary import SalaryCalculateAPIView
 from .views_salaryrecord import SalaryRecordViewSet
 
 from .views import (
@@ -68,7 +67,4 @@ urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path(
-        "salary/calculate/", SalaryCalculateAPIView.as_view(), name="salary-calculate"
-    ),
 ]

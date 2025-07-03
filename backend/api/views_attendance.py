@@ -20,8 +20,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         user = request.user
-        today = timezone.localdate()
-        now = timezone.localtime().time()
+        now_dt = timezone.localtime()
+        today = now_dt.date()
+        now = now_dt.time()
 
         # Check for public holiday
         if PublicHoliday.objects.filter(date=today).exists():
@@ -81,6 +82,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             user=user,
             date=today,
             check_in_time=now,
+            check_in_datetime=now_dt,
             attendance_type=attendance_type,
             status=status_val,
             mac_address=mac_address_used,
