@@ -12,6 +12,8 @@ from .views import (
     TaskViewSet,
 )
 from .views_attendance import AttendanceViewSet
+from .views_salary import SalaryCalculateAPIView
+from .views_salaryrecord import SalaryRecordViewSet
 
 from .views import (
     HRRejectEmployeeViewSet,
@@ -60,9 +62,13 @@ router.register(r"admin/invite-hr", AdminInviteHRViewSet, basename="admin-invite
 # tasks
 router.register(r"tasks", TaskViewSet, basename="tasks")
 router.register(r"attendance", AttendanceViewSet, basename="attendance")
+router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
 
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path(
+        "salary/calculate/", SalaryCalculateAPIView.as_view(), name="salary-calculate"
+    ),
 ]
