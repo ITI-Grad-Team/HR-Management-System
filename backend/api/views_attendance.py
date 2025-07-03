@@ -8,10 +8,17 @@ from .models import AttendanceRecord, WorkDayConfig, PublicHoliday
 from .serializers import AttendanceRecordSerializer
 
 
-class AttendanceViewSet(viewsets.ViewSet):
+class AttendanceViewSet(viewsets.ModelViewSet):
+    queryset = AttendanceRecord.objects.all()
+    serializer_class = AttendanceRecordSerializer
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
+    # Attendance timing constants
+    WORK_START = time(9, 0)
+    GRACE_END = time(9, 15)
+    WORK_END = time(17, 0)
+
+    def create(self, request, *args, **kwargs):
         user = request.user
         today = timezone.localdate()
         now = timezone.localtime().time()
@@ -50,7 +57,6 @@ class AttendanceViewSet(viewsets.ViewSet):
         attendance_type = "online" if workday_cfg.is_online else "physical"
         mac_address_used = request.data.get("mac_address")
         if attendance_type == "physical":
-            # Assume user.mac_address exists (custom user field)
             user_mac = getattr(user, "mac_address", None)
             if not user_mac or mac_address_used != user_mac:
                 return Response(
@@ -61,12 +67,9 @@ class AttendanceViewSet(viewsets.ViewSet):
             mac_address_used = None
 
         # Timing logic
-        work_start = time(9, 0)
-        grace_end = time(9, 15)
-        work_end = time(17, 0)
-        if now <= grace_end:
+        if now <= self.GRACE_END:
             status_val = "present"
-        elif now > grace_end and now < work_end:
+        elif now > self.GRACE_END and now < self.WORK_END:
             status_val = "late"
         else:
             return Response(
@@ -84,3 +87,5 @@ class AttendanceViewSet(viewsets.ViewSet):
         )
         serializer = AttendanceRecordSerializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # Note: For now, check_in_datetime is not stored; only check_in_time and date are saved.
