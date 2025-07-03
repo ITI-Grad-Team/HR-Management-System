@@ -3,14 +3,15 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from api.models import AttendanceRecord, OvertimeRequest
+from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord
+from api.serializers import SalaryRecordSerializer
 from django.db import models
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    http_method_names = ["post"]  # Only allow POST for now
-    queryset = []  # Not used, as we don't list or retrieve yet
+    queryset = SalaryRecord.objects.all()
+    serializer_class = SalaryRecordSerializer
 
     def create(self, request, *args, **kwargs):
         user_id = request.data.get("user_id")
@@ -29,6 +30,13 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response(
                 {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check for existing SalaryRecord
+        if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():
+            return Response(
+                {"detail": "Salary already calculated for this month"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         records = AttendanceRecord.objects.filter(
@@ -55,12 +63,22 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             base_salary - absent_penalty - late_penalty + overtime_bonus, 2
         )
 
-        return Response(
-            {
-                "base_salary": round(base_salary, 2),
-                "absent_days": absent_days,
-                "late_days": late_days,
-                "overtime_hours": round(overtime_hours, 2),
-                "final_salary": final_salary,
-            }
+        salary_record = SalaryRecord.objects.create(
+            user=user,
+            year=year,
+            month=month,
+            base_salary=round(base_salary, 2),
+            absent_days=absent_days,
+            late_days=late_days,
+            overtime_hours=round(overtime_hours, 2),
+            final_salary=final_salary,
+            details={
+                "absent_penalty": round(absent_penalty, 2),
+                "late_penalty": round(late_penalty, 2),
+                "overtime_bonus": round(overtime_bonus, 2),
+                "daily_wage": round(daily_wage, 2),
+                "hourly_rate": round(hourly_rate, 2),
+            },
         )
+        serializer = SalaryRecordSerializer(salary_record)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
