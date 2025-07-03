@@ -9,24 +9,15 @@ from .views import (
     HRManageSkillsViewSet,
     HRManagePositionsViewSet,
     AdminInviteHRViewSet,
-    TaskViewSet,
-)
-from .views_attendance import AttendanceViewSet
-from .views_salaryrecord import SalaryRecordViewSet
-
-from .views import (
     HRRejectEmployeeViewSet,
     PublicApplicantsViewSet,
-    HRViewEmployeesViewSet,
-    AdminViewHRsViewSet,
-    AdminViewEmployeesViewSet,
-    HRManageApplicationLinksViewSet,
-    HRManageSkillsViewSet,
-    HRManagePositionsViewSet,
-    AdminInviteHRViewSet,
+    HRAcceptEmployeeViewSet,
+    TaskViewSet,
 )
+
+from .views_attendance import AttendanceViewSet
+from .views_salaryrecord import SalaryRecordViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import HRAcceptEmployeeViewSet
 
 router = DefaultRouter()
 
