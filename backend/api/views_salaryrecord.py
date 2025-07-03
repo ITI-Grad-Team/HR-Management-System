@@ -6,12 +6,15 @@ from django.contrib.auth import get_user_model
 from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord
 from api.serializers import SalaryRecordSerializer
 from django.db import models
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = SalaryRecord.objects.all()
     serializer_class = SalaryRecordSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["user", "year", "month"]
 
     def create(self, request, *args, **kwargs):
         user_id = request.data.get("user_id")
