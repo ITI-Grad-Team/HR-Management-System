@@ -79,12 +79,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         attendance_type = "online" if workday_cfg.is_online else "physical"
         mac_address_used = request.data.get("mac_address")
         if attendance_type == "physical":
-            user_mac = getattr(user, "mac_address", None)
-            if not user_mac or mac_address_used != user_mac:
-                return Response(
-                    {"detail": "Invalid MAC address for physical attendance."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            # user_mac = getattr(user, "mac_address", None)
+            # if not user_mac or mac_address_used != user_mac:
+            #     return Response(
+            #         {"detail": "Invalid MAC address for physical attendance."},
+            #         status=status.HTTP_400_BAD_REQUEST,
+            #     )
+            pass
         else:
             mac_address_used = None
 
@@ -98,6 +99,38 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 {"detail": "Check-in is not allowed after end of workday."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        check_out_time = request.data.get("check_out_time")
+        overtime_approved = request.data.get("overtime_approved", False)
+        overtime_hours = None
+
+        if check_out_time:
+            from datetime import datetime
+            from django.utils.dateparse import parse_time
+
+            parsed_check_out = (
+                parse_time(check_out_time)
+                if isinstance(check_out_time, str)
+                else check_out_time
+            )
+            if parsed_check_out:
+                # Only calculate overtime if check_out_time is after WORK_END
+                if parsed_check_out > self.WORK_END:
+                    # Use today's date for both times to get timedelta
+                    dt_work_end = datetime.combine(
+                        today, self.WORK_END, tzinfo=now_dt.tzinfo
+                    )
+                    dt_check_out = datetime.combine(
+                        today, parsed_check_out, tzinfo=now_dt.tzinfo
+                    )
+                    overtime_delta = dt_check_out - dt_work_end
+                    overtime_hours_val = overtime_delta.total_seconds() / 3600.0
+                    if overtime_approved and overtime_hours_val > 0:
+                        overtime_hours = round(overtime_hours_val, 2)
+            else:
+                return Response(
+                    {"detail": "Invalid check_out_time format. Use HH:MM[:ss] format."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         record = AttendanceRecord.objects.create(
             user=user,
@@ -107,6 +140,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             attendance_type=attendance_type,
             status=status_val,
             mac_address=mac_address_used,
+            check_out_time=check_out_time,
+            overtime_approved=overtime_approved,
+            overtime_hours=overtime_hours,
         )
         serializer = AttendanceRecordSerializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
