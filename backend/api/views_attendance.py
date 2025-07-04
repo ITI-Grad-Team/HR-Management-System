@@ -20,7 +20,28 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         user = request.user
-        now_dt = timezone.localtime()
+        check_in_datetime_str = request.data.get("check_in_datetime")
+        now_dt = None
+        if check_in_datetime_str:
+            from django.utils.dateparse import parse_datetime
+
+            parsed_dt = parse_datetime(check_in_datetime_str)
+            if not parsed_dt:
+                return Response(
+                    {
+                        "detail": "Invalid check_in_datetime format. Use ISO 8601 format."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if timezone.is_naive(parsed_dt):
+                # Assume local timezone if naive
+                parsed_dt = timezone.make_aware(
+                    parsed_dt, timezone.get_current_timezone()
+                )
+            now_dt = timezone.localtime(parsed_dt)
+        else:
+            now_dt = timezone.localtime()
+
         today = now_dt.date()
         now = now_dt.time()
 
@@ -89,5 +110,3 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         )
         serializer = AttendanceRecordSerializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    # Note: For now, check_in_datetime is not stored; only check_in_time and date are saved.
