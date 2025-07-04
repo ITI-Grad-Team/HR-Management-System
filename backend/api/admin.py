@@ -204,6 +204,7 @@ class OvertimeRequestAdmin(admin.ModelAdmin):
 @admin.register(SalaryRecord)
 class SalaryRecordAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "user",
         "month",
         "year",
@@ -216,8 +217,3 @@ class SalaryRecordAdmin(admin.ModelAdmin):
     )
     list_filter = ("year", "month")
     search_fields = ("user__username",)
-
-
-from django.contrib import admin
-
-# Register your models here.

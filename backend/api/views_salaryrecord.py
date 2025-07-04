@@ -17,23 +17,40 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
     filterset_fields = ["user", "year", "month"]
 
     def create(self, request, *args, **kwargs):
-        user_id = request.data.get("user_id")
+        # Accept both "user" and "user_id" for compatibility
+        user_id = request.data.get("user") or request.data.get("user_id")
         year = int(request.data.get("year"))
         month = int(request.data.get("month"))
-        User = get_user_model()
-        try:
-            user = User.objects.get(id=user_id)
-            employee = getattr(user, "employee", None)
-            if not employee or employee.basic_salary is None:
-                return Response(
-                    {"detail": "User does not have a base salary set."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            base_salary = float(employee.basic_salary)
-        except User.DoesNotExist:
+        UserModel = get_user_model()
+        user = None
+        # Try to fetch by integer ID or username/email fallback
+        if user_id is not None:
+            try:
+                # Try integer ID
+                user = UserModel.objects.get(pk=int(user_id))
+            except (UserModel.DoesNotExist, ValueError, TypeError):
+                # Try username or email if pk lookup fails
+                try:
+                    user = UserModel.objects.get(username=user_id)
+                except UserModel.DoesNotExist:
+                    try:
+                        user = UserModel.objects.get(email=user_id)
+                    except UserModel.DoesNotExist:
+                        return Response(
+                            {"detail": "User not found."},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
+        else:
             return Response(
-                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "User not specified."}, status=status.HTTP_400_BAD_REQUEST
             )
+        employee = getattr(user, "employee", None)
+        if not employee or employee.basic_salary is None:
+            return Response(
+                {"detail": "User does not have a base salary set."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        base_salary = float(employee.basic_salary)
 
         # Check for existing SalaryRecord
         if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():

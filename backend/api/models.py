@@ -79,11 +79,12 @@ class SalaryRecord(models.Model):
     month = models.IntegerField()
     year = models.IntegerField()
     base_salary = models.FloatField()
-    absent_days = models.IntegerField(default=0)
-    late_days = models.IntegerField(default=0)
-    overtime_hours = models.FloatField(default=0)
     final_salary = models.FloatField()
-    details = models.JSONField(default=dict, blank=True)
+    details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Snapshot of all salary factors for this month.",
+    )
     generated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -91,6 +92,34 @@ class SalaryRecord(models.Model):
 
     def __str__(self):
         return f"Salary for {self.user} - {self.month}/{self.year}: {self.final_salary}"
+
+    @property
+    def summary(self):
+        """Return a summary of the main salary components for display/reporting."""
+        d = self.details or {}
+        return {
+            "base_salary": self.base_salary,
+            "final_salary": self.final_salary,
+            "absent_days": d.get("absent_days"),
+            "late_days": d.get("late_days"),
+            "overtime_hours": d.get("overtime_hours"),
+            "absent_penalty": d.get("absent_penalty"),
+            "late_penalty": d.get("late_penalty"),
+            "overtime_bonus": d.get("overtime_bonus"),
+            "other": {
+                k: v
+                for k, v in d.items()
+                if k
+                not in {
+                    "absent_days",
+                    "late_days",
+                    "overtime_hours",
+                    "absent_penalty",
+                    "late_penalty",
+                    "overtime_bonus",
+                }
+            },
+        }
 
 
 class BasicInfo(models.Model):
