@@ -198,9 +198,27 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
         "mac_address",
         "overtime_hours",
         "overtime_approved",
+        "get_short_time_hours",
     )
     list_filter = ("attendance_type", "status", "date", "overtime_approved")
     search_fields = ("user__username", "mac_address")
+
+    def get_short_time_hours(self, obj):
+        # Calculate short time hours if check_out_time and expected_leave_time are set
+        expected_leave = getattr(obj.user.employee, "expected_leave_time", None)
+        if (
+            expected_leave
+            and obj.check_out_time
+            and obj.check_out_time < expected_leave
+        ):
+            delta = (expected_leave.hour * 60 + expected_leave.minute) - (
+                obj.check_out_time.hour * 60 + obj.check_out_time.minute
+            )
+            hours = delta / 60.0
+            return round(hours, 2) if hours > 0 else 0
+        return 0
+
+    get_short_time_hours.short_description = "Short Time Hours"
 
 
 @admin.register(OvertimeRequest)

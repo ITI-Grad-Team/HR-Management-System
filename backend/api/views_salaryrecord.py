@@ -80,6 +80,26 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             )["total"]
             or 0
         )
+        # Short time: sum short_time_hours where check_out_time is before expected_leave_time
+        short_time_hours = 0
+        short_time_penalty_total = 0
+        for rec in records:
+            # Only count if expected_leave_time and check_out_time are set
+            expected_leave = getattr(rec.user.employee, "expected_leave_time", None)
+            if (
+                expected_leave
+                and rec.check_out_time
+                and rec.check_out_time < expected_leave
+            ):
+                # Calculate short time in hours
+                delta = (expected_leave.hour * 60 + expected_leave.minute) - (
+                    rec.check_out_time.hour * 60 + rec.check_out_time.minute
+                )
+                hours = delta / 60.0
+                if hours > 0:
+                    short_time_hours += hours
+        short_time_hours = round(short_time_hours, 2)
+        short_time_penalty_total = round(short_time_hours * shorttime_hour_penalty, 2)
 
         absent_penalty_total = absent_days * absence_penalty
         late_penalty_total = late_days * shorttime_hour_penalty
@@ -88,6 +108,7 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             base_salary
             - absent_penalty_total
             - late_penalty_total
+            - short_time_penalty_total
             + overtime_bonus_total,
             2,
         )
@@ -101,6 +122,8 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             "overtime_hour_salary": overtime_hour_salary,
             "absent_penalty": round(absent_penalty_total, 2),
             "late_penalty": round(late_penalty_total, 2),
+            "short_time_hours": short_time_hours,
+            "short_time_penalty": short_time_penalty_total,
             "overtime_bonus": round(overtime_bonus_total, 2),
         }
 

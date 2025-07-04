@@ -101,7 +101,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             )
         check_out_time = request.data.get("check_out_time")
         overtime_approved = request.data.get("overtime_approved", False)
-        overtime_hours = None
+        overtime_hours = 0.0
 
         if check_out_time:
             from datetime import datetime
