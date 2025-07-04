@@ -39,6 +39,7 @@ class HRAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "user",
         "phone",
         "position",
@@ -203,17 +204,29 @@ class OvertimeRequestAdmin(admin.ModelAdmin):
 
 @admin.register(SalaryRecord)
 class SalaryRecordAdmin(admin.ModelAdmin):
-    list_display = (
+    list_display = [
         "id",
         "user",
         "month",
         "year",
         "base_salary",
-        "absent_days",
-        "late_days",
-        "overtime_hours",
+        "get_absent_days",
+        "get_late_days",
+        "get_overtime_hours",
         "final_salary",
-        "generated_at",
-    )
-    list_filter = ("year", "month")
-    search_fields = ("user__username",)
+    ]
+
+    def get_absent_days(self, obj):
+        return obj.details.get("absent_days", 0)
+
+    get_absent_days.short_description = "Absent Days"
+
+    def get_late_days(self, obj):
+        return obj.details.get("late_days", 0)
+
+    get_late_days.short_description = "Late Days"
+
+    def get_overtime_hours(self, obj):
+        return obj.details.get("overtime_hours", 0)
+
+    get_overtime_hours.short_description = "Overtime Hours"

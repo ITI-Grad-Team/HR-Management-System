@@ -281,33 +281,31 @@ class OvertimeRequestSerializer(serializers.ModelSerializer):
 
 
 class SalaryRecordSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    user_email = serializers.EmailField(source="user.email", read_only=True)
+    absent_days = serializers.SerializerMethodField()
+    late_days = serializers.SerializerMethodField()
+    overtime_hours = serializers.SerializerMethodField()
 
     class Meta:
         model = SalaryRecord
         fields = [
             "id",
             "user",
-            "user_email",
             "month",
             "year",
             "base_salary",
+            "final_salary",
+            "details",
             "absent_days",
             "late_days",
             "overtime_hours",
-            "final_salary",
-            "details",
             "generated_at",
         ]
-        read_only_fields = ["final_salary", "details", "generated_at"]
 
-    def validate_base_salary(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Base salary cannot be negative.")
-        return round(value, 2)
+    def get_absent_days(self, obj):
+        return obj.details.get("absent_days", 0)
 
-    def validate_overtime_hours(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Overtime hours cannot be negative.")
-        return round(value, 2)
+    def get_late_days(self, obj):
+        return obj.details.get("late_days", 0)
+
+    def get_overtime_hours(self, obj):
+        return obj.details.get("overtime_hours", 0)

@@ -18,28 +18,33 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         # Accept both "user" and "user_id" for compatibility
-        user_id = request.data.get("user") or request.data.get("user_id")
+        user_value = request.data.get("user") or request.data.get("user_id")
         year = int(request.data.get("year"))
         month = int(request.data.get("month"))
         UserModel = get_user_model()
         user = None
-        # Try to fetch by integer ID or username/email fallback
-        if user_id is not None:
+        if user_value is not None:
+            # Try integer PK first
             try:
-                # Try integer ID
-                user = UserModel.objects.get(pk=int(user_id))
-            except (UserModel.DoesNotExist, ValueError, TypeError):
-                # Try username or email if pk lookup fails
+                user = UserModel.objects.get(pk=int(user_value))
+            except (ValueError, TypeError):
+                # Not an int, try username/email
                 try:
-                    user = UserModel.objects.get(username=user_id)
+                    user = UserModel.objects.get(username=user_value)
                 except UserModel.DoesNotExist:
                     try:
-                        user = UserModel.objects.get(email=user_id)
+                        user = UserModel.objects.get(email=user_value)
                     except UserModel.DoesNotExist:
                         return Response(
                             {"detail": "User not found."},
                             status=status.HTTP_404_NOT_FOUND,
                         )
+            except UserModel.DoesNotExist:
+                # int(user_value) succeeded but no user with that PK
+                return Response(
+                    {"detail": "User not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
         else:
             return Response(
                 {"detail": "User not specified."}, status=status.HTTP_400_BAD_REQUEST
@@ -50,7 +55,11 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
                 {"detail": "User does not have a base salary set."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        base_salary = float(employee.basic_salary)
+
+        base_salary = float(employee.basic_salary or 0)
+        absence_penalty = float(employee.absence_penalty or 0)
+        shorttime_hour_penalty = float(employee.shorttime_hour_penalty or 0)
+        overtime_hour_salary = float(employee.overtime_hour_salary or 0)
 
         # Check for existing SalaryRecord
         if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():
@@ -64,41 +73,44 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         )
         absent_days = records.filter(status="absent").count()
         late_days = records.filter(status="late").count()
+        # Overtime: sum overtime_hours from AttendanceRecord where overtime_approved=True and overtime_hours > 0
         overtime_hours = (
-            OvertimeRequest.objects.filter(
-                attendance_record__user=user,
-                attendance_record__date__year=year,
-                attendance_record__date__month=month,
-                status="approved",
-            ).aggregate(total=models.Sum("requested_hours"))["total"]
+            records.filter(overtime_approved=True, overtime_hours__gt=0).aggregate(
+                total=models.Sum("overtime_hours")
+            )["total"]
             or 0
         )
 
-        daily_wage = base_salary / 30
-        hourly_rate = daily_wage / 8
-        absent_penalty = daily_wage * absent_days
-        late_penalty = 0.25 * daily_wage * late_days
-        overtime_bonus = hourly_rate * overtime_hours
+        absent_penalty_total = absent_days * absence_penalty
+        late_penalty_total = late_days * shorttime_hour_penalty
+        overtime_bonus_total = overtime_hours * overtime_hour_salary
         final_salary = round(
-            base_salary - absent_penalty - late_penalty + overtime_bonus, 2
+            base_salary
+            - absent_penalty_total
+            - late_penalty_total
+            + overtime_bonus_total,
+            2,
         )
+
+        details = {
+            "absent_days": absent_days,
+            "late_days": late_days,
+            "overtime_hours": round(overtime_hours, 2),
+            "absence_penalty": absence_penalty,
+            "shorttime_hour_penalty": shorttime_hour_penalty,
+            "overtime_hour_salary": overtime_hour_salary,
+            "absent_penalty": round(absent_penalty_total, 2),
+            "late_penalty": round(late_penalty_total, 2),
+            "overtime_bonus": round(overtime_bonus_total, 2),
+        }
 
         salary_record = SalaryRecord.objects.create(
             user=user,
             year=year,
             month=month,
             base_salary=round(base_salary, 2),
-            absent_days=absent_days,
-            late_days=late_days,
-            overtime_hours=round(overtime_hours, 2),
             final_salary=final_salary,
-            details={
-                "absent_penalty": round(absent_penalty, 2),
-                "late_penalty": round(late_penalty, 2),
-                "overtime_bonus": round(overtime_bonus, 2),
-                "daily_wage": round(daily_wage, 2),
-                "hourly_rate": round(hourly_rate, 2),
-            },
+            details=details,
         )
         serializer = SalaryRecordSerializer(salary_record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
