@@ -1,5 +1,20 @@
 from django.contrib import admin
 
+#################### Just for testing and see the right id buddyyyy! ^^ ####################
+# from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+# from django.contrib.auth.models import User
+
+# #
+# # Unregister default User admin
+# admin.site.unregister(User)
+
+
+# # Create custom User admin
+# @admin.register(User)
+# class CustomUserAdmin(BaseUserAdmin):
+#     list_display = ("id", "username", "email", "is_staff", "is_active")
+############################################################################################
+
 from .models import (
     BasicInfo,
     HR,
@@ -39,7 +54,6 @@ class HRAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
         "user",
         "phone",
         "position",
@@ -205,7 +219,6 @@ class OvertimeRequestAdmin(admin.ModelAdmin):
 @admin.register(SalaryRecord)
 class SalaryRecordAdmin(admin.ModelAdmin):
     list_display = [
-        "id",
         "user",
         "month",
         "year",
