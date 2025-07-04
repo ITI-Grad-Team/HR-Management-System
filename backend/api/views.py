@@ -1,90 +1,47 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
-from .models import Task
-from .serializers import TaskSerializer
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from rest_framework.response import Response
-from rest_framework import status
 from django.contrib.auth.models import User
 from django.db import transaction
-from .models import Employee, ApplicationLink, Skill
-from .serializers import EmployeeSerializer,EmployeeRejectingSerializer
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from .models import Task
-from .serializers import TaskSerializer
-from .cv_processing.LLM_utils import TogetherCVProcessor
-from django.utils.dateparse import parse_datetime
 from django.db.models import Avg
-def recalculate_interview_avg_grade(employee):
-    avg = InterviewQuestion.objects.filter(employee=employee).aggregate(Avg('grade'))['grade__avg']
-    employee.interview_questions_avg_grade = avg
-    employee.save(update_fields=['interview_questions_avg_grade'])
-from django.utils.dateformat import format as django_format
-from django.utils.timezone import localtime,make_aware, is_naive
-
-
-
-# # utils/llm_utils.py (testing mock)
-# def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
-#     # This is a mock implementation for testing purposes
-#     return {
-#         "region": region_choices[0] if region_choices else "Unknown",
-#         "degree": degree_choices[0] if degree_choices else "Unknown",
-#         "field": field_choices[0] if field_choices else "Unknown",
-#         "experience": 3,
-#         "had_leadership": True,
-#         "skills": skills_choices[:2],  # return first two as matched
-#         "has_position_related_high_education": True
-#     }
-
-
-# utils/llm_utils.py (testing mock)
-def extract_info_from_cv(cv, skills_choices, degree_choices, region_choices, field_choices):
-    # This is a mock implementation for testing purposes
-    return {
-        "region": region_choices[0] if region_choices else "Unknown",
-        "degree": degree_choices[0] if degree_choices else "Unknown",
-        "field": field_choices[0] if field_choices else "Unknown",
-        "experience": 3,
-        "had_leadership": True,
-        "skills": skills_choices[:2],  # return first two as matched
-        "has_position_related_high_education": True
-    }
-
-# region_distance_map.py (testing mock)
-REGION_DISTANCE_MAP = {
-    "Cairo": 10.0,
-    "Giza": 15.0,
-    "Alexandria": 25.0,
-    "Aswan": 100.0,
-    "Unknown": 0.0
-}
-
-
-from .models import User, BasicInfo, HR, Employee, ApplicationLink, Skill,EducationDegree,Region,EducationField, InterviewQuestion, OvertimeClaim, Task, File, Position, Report
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
-from .models import Employee
-from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
-from .serializers import EmployeeSerializer
-from django.utils import timezone
-from .permissions import IsEmployee
 from django.shortcuts import get_object_or_404
-from .permissions import IsHR,IsAdmin,IsHRorAdmin,IsEmployee,IsCoordinator
+from django.utils import timezone
+from django.utils.dateformat import format as django_format
+from django.utils.timezone import localtime, make_aware, is_naive
+from django.utils.dateparse import parse_datetime
+
+from rest_framework.viewsets import ModelViewSet, ViewSet,ReadOnlyModelViewSet
+from rest_framework.views import APIView
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .models import (
+    User,
+    BasicInfo,
+    HR,
+    Employee,
+    ApplicationLink,
+    Skill,
+    EducationDegree,
+    Region,
+    EducationField,
+    InterviewQuestion,
+    OvertimeClaim,
+    Task,
+    File,
+    Position,
+    Report
+)
+
 from .serializers import (
     UserSerializer,
     BasicInfoSerializer,
     HRSerializer,
     EmployeeSerializer,
+    EmployeeListSerializer,
+    EmployeeRejectingSerializer,
+    EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
     InterviewQuestionSerializer,
@@ -92,15 +49,66 @@ from .serializers import (
     TaskSerializer,
     FileSerializer,
     PositionSerializer,
-    ReportSerializer,
-    EmployeeAcceptingSerializer,
+    ReportSerializer
 )
+
+from .permissions import (
+    IsHR,
+    IsAdmin,
+    IsHRorAdmin,
+    IsEmployee,
+    IsCoordinator
+)
+
+from .cv_processing.LLM_utils import TogetherCVProcessor
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
 import random
 import string
 
+class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeListSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['region', 'position', 'is_coordinator', 'interview_state', 'application_link']
+    search_fields = ['user__username', 'phone']
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = EmployeeSerializer
+        return super().retrieve(request, *args, **kwargs)
+    
+class AdminManageSkillsViewSet(ModelViewSet):
+    queryset = Skill.objects.all()
+    serializer_class = SkillSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ['get', 'post']  
+
+
+class AdminManagePositionsViewSet(ModelViewSet):
+    queryset = Position.objects.all()
+    serializer_class = PositionSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ['get', 'post'] 
+
+
+class AdminViewEmployeesViewSet(ModelViewSet):
+    """
+    Admin can:
+    - List all employees (paginated + filterable + searchable)
+    - Retrieve full details of any employee
+    """
+    queryset = Employee.objects.all()
+    permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['region', 'position', 'is_coordinator', 'interview_state', 'application_link']
+    search_fields = ['user__username', 'phone']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmployeeListSerializer
+        return EmployeeSerializer
 
 class AdminInviteHRViewSet(ModelViewSet):
     """
@@ -110,7 +118,7 @@ class AdminInviteHRViewSet(ModelViewSet):
     - Sends email with credentials
     - Only accessible by admin role
     """
-    queryset = User.objects.none()  # Will be customized in get_queryset
+    queryset = User.objects.none()  
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -127,10 +135,10 @@ class AdminInviteHRViewSet(ModelViewSet):
 
         HR.objects.create(
             user=user,
-            accepted_employees_avg_task_rating=0,
-            accepted_employees_avg_time_remaining=0,
-            accepted_employees_avg_lateness_hrs=0,
-            accepted_employees_avg_absence_days=0,
+            accepted_employees_avg_task_rating=None,
+            accepted_employees_avg_time_remaining=None,
+            accepted_employees_avg_lateness_hrs=None,
+            accepted_employees_avg_absence_days=None,
             )
         
         BasicInfo.objects.create(
@@ -156,15 +164,6 @@ class AdminViewHRsViewSet(ModelViewSet):
     filter_backends = [SearchFilter]
     search_fields = ['user__username', 'user__email']
 
-
-class AdminViewEmployeesViewSet(ModelViewSet):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['region', 'position', 'is_coordinator']
-    search_fields = ['user__username', 'phone']
-
 class AdminViewUsersViewSet(ModelViewSet):
     """
     Displays all users (employees + HRs) in card format
@@ -186,6 +185,16 @@ class AdminPromoteEmployeeViewSet(ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
 
+
+class AdminViewApplicationLinksViewSet(ReadOnlyModelViewSet):
+    """
+    Allows admin to view application links
+    - Read-only: no creation, update, or deletion
+    - Only accessible by Admin role
+    """
+    queryset = ApplicationLink.objects.all()
+    serializer_class = ApplicationLinkSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
 
 
 class HRManageApplicationLinksViewSet(ModelViewSet):
@@ -215,7 +224,6 @@ class PublicApplicantsViewSet(ModelViewSet):
         phone = data.get("phone")
         cv = data.get("cv")
         distinction_name = data.get("distinction_name")
-        is_coordinator = data.get("is_coordinator", False)
 
         if not all([email, phone, cv, distinction_name]):
             return Response({"detail": "Missing required fields."}, status=400)
@@ -223,11 +231,18 @@ class PublicApplicantsViewSet(ModelViewSet):
         # 1. Get ApplicationLink
         try:
             application_link = ApplicationLink.objects.get(distinction_name=distinction_name)
+            is_coordinator = application_link.is_coordinator
+
         except ApplicationLink.DoesNotExist:
             return Response({"detail": "Invalid distinction name."}, status=400)
 
         if User.objects.filter(username=email).exists():
             return Response({"detail": "User already exists."}, status=400)
+        
+        if application_link.number_remaining_applicants_to_limit <= 0:
+            return Response({"detail": "Limit of applicants exceeded"}, status=400)
+            
+
 
         # 2. Extract info from CV
         all_skills = list(Skill.objects.values_list("name", flat=True))
@@ -314,6 +329,7 @@ class PublicApplicantsViewSet(ModelViewSet):
             if has_relevant_edu is not None: employee_data["has_position_related_high_education"] = has_relevant_edu
 
             employee = Employee.objects.create(**employee_data)
+            
 
             if skills_list:
                 employee.skills.set(skills_list)
@@ -323,6 +339,10 @@ class PublicApplicantsViewSet(ModelViewSet):
                 role='employee',
                 username=email.split("@")[0]
             )
+
+            application_link.number_remaining_applicants_to_limit-=1
+            application_link.save()
+
         message = "Application submitted successfully."
         if not llm_success:
             message += " (Note: CV parsing failed, submitted with required data only.)"
@@ -356,16 +376,123 @@ class HRViewEmployeesViewSet(ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['region', 'position', 'is_coordinator']
+    filterset_fields = ['region', 'position', 'is_coordinator','interview_state','application_link']
     search_fields = ['user__username', 'phone']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmployeeListSerializer  
+        return EmployeeSerializer
+
+
+    @action(detail=True, methods=['patch'], url_path='update-profile-fields')
+    def update_profile_fields(self, request, pk=None):
+
+        employee = get_object_or_404(Employee, pk=pk)
+
+        required_fields = [
+            "region", "highest_education_degree", "highest_education_field",
+            "years_of_experience", "had_leadership_role",
+            "has_position_related_high_education",
+            "skills"
+        ]
+
+        missing = [f for f in required_fields if f not in request.data]
+        if missing:
+            return Response(
+                {"detail": f"Missing required fields: {', '.join(missing)}"},
+                status=400
+            )
+
+        try:
+            region = Region.objects.get(id=request.data["region"])
+            degree = EducationDegree.objects.get(id=request.data["highest_education_degree"])
+            field = EducationField.objects.get(id=request.data["highest_education_field"])
+            skills = Skill.objects.filter(id__in=request.data["skills"])
+
+            if skills.count() != len(request.data["skills"]):
+                return Response({"detail": "One or more skill IDs are invalid."}, status=400)
+
+            employee.region = region
+            employee.highest_education_degree = degree
+            employee.highest_education_field = field
+            employee.years_of_experience = int(request.data["years_of_experience"])
+            employee.had_leadership_role = bool(request.data["had_leadership_role"])
+            employee.has_position_related_high_education = bool(request.data["has_position_related_high_education"])
+            employee.skills.set(skills)
+            required_skills = employee.application_link.skills.all()
+            relevant_emp_skills = skills.intersection(required_skills)
+            percentage = (relevant_emp_skills.count() / required_skills.count()) * 100 if required_skills.exists() else 0
+            employee.percentage_of_matching_skills = percentage
+
+            employee.save()
+            return Response({"detail": "Employee profile fields updated successfully."})
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=400)         
+    
+
+    @action(detail=False, methods=['get'], url_path='my-scheduled')
+    def my_scheduled_employees(self, request):
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can view this."}, status=403)
+
+        queryset = Employee.objects.filter(scheduling_interviewer=hr)
+        serializer = EmployeeListSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='my-taken')
+    def my_taken_employees(self, request):
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can view this."}, status=403)
+
+        queryset = Employee.objects.filter(interviewer=hr)
+        serializer = EmployeeListSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'], url_path='my-interview-questions')
+    def my_interview_questions(self, request, pk=None):
+        """
+        Fetches all interview questions for this employee,
+        but only if the current HR is the assigned interviewer.
+        """
+        employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can access this."}, status=403)
+
+        if employee.interviewer != hr:
+            return Response({"detail": "You are not the assigned interviewer for this employee."}, status=403)
+
+        questions = InterviewQuestion.objects.filter(employee=employee)
+        data = [{"id": q.id, "text": q.text, "grade": q.grade} for q in questions]
+        return Response(data)    
 
 
     @action(detail=True, methods=['patch'], url_path='schedule-interview')
     def schedule_interview(self, request, pk=None):
-        # a field right in the frontend record! .. this should sent the employee an email 
-        # the main purpose is to indicate that the interview is scheduled
-        # it should send the employee an email btw!!!!!!
         employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+            hr_name = hr.user.basicinfo.username
+        except HR.DoesNotExist:
+            return Response({"detail": "Only HRs can schedule interviews."}, status=403)
+
+        if employee.scheduling_interviewer and employee.scheduling_interviewer != hr:
+            return Response(
+                {
+                    "detail": f"Interview already scheduled by {hr_name}, contact him for any scheduling updates"
+                },
+                status=400
+            )
+                
 
         interview_datetime_str = request.data.get("interview_datetime")
         if not interview_datetime_str:
@@ -375,12 +502,13 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if not interview_datetime:
             return Response({"detail": "Invalid datetime format. Use ISO format like 2025-07-01T14:00:00"}, status=400)
 
-        # Ensure datetime is timezone-aware
         if is_naive(interview_datetime):
             interview_datetime = make_aware(interview_datetime)
 
+
         employee.interview_datetime = interview_datetime
         employee.interview_state = "scheduled"
+        employee.scheduling_interviewer = hr  
         employee.save()
 
         # Format for email
@@ -388,13 +516,14 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
         send_mail(
             subject='Interview Scheduled',
-            message=f"Your interview has been scheduled for {formatted_dt}.\n\nPlease be on time.\n\nBest regards,\nHR Team",
+            message=f"Your interview has been scheduled for {formatted_dt} by HR: {hr_name} .\n\nPlease be on time.\n\nBest regards,\nHR Team",
             from_email='tempohr44@gmail.com',
             recipient_list=[employee.user.username],
             fail_silently=False,
         )
 
         return Response({"detail": "Interview scheduled and email sent successfully."})
+
 
 
     @action(detail=True, methods=['patch'], url_path='take-interviewee')
@@ -709,12 +838,34 @@ class TaskViewSet(ModelViewSet):
                 {"error": "User has no associated employee profile"},
                 status=status.HTTP_403_FORBIDDEN
             )
+        
+        assigned_id = request.data.get('assigned_to')
+        try:
+            assigned_emp = Employee.objects.get(id=assigned_id)
+        except Employee.DoesNotExist:
+            return Response(
+                {"error": "Assigned employee not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if assigned_emp.is_coordinator:
+            return Response(
+                {"error": "You cannot assign tasks to yourself or another coordinator like you."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if assigned_emp.position != request.user.employee.position:
+            return Response(
+                {"error": "You can only assign tasks to employees with the same position as yours."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
         # 2. Create task instance directly (bypassing serializer for creation)
         try:
             task = Task.objects.create(
                 created_by=request.user.employee,
-                assigned_to_id=request.data['assigned_to'],
+                assigned_to=assigned_emp,
                 title=request.data['title'],
                 description=request.data['description'],
                 deadline=request.data['deadline'],
@@ -896,4 +1047,118 @@ class TaskViewSet(ModelViewSet):
         tasks = Task.objects.filter(assigned_to=request.user.employee)
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
-##
+
+
+class AdminPromoteEmployeeViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    @action(detail=True, methods=['post'], url_path='promote')
+    def promote(self, request, pk=None):
+        try:
+            employee = self.get_object()
+        except Employee.DoesNotExist:
+            return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if employee.is_coordinator:
+            return Response({"detail": "Employee is already promoted."}, status=status.HTTP_200_OK)
+
+        employee.is_coordinator = True
+        employee.save()
+
+        return Response(
+            {"detail": "Employee promoted to coordinator successfully."},
+            status=status.HTTP_200_OK
+        )
+    
+class ViewSelfViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        basicinfo = user.basicinfo
+        role = basicinfo.role
+
+        user_data = UserSerializer(user).data
+        basicinfo_data = BasicInfoSerializer(basicinfo).data
+
+        if role == 'hr':
+            try:
+                hr = HR.objects.get(user=user)
+                hr_data = HRSerializer(hr).data
+                return Response({
+                    "role": "hr",
+                    "user": user_data,
+                    "basicinfo": basicinfo_data,
+                    "hr": hr_data,
+                })
+            except HR.DoesNotExist:
+                return Response({"detail": "HR profile not found."}, status=404)
+
+        elif role == 'employee':
+            try:
+                emp = Employee.objects.get(user=user)
+                emp_data = EmployeeSerializer(emp).data
+                return Response({
+                    "role": "employee",
+                    "user": user_data,
+                    "basicinfo": basicinfo_data,
+                    "employee": emp_data,
+                })
+            except Employee.DoesNotExist:
+                return Response({"detail": "Employee profile not found."}, status=404)
+
+        elif role == 'admin':
+            return Response({
+                "role": "admin",
+                "user": user_data,
+                "basicinfo": basicinfo_data
+            })
+
+        return Response({"detail": "Unknown role."}, status=status.HTTP_400_BAD_REQUEST)
+
+class CoordinatorViewEmployeesViewSet(ModelViewSet):
+    serializer_class = EmployeeListSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['region', 'position']
+    search_fields = ['user__username', 'user__email', 'user__basicinfo__username']
+    http_method_names = ['get']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            emp = user.employee
+        except AttributeError:
+            return Response({"detail": "You are not an employee."}, status=403)
+
+        if not emp.is_coordinator:
+            return Response({"detail": "Only coordinators can view this."}, status=403)
+
+        return Employee.objects.filter(is_coordinator=False)
+
+    @action(detail=False, methods=['get'], url_path='same-pos')
+    def same_position_only(self, request):
+        user = request.user
+        try:
+            emp = user.employee
+        except AttributeError:
+            return Response({"detail": "You are not an employee."}, status=403)
+
+        if not emp.is_coordinator:
+            return Response({"detail": "Only coordinators can view this."}, status=403)
+
+        queryset = Employee.objects.filter(
+            is_coordinator=False,
+            position=emp.position
+        )
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data)
