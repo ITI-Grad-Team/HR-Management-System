@@ -94,13 +94,6 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
             queryset = queryset.exclude(interview_state=interview_state_not)
         return queryset
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        interview_state_not = self.request.query_params.get('interview_state_not')
-        if interview_state_not:
-            queryset = queryset.exclude(interview_state=interview_state_not)
-        return queryset
-
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = EmployeeSerializer
         return super().retrieve(request, *args, **kwargs)
@@ -423,14 +416,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
         return queryset
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        interview_state_not = self.request.query_params.get('interview_state_not')
 
-        if interview_state_not:
-            queryset = queryset.exclude(interview_state=interview_state_not)
-
-        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
