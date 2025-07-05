@@ -185,6 +185,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'avg_time_remaining_before_deadline',
             'avg_attendance_lateness_hrs',
             'avg_absence_days',
-            'interview_state','skills'
+            'interview_state','skills','interview_datetime'
         ]
 
