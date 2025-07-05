@@ -334,18 +334,17 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            "id",
-            "position",
-            "region",
-            "is_coordinator",
-            "highest_education_degree",
-            "highest_education_field",
-            "years_of_experience",
-            "percentage_of_matching_skills",
-            "avg_task_rating",
-            "avg_time_remaining_before_deadline",
-            "avg_attendance_lateness_hrs",
-            "avg_absence_days",
-            "interview_state",
-            "skills",
+            'id',
+            'position',
+            'region',
+            'is_coordinator',
+            'highest_education_degree',
+            'highest_education_field',
+            'years_of_experience',
+            'percentage_of_matching_skills',
+            'avg_task_rating',
+            'avg_time_remaining_before_deadline',
+            'avg_attendance_lateness_hrs',
+            'avg_absence_days',
+            'interview_state','skills','interview_datetime'
         ]
