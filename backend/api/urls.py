@@ -91,6 +91,10 @@ router.register(
 # Employee
 router.register(r"tasks", TaskViewSet, basename="tasks")
 
+# Attendance & Salary
+router.register(r"attendance", AttendanceViewSet, basename="attendance")
+router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
+
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

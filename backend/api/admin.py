@@ -200,7 +200,12 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
         "overtime_approved",
         "get_short_time_hours",
     )
-    list_filter = ("attendance_type", "status", "date", "overtime_approved")
+    list_filter = (
+        "attendance_type",
+        "status",
+        "date",
+        "overtime_approved",
+    )  # ?date__exact=2025-07-05 [ Add this to the url if you want to filter by a specific date]
     search_fields = ("user__username", "mac_address")
 
     def get_short_time_hours(self, obj):
