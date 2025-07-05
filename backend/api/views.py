@@ -8,7 +8,6 @@ from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
 
 from rest_framework.viewsets import ModelViewSet, ViewSet,ReadOnlyModelViewSet
-from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -66,6 +65,12 @@ from rest_framework import status
 from django.core.mail import send_mail
 import random
 import string
+
+def recalculate_interview_avg_grade(employee):
+    avg = InterviewQuestion.objects.filter(employee=employee).aggregate(Avg('grade'))['grade__avg']
+    employee.interview_questions_avg_grade = avg
+    employee.save(update_fields=['interview_questions_avg_grade'])
+
 
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
