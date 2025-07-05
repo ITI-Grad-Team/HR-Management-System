@@ -216,6 +216,9 @@ class Employee(models.Model):
     interview_datetime = models.DateTimeField(null=True, blank=True)
     interview_state = models.CharField(max_length=50, default="pending")
     interviewer = models.ForeignKey(HR, on_delete=models.SET_NULL, null=True)
+    scheduling_interviewer = models.ForeignKey(
+        HR, on_delete=models.SET_NULL, null=True, related_name="scheduled_employees"
+    )
     interviewer_rating = models.FloatField(null=True, blank=True)
     interview_questions_avg_grade = models.FloatField(null=True, blank=True)
     join_date = models.DateField(null=True, blank=True)
@@ -231,10 +234,10 @@ class Employee(models.Model):
     number_of_absent_days = models.IntegerField(default=0)
     last_attend_date = models.DateField(null=True, blank=True)
     last_leave_date = models.DateField(null=True, blank=True)
-    avg_task_rating = models.FloatField(default=0)
-    avg_time_remaining_before_deadline = models.FloatField(default=0)
-    avg_attendance_lateness_hrs = models.FloatField(default=0)
-    avg_absence_days = models.FloatField(default=0)
+    avg_task_rating = models.FloatField(null=True, blank=True)
+    avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True)
+    avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
+    avg_absence_days = models.FloatField(null=True, blank=True)
     skills = models.ManyToManyField(Skill, blank=True)
 
 

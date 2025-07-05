@@ -66,6 +66,19 @@ class HRSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     basicinfo = BasicInfoSerializer(read_only=True, source="user.basicinfo")
 
+    accepted_employees_avg_task_rating = serializers.FloatField(
+        allow_null=True, required=False
+    )
+    accepted_employees_avg_time_remaining = serializers.FloatField(
+        allow_null=True, required=False
+    )
+    accepted_employees_avg_lateness_hrs = serializers.FloatField(
+        allow_null=True, required=False
+    )
+    accepted_employees_avg_absence_days = serializers.FloatField(
+        allow_null=True, required=False
+    )
+
     class Meta:
         model = HR
         fields = "__all__"
@@ -309,3 +322,30 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
 
     def get_overtime_hours(self, obj):
         return obj.details.get("overtime_hours", 0)
+
+
+class EmployeeListSerializer(serializers.ModelSerializer):
+    position = serializers.StringRelatedField()
+    region = serializers.StringRelatedField()
+    highest_education_degree = serializers.StringRelatedField()
+    highest_education_field = serializers.StringRelatedField()
+    skills = serializers.StringRelatedField(many=True)
+
+    class Meta:
+        model = Employee
+        fields = [
+            "id",
+            "position",
+            "region",
+            "is_coordinator",
+            "highest_education_degree",
+            "highest_education_field",
+            "years_of_experience",
+            "percentage_of_matching_skills",
+            "avg_task_rating",
+            "avg_time_remaining_before_deadline",
+            "avg_attendance_lateness_hrs",
+            "avg_absence_days",
+            "interview_state",
+            "skills",
+        ]
