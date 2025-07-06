@@ -1261,48 +1261,21 @@ class ViewSelfViewSet(ViewSet):
 
 class CoordinatorViewEmployeesViewSet(ModelViewSet):
     serializer_class = EmployeeListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCoordinator]
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["region", "position"]
-    search_fields = ["user__username", "user__email", "user__basicinfo__username"]
-    http_method_names = ["get"]
+    filterset_fields = ['region']
+    search_fields = ['user__username', 'user__email', 'user__basicinfo__username']
+    http_method_names = ['get']
 
     def get_queryset(self):
-        user = self.request.user
-        try:
-            emp = user.employee
-        except AttributeError:
-            raise Http404("You are not an employee.")
-
-        if not emp.is_coordinator:
-            raise Http404("Only coordinators can view this.")
-
+        emp = self.request.user.employee
         return Employee.objects.filter(
-            is_coordinator=False,
-            interview_state='accepted'
-        )
-
-    @action(detail=False, methods=["get"], url_path="same-pos")
-    def same_position_only(self, request):
-        user = request.user
-        try:
-            emp = user.employee
-        except AttributeError:
-            return Response({"detail": "You are not an employee."}, status=403)
-
-        if not emp.is_coordinator:
-            return Response({"detail": "Only coordinators can view this."}, status=403)
-
-        queryset = Employee.objects.filter(
             is_coordinator=False,
             position=emp.position,
             interview_state='accepted'
         )
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return EmployeeSerializer
+        return super().get_serializer_class()
