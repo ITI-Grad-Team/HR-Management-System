@@ -50,3 +50,12 @@ class IsHRorAdmin(BasePermission):
             hasattr(request.user, 'basicinfo') and
             request.user.basicinfo.role in ['hr', 'admin']
         )
+
+
+class IsCoordinator(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and hasattr(request.user, 'employee')
+            and request.user.employee.is_coordinator
+        )
