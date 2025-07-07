@@ -5,7 +5,7 @@ from .models import (
     OvertimeRequest,
     SalaryRecord,
 )
-
+from datetime import datetime, time
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -20,7 +20,7 @@ from .models import (
     ApplicationLink,
     Skill,
     InterviewQuestion,
-    OvertimeClaim,
+    OvertimeRequest,
     Task,
     File,
     Position,
@@ -99,12 +99,6 @@ class SkillSerializer(serializers.ModelSerializer):
 class InterviewQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterviewQuestion
-        fields = "__all__"
-
-
-class OvertimeClaimSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OvertimeClaim
         fields = "__all__"
 
 
@@ -266,31 +260,162 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
 
 
 class OvertimeRequestSerializer(serializers.ModelSerializer):
-    attendance_record = serializers.PrimaryKeyRelatedField(
-        queryset=AttendanceRecord.objects.all()
+    user = serializers.CharField(
+        source="attendance_record.user.username", read_only=True
     )
-    user = serializers.SerializerMethodField()
+    date = serializers.DateField(source="attendance_record.date", read_only=True)
+    check_out_time = serializers.TimeField(
+        source="attendance_record.check_out_time", read_only=True
+    )
+    reviewed_by_username = serializers.CharField(
+        source="reviewed_by.username", read_only=True
+    )
 
     class Meta:
         model = OvertimeRequest
         fields = [
             "id",
             "attendance_record",
-            "user",
             "requested_hours",
             "status",
             "hr_comment",
             "requested_at",
             "reviewed_at",
+            "reviewed_by_username",
+            "user",
+            "date",
+            "check_out_time",
         ]
+        read_only_fields = ["status", "reviewed_at", "reviewed_by"]
 
-    def get_user(self, obj):
-        return obj.attendance_record.user.id if obj.attendance_record else None
+
+class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
+    attendance_record_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = OvertimeRequest
+        fields = ["attendance_record_id", "requested_hours"]
+
+    def validate_attendance_record_id(self, value):
+        try:
+            attendance_record = AttendanceRecord.objects.get(id=value)
+        except AttendanceRecord.DoesNotExist:
+            raise serializers.ValidationError("Attendance record not found.")
+
+        # Check if user owns this attendance record or is coordinator with access
+        user = self.context["request"].user
+        if attendance_record.user != user:
+            # Check if user is coordinator with access to this employee
+            if not (hasattr(user, "employee") and user.employee.is_coordinator):
+                raise serializers.ValidationError(
+                    "You can only request overtime for your own attendance."
+                )
+
+            # Check if coordinator has access to this employee
+            if (
+                hasattr(attendance_record.user, "employee")
+                and attendance_record.user.employee.position != user.employee.position
+            ):
+                raise serializers.ValidationError(
+                    "You can only request overtime for employees in your position."
+                )
+
+        # Check if overtime request already exists
+        if hasattr(attendance_record, "overtime_request"):
+            raise serializers.ValidationError(
+                "Overtime request already exists for this attendance record."
+            )
+
+        return value
 
     def validate_requested_hours(self, value):
         if value <= 0:
             raise serializers.ValidationError("Requested hours must be positive.")
-        return round(value, 2)
+        if value > 8:  # Maximum 8 hours overtime per day
+            raise serializers.ValidationError(
+                "Maximum 8 hours overtime allowed per day."
+            )
+        return value
+
+    def validate(self, attrs):
+        attendance_record = AttendanceRecord.objects.get(
+            id=attrs["attendance_record_id"]
+        )
+        user = self.context["request"].user
+
+        # Business rule: Can only request on the same calendar day
+        today = timezone.localtime().date()
+        if attendance_record.date != today:
+            raise serializers.ValidationError(
+                "You can only request overtime on the same day as attendance."
+            )
+
+        # Get employee's expected leave time (with defaults)
+        expected_leave_time = time(17, 0)  # Default 5:00 PM
+        if (
+            hasattr(attendance_record.user, "employee")
+            and attendance_record.user.employee.expected_leave_time
+        ):
+            expected_leave_time = attendance_record.user.employee.expected_leave_time
+
+        # Business rule: Can only request after 30 minutes past expected leave time
+        current_time = timezone.localtime().time()
+        leave_plus_30min = datetime.combine(today, expected_leave_time)
+        leave_plus_30min = leave_plus_30min.replace(minute=leave_plus_30min.minute + 30)
+        if leave_plus_30min.minute >= 60:
+            leave_plus_30min = leave_plus_30min.replace(
+                hour=leave_plus_30min.hour + 1, minute=leave_plus_30min.minute - 60
+            )
+
+        if current_time < leave_plus_30min.time():
+            raise serializers.ValidationError(
+                f"Overtime can only be requested after {leave_plus_30min.time().strftime('%H:%M')} "
+                f"(30 minutes past expected leave time)."
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        attendance_record = AttendanceRecord.objects.get(
+            id=validated_data["attendance_record_id"]
+        )
+
+        # Calculate overtime hours from expected leave time
+        expected_leave_time = time(17, 0)  # Default 5:00 PM
+        if (
+            hasattr(attendance_record.user, "employee")
+            and attendance_record.user.employee.expected_leave_time
+        ):
+            expected_leave_time = attendance_record.user.employee.expected_leave_time
+
+        # Use current time as check_out_time if not set
+        if not attendance_record.check_out_time:
+            attendance_record.check_out_time = timezone.localtime().time()
+            attendance_record.save()
+
+        # Calculate actual overtime hours
+        if attendance_record.check_out_time > expected_leave_time:
+            checkout_dt = datetime.combine(
+                attendance_record.date, attendance_record.check_out_time
+            )
+            expected_dt = datetime.combine(attendance_record.date, expected_leave_time)
+            overtime_delta = checkout_dt - expected_dt
+            calculated_hours = round(overtime_delta.total_seconds() / 3600.0, 2)
+
+            # Use the minimum of requested hours and calculated hours
+            final_hours = min(validated_data["requested_hours"], calculated_hours)
+        else:
+            final_hours = 0
+
+        return OvertimeRequest.objects.create(
+            attendance_record=attendance_record, requested_hours=final_hours
+        )
+
+
+class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OvertimeRequest
+        fields = ["hr_comment"]
 
 
 class SalaryRecordSerializer(serializers.ModelSerializer):

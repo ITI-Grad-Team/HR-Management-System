@@ -29,7 +29,6 @@ from .models import (
     Region,
     EducationField,
     InterviewQuestion,
-    OvertimeClaim,
     Task,
     File,
     Position,
@@ -47,7 +46,6 @@ from .serializers import (
     ApplicationLinkSerializer,
     SkillSerializer,
     InterviewQuestionSerializer,
-    OvertimeClaimSerializer,
     TaskSerializer,
     FileSerializer,
     PositionSerializer,
@@ -815,18 +813,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
         return Response({"detail": "Interview submitted successfully."})
 
 
-class HROvertimeApprovalViewSet(ModelViewSet):
-    """
-    Views and approves/rejects overtime claims
-    - Approved time added to employee record
-    - Only accessible by HR role
-    """
-
-    queryset = OvertimeClaim.objects.all()
-    serializer_class = OvertimeClaimSerializer
-    permission_classes = [IsAuthenticated]
-
-
 class HRSalaryReportsViewSet(ModelViewSet):
     """
     Views monthly salary reports
@@ -850,18 +836,6 @@ class EmployeeCheckInOutViewSet(ModelViewSet):
 
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class EmployeeOvertimeClaimViewSet(ModelViewSet):
-    """
-    Handles overtime claim submission
-    - Available when grace period passes after late check-out
-    - Only accessible by employee role
-    """
-
-    queryset = OvertimeClaim.objects.all()
-    serializer_class = OvertimeClaimSerializer
     permission_classes = [IsAuthenticated]
 
 

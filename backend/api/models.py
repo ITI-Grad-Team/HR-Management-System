@@ -63,15 +63,28 @@ class OvertimeRequest(models.Model):
         ("approved", "Approved"),
         ("rejected", "Rejected"),
     ]
-    attendance_record = models.OneToOneField(AttendanceRecord, on_delete=models.CASCADE)
+
+    attendance_record = models.OneToOneField(
+        "AttendanceRecord", on_delete=models.CASCADE, related_name="overtime_request"
+    )
     requested_hours = models.FloatField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     hr_comment = models.TextField(blank=True)
     requested_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_overtime_requests",
+    )
 
     def __str__(self):
         return f"Overtime {self.requested_hours}h for {self.attendance_record.user} on {self.attendance_record.date} ({self.status})"
+
+    class Meta:
+        ordering = ["-requested_at"]
 
 
 class SalaryRecord(models.Model):
@@ -245,13 +258,6 @@ class InterviewQuestion(models.Model):
     text = models.TextField()
     grade = models.FloatField()
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-
-
-class OvertimeClaim(models.Model):
-    hours = models.FloatField()
-    leave_date = models.DateField()
-    is_at_midnight = models.BooleanField(default=False)
-    claimer = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
 
 class Task(models.Model):

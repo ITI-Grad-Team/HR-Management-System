@@ -26,7 +26,6 @@ from .models import (
     EducationDegree,
     Region,
     InterviewQuestion,
-    OvertimeClaim,
     Task,
     File,
     Report,
@@ -112,13 +111,6 @@ class RegionAdmin(admin.ModelAdmin):
 class InterviewQuestionAdmin(admin.ModelAdmin):
     list_display = ("employee", "text", "grade")
     search_fields = ("employee__user__username", "text")
-
-
-@admin.register(OvertimeClaim)
-class OvertimeClaimAdmin(admin.ModelAdmin):
-    list_display = ("claimer", "hours", "leave_date", "is_at_midnight")
-    search_fields = ("claimer__user__username",)
-    list_filter = ("is_at_midnight",)
 
 
 @admin.register(Task)
@@ -229,14 +221,28 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
 @admin.register(OvertimeRequest)
 class OvertimeRequestAdmin(admin.ModelAdmin):
     list_display = (
-        "attendance_record",
+        "id",
+        "attendance_user",
+        "attendance_date",
         "requested_hours",
         "status",
+        "reviewed_by",
         "requested_at",
         "reviewed_at",
     )
-    list_filter = ("status", "requested_at", "reviewed_at")
-    search_fields = ("attendance_record__user__username",)
+    list_filter = ("status", "requested_at", "reviewed_by")
+    search_fields = ("attendance_record__user__username", "reviewed_by__username")
+    readonly_fields = ("requested_at",)
+
+    def attendance_user(self, obj):
+        return obj.attendance_record.user
+
+    attendance_user.short_description = "User"
+
+    def attendance_date(self, obj):
+        return obj.attendance_record.date
+
+    attendance_date.short_description = "Date"
 
 
 @admin.register(SalaryRecord)

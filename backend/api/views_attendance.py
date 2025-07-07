@@ -4,8 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils import timezone
 from datetime import time
+from django.db.models import Q
 from .models import AttendanceRecord, WorkDayConfig, PublicHoliday
 from .serializers import AttendanceRecordSerializer
+from utils.overtime_utils import can_request_overtime
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -17,6 +19,38 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     WORK_START = time(9, 0)
     GRACE_END = time(9, 15)
     WORK_END = time(17, 0)
+
+    def get_queryset(self):
+        user = self.request.user
+        role = user.basicinfo.role.lower()
+
+        # Admin and HR can see all records
+        if role in ["admin", "hr"]:
+            return AttendanceRecord.objects.all()
+
+        # Coordinators can see records for their position employees
+        elif hasattr(user, "employee") and user.employee.is_coordinator:
+            return AttendanceRecord.objects.filter(
+                user__employee__position=user.employee.position
+            )
+
+        # Employees can only see their own records
+        else:
+            return AttendanceRecord.objects.filter(user=user)
+
+    @action(detail=True, methods=["get"])
+    def can_request_overtime(self, request, pk=None):
+        """Check if user can request overtime for this attendance record"""
+        attendance_record = self.get_object()
+        can_request, reason = can_request_overtime(request.user, attendance_record)
+
+        return Response(
+            {
+                "can_request": can_request,
+                "reason": reason,
+                "has_existing_request": hasattr(attendance_record, "overtime_request"),
+            }
+        )
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -99,6 +133,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 {"detail": "Check-in is not allowed after end of workday."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
         check_out_time = request.data.get("check_out_time")
         overtime_approved = request.data.get("overtime_approved", False)
         overtime_hours = 0.0
