@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
+from django.http import Http404
 
 from rest_framework.viewsets import ModelViewSet, ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
@@ -84,6 +85,13 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     ]
     search_fields = ["user__username", "phone"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        interview_state_not = self.request.query_params.get('interview_state_not')
+        if interview_state_not:
+            queryset = queryset.exclude(interview_state=interview_state_not)
+        return queryset
+
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = EmployeeSerializer
         return super().retrieve(request, *args, **kwargs)
@@ -101,32 +109,6 @@ class AdminManagePositionsViewSet(ModelViewSet):
     serializer_class = PositionSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     http_method_names = ["get", "post"]
-
-
-class AdminViewEmployeesViewSet(ModelViewSet):
-    """
-    Admin can:
-    - List all employees (paginated + filterable + searchable)
-    - Retrieve full details of any employee
-    """
-
-    queryset = Employee.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = [
-        "region",
-        "position",
-        "is_coordinator",
-        "interview_state",
-        "application_link",
-    ]
-    search_fields = ["user__username", "phone"]
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return EmployeeListSerializer
-        return EmployeeSerializer
-
 
 class AdminInviteHRViewSet(ModelViewSet):
     """
@@ -422,6 +404,17 @@ class HRViewEmployeesViewSet(ModelViewSet):
         "application_link",
     ]
     search_fields = ["user__username", "phone"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        interview_state_not = self.request.query_params.get('interview_state_not')
+
+        if interview_state_not:
+            queryset = queryset.exclude(interview_state=interview_state_not)
+
+        return queryset
+
+
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -1242,42 +1235,21 @@ class ViewSelfViewSet(ViewSet):
 
 class CoordinatorViewEmployeesViewSet(ModelViewSet):
     serializer_class = EmployeeListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCoordinator]
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["region", "position"]
-    search_fields = ["user__username", "user__email", "user__basicinfo__username"]
-    http_method_names = ["get"]
+    filterset_fields = ['region']
+    search_fields = ['user__username', 'user__email', 'user__basicinfo__username']
+    http_method_names = ['get']
 
     def get_queryset(self):
-        user = self.request.user
-        try:
-            emp = user.employee
-        except AttributeError:
-            return Response({"detail": "You are not an employee."}, status=403)
+        emp = self.request.user.employee
+        return Employee.objects.filter(
+            is_coordinator=False,
+            position=emp.position,
+            interview_state='accepted'
+        )
 
-        if not emp.is_coordinator:
-            return Response({"detail": "Only coordinators can view this."}, status=403)
-
-        return Employee.objects.filter(is_coordinator=False)
-
-    @action(detail=False, methods=["get"], url_path="same-pos")
-    def same_position_only(self, request):
-        user = request.user
-        try:
-            emp = user.employee
-        except AttributeError:
-            return Response({"detail": "You are not an employee."}, status=403)
-
-        if not emp.is_coordinator:
-            return Response({"detail": "Only coordinators can view this."}, status=403)
-
-        queryset = Employee.objects.filter(is_coordinator=False, position=emp.position)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-
-        return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return EmployeeSerializer
+        return super().get_serializer_class()

@@ -147,10 +147,10 @@ class BasicInfo(models.Model):
 
 class HR(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    accepted_employees_avg_task_rating = models.FloatField()
-    accepted_employees_avg_time_remaining = models.FloatField()
-    accepted_employees_avg_lateness_hrs = models.FloatField()
-    accepted_employees_avg_absence_days = models.FloatField()
+    accepted_employees_avg_task_rating = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_time_remaining = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_lateness_hrs = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_absence_days = models.FloatField(null=True, blank=True)
 
 
 class Position(models.Model):
