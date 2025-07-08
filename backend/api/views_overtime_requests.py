@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q
 from .models import OvertimeRequest
+from .utils.queryset_utils import get_role_based_queryset
 from .serializers import (
     OvertimeRequestSerializer,
     OvertimeRequestCreateSerializer,
@@ -19,25 +20,7 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, OvertimeRequestPermission]
 
     def get_queryset(self):
-        user = self.request.user
-        role = user.basicinfo.role.lower()
-
-        # Admin and HR can see all requests
-        if role in ["admin", "hr"]:
-            return OvertimeRequest.objects.all()
-
-        # Coordinators can see requests for their position employees
-        elif hasattr(user, "employee") and user.employee.is_coordinator:
-            return OvertimeRequest.objects.filter(
-                Q(attendance_record__user=user)  # Own requests
-                | Q(
-                    attendance_record__user__employee__position=user.employee.position
-                )  # Team requests
-            )
-
-        # Employees can only see their own requests
-        else:
-            return OvertimeRequest.objects.filter(attendance_record__user=user)
+        return get_role_based_queryset(self.request.user, OvertimeRequest)
 
     def get_serializer_class(self):
         if self.action == "create":

@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from django.utils import timezone
 from datetime import time
 from .models import AttendanceRecord, WorkDayConfig, PublicHoliday
+from .utils.queryset_utils import get_role_based_queryset
 from .serializers import AttendanceRecordSerializer
 from .utils.overtime_utils import can_request_overtime
 
@@ -20,22 +21,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     WORK_END = time(17, 0)
 
     def get_queryset(self):
-        user = self.request.user
-        role = user.basicinfo.role.lower()
-
-        # Admin and HR can see all records
-        if role in ["admin", "hr"]:
-            return AttendanceRecord.objects.all()
-
-        # Coordinators can see records for their position employees
-        elif hasattr(user, "employee") and user.employee.is_coordinator:
-            return AttendanceRecord.objects.filter(
-                user__employee__position=user.employee.position
-            )
-
-        # Employees can only see their own records
-        else:
-            return AttendanceRecord.objects.filter(user=user)
+        return get_role_based_queryset(self.request.user, AttendanceRecord)
 
     @action(detail=True, methods=["get"])
     def can_request_overtime(self, request, pk=None):
