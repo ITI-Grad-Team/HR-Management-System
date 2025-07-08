@@ -109,8 +109,8 @@ class OvertimeRequestPermission(BasePermission):
                 hasattr(user, "employee") and user.employee.is_coordinator
             )
 
-        # Approve/Reject: HR or Admin only
-        if view.action in ["approve", "reject"]:
+        # Approve/Reject/Pending: HR or Admin only
+        if view.action in ["approve", "reject", "pending"]:
             return role in ["hr", "admin"]
 
         # List/Retrieve: All authenticated users (filtered by queryset)
