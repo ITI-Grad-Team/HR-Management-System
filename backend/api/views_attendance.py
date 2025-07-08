@@ -4,10 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils import timezone
 from datetime import time
-from django.db.models import Q
 from .models import AttendanceRecord, WorkDayConfig, PublicHoliday
 from .serializers import AttendanceRecordSerializer
-from utils.overtime_utils import can_request_overtime
+from .utils.overtime_utils import can_request_overtime
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):

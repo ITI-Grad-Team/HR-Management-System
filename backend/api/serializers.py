@@ -6,6 +6,7 @@ from .models import (
     SalaryRecord,
 )
 from datetime import datetime, time
+from .utils.overtime_utils import can_request_overtime
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -343,35 +344,10 @@ class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
         )
         user = self.context["request"].user
 
-        # Business rule: Can only request on the same calendar day
-        today = timezone.localtime().date()
-        if attendance_record.date != today:
-            raise serializers.ValidationError(
-                "You can only request overtime on the same day as attendance."
-            )
-
-        # Get employee's expected leave time (with defaults)
-        expected_leave_time = time(17, 0)  # Default 5:00 PM
-        if (
-            hasattr(attendance_record.user, "employee")
-            and attendance_record.user.employee.expected_leave_time
-        ):
-            expected_leave_time = attendance_record.user.employee.expected_leave_time
-
-        # Business rule: Can only request after 30 minutes past expected leave time
-        current_time = timezone.localtime().time()
-        leave_plus_30min = datetime.combine(today, expected_leave_time)
-        leave_plus_30min = leave_plus_30min.replace(minute=leave_plus_30min.minute + 30)
-        if leave_plus_30min.minute >= 60:
-            leave_plus_30min = leave_plus_30min.replace(
-                hour=leave_plus_30min.hour + 1, minute=leave_plus_30min.minute - 60
-            )
-
-        if current_time < leave_plus_30min.time():
-            raise serializers.ValidationError(
-                f"Overtime can only be requested after {leave_plus_30min.time().strftime('%H:%M')} "
-                f"(30 minutes past expected leave time)."
-            )
+        # Use the shared business logic function for overtime eligibility
+        can_request, reason = can_request_overtime(user, attendance_record)
+        if not can_request:
+            raise serializers.ValidationError(reason)
 
         return attrs
 
@@ -459,17 +435,19 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = [
-            'id',
-            'position',
-            'region',
-            'is_coordinator',
-            'highest_education_degree',
-            'highest_education_field',
-            'years_of_experience',
-            'percentage_of_matching_skills',
-            'avg_task_rating',
-            'avg_time_remaining_before_deadline',
-            'avg_attendance_lateness_hrs',
-            'avg_absence_days',
-            'interview_state','skills','interview_datetime'
+            "id",
+            "position",
+            "region",
+            "is_coordinator",
+            "highest_education_degree",
+            "highest_education_field",
+            "years_of_experience",
+            "percentage_of_matching_skills",
+            "avg_task_rating",
+            "avg_time_remaining_before_deadline",
+            "avg_attendance_lateness_hrs",
+            "avg_absence_days",
+            "interview_state",
+            "skills",
+            "interview_datetime",
         ]
