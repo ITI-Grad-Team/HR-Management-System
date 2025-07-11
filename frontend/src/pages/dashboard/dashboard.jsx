@@ -1,3 +1,4 @@
+import ProfileContainer from "../../components/BioCard/ProfileContainer"; 
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar";
 import StatCards from "../../components/statCards/statCards";
@@ -15,6 +16,11 @@ export default function DashboardPage() {
         style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}
       >
         <HeaderBar />
+        
+        <div className="my-4">
+          <ProfileContainer />
+        </div>
+
         <StatCards />
         <CandidateCharts />
 
@@ -23,5 +29,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    
   );
 }

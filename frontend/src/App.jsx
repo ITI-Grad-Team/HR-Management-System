@@ -1,7 +1,8 @@
 import { Suspense } from 'react'
 import './App.css'
 import { lazy } from 'react'
-import { Route, Router, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
+import ProfileContainer from './components/BioCard/ProfileContainer';
 
 const Login = lazy(() => import('./pages/login/login'))
 const DashBoard = lazy(() => import('./pages/dashboard/dashboard'))
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<DashBoard />} />
+        <Route path="/profile" element={<ProfileContainer />} />
       </Routes>
     </Suspense>
    )
