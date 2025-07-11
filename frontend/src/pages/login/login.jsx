@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from '../../api/config'
 import { Link } from "react-router-dom";
 import './login.css'
-
+import { useNavigate } from "react-router-dom";
 
 function parseJwt(token) {
   const base64Url = token.split(".")[1];
@@ -20,6 +20,7 @@ function parseJwt(token) {
 }
 
 const Login = () => {
+  const navigate = useNavigate();
     
     const [formData, setFormData] = useState({ username: "", password: "" });
      const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +42,7 @@ const Login = () => {
         localStorage.setItem("access_token", res.data.access);
         localStorage.setItem("refresh_token", res.data.refresh);
         setAlert({ message: "Logged in successfully", type: "success" });
-        window.location.href = "/";
+        navigate("/dashboard");
       } else {
         throw new Error("Invalid response format: access or refresh token missing");
       }
