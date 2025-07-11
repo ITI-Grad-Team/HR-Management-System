@@ -7,7 +7,7 @@ const rows = [
 
 export default function RecruitersTable() {
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm mt-4">
       <Card.Body>
         <h6>Recruiters rating</h6>
         <Table hover>
