@@ -14,18 +14,19 @@ export default function Sidebar() {
       }}
       className="d-flex flex-column align-items-center"
     >
-      
       <Nav defaultActiveKey="/home" className="flex-column gap-4">
         <Nav.Link href="#" className="text-center text-muted">
           <FaHome size={20} />
         </Nav.Link>
-        <Nav.Link href="#" className="text-center text-muted">
+
+        <Nav.Link href="/admin" className="text-center text-muted">
           <FaUserFriends size={20} />
-        </Nav.Link> 
-        
+        </Nav.Link>
+
         <Nav.Link href="#" className="text-center text-muted">
           <FaChartBar size={20} />
         </Nav.Link>
+
         <Nav.Link href="#" className="text-center text-muted">
           <FaBell size={20} />
         </Nav.Link>
