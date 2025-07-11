@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import "./App.css";
 import { lazy } from "react";
 import { Route, Router, Routes } from "react-router-dom";
+import Sidebar from "./components/sidebar/sidebar";
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashBoard = lazy(() => import("./pages/dashboard/dashboard"));
@@ -11,6 +12,7 @@ const Settings = lazy(() => import("./pages/settings/settings"));
 function App() {
   return (
     <Suspense fallback={<div>Loading…</div>}>
+      <Sidebar />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<DashBoard />} />
