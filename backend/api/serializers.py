@@ -431,6 +431,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     highest_education_degree = serializers.StringRelatedField()
     highest_education_field = serializers.StringRelatedField()
     skills = serializers.StringRelatedField(many=True)
+    basic_info = BasicInfoSerializer(source='user.basicinfo')
 
     class Meta:
         model = Employee
@@ -450,4 +451,5 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "interview_state",
             "skills",
             "interview_datetime",
+            "basic_info",  # Include the basic info (name and image)
         ]

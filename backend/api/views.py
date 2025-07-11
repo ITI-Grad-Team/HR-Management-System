@@ -328,7 +328,6 @@ class PublicApplicantsViewSet(ModelViewSet):
 
             employee_data = {
                 "user": user,
-                "phone": phone,
                 "cv": cv,
                 "position": application_link.position,
                 "is_coordinator": is_coordinator,
@@ -357,7 +356,8 @@ class PublicApplicantsViewSet(ModelViewSet):
                 employee.skills.set(skills_list)
 
             BasicInfo.objects.create(
-                user=user, role="employee", username=email.split("@")[0]
+                user=user, role="employee", username=email.split("@")[0] , 
+                phone=phone,
             )
 
             application_link.number_remaining_applicants_to_limit -= 1
