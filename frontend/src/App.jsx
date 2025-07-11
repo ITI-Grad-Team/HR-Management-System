@@ -5,6 +5,7 @@ import { Route, Router, Routes } from 'react-router-dom'
 
 const Login = lazy(() => import('./pages/login/login'))
 const DashBoard = lazy(() => import('./pages/dashboard/dashboard'))
+const Settings = lazy(() => import('./pages/settings/settings'))
 
 function App() {
    return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<DashBoard />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Suspense>
    )
