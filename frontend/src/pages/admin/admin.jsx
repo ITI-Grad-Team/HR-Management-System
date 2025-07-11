@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar.jsx";
 import "./admin.css";
@@ -5,6 +6,14 @@ import { positions } from "../../lib/Positions.js";
 import { regions } from "../../lib/Regions.js";
 
 const Directories = () => {
+  const [positionSelect, setPositionSelect] = useState("");
+  const [regionSelect, setRegionSelect] = useState("");
+  const [isCoordinatorValue, setIsCoordinatorValue] = useState(false);
+
+  console.log("Selected Position:", positionSelect);
+  console.log("Selected Region:", regionSelect);
+  console.log("Selected IsCoordinatorValue:", isCoordinatorValue);
+
   return (
     <div className="directories d-flex">
       <Sidebar />
@@ -33,7 +42,8 @@ const Directories = () => {
 
             <div className="filter-controls">
               <div className="position-select">
-                <select>
+                <select onChange={(e) => setPositionSelect(e.target.value)}>
+                  <option value="">Position</option>
                   {positions.map((position) => (
                     <option key={position.id} value={position.name}>
                       {position.name}
@@ -43,7 +53,8 @@ const Directories = () => {
               </div>
 
               <div className="region-select">
-                <select>
+                <select onChange={(e) => setRegionSelect(e.target.value)}>
+                  <option value="">Region</option>
                   {regions.map((region) => (
                     <option key={region.id} value={region.name}>
                       {region.name}
@@ -54,7 +65,11 @@ const Directories = () => {
 
               <div className="is-coordinator">
                 <label htmlFor="">Is Coordinator</label>
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={isCoordinatorValue}
+                  onChange={() => setIsCoordinatorValue(!isCoordinatorValue)}
+                />
               </div>
             </div>
           </div>
