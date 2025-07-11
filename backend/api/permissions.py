@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 
+
 class IsHR(BasePermission):
     """
     Allows access only to users with role='hr' in BasicInfo.
@@ -8,9 +9,9 @@ class IsHR(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return (
-            user.is_authenticated and
-            hasattr(user, 'basicinfo') and
-            user.basicinfo.role == 'hr'
+            user.is_authenticated
+            and hasattr(user, "basicinfo")
+            and user.basicinfo.role == "hr"
         )
 
 
@@ -22,9 +23,9 @@ class IsEmployee(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return (
-            user.is_authenticated and
-            hasattr(user, 'basicinfo') and
-            user.basicinfo.role == 'employee'
+            user.is_authenticated
+            and hasattr(user, "basicinfo")
+            and user.basicinfo.role == "employee"
         )
 
 
@@ -36,19 +37,18 @@ class IsAdmin(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return (
-            user.is_authenticated and
-            hasattr(user, 'basicinfo') and
-            user.basicinfo.role == 'admin'
+            user.is_authenticated
+            and hasattr(user, "basicinfo")
+            and user.basicinfo.role == "admin"
         )
 
-from rest_framework.permissions import BasePermission
 
 class IsHRorAdmin(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.user.is_authenticated and
-            hasattr(request.user, 'basicinfo') and
-            request.user.basicinfo.role in ['hr', 'admin']
+            request.user.is_authenticated
+            and hasattr(request.user, "basicinfo")
+            and request.user.basicinfo.role in ["hr", "admin"]
         )
 
 
@@ -56,6 +56,69 @@ class IsCoordinator(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
-            and hasattr(request.user, 'employee')
+            and hasattr(request.user, "employee")
             and request.user.employee.is_coordinator
         )
+
+
+class AttendancePermission(BasePermission):
+    """
+    Custom permission for AttendanceViewSet.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user.is_authenticated or not hasattr(user, "basicinfo"):
+            return False
+        role = user.basicinfo.role.lower()
+        # Allow check-in/check-out for employees only on themselves
+        if view.action in ["check_in", "check_out"]:
+            return role == "employee"
+        # Allow can_request_overtime for employees and coordinators
+        if view.action == "can_request_overtime":
+            return role == "employee" or (
+                hasattr(user, "employee") and user.employee.is_coordinator
+            )
+        # Only admin/hr can create/update
+        if view.action in ["create", "update", "partial_update"]:
+            return role in ["admin", "hr"]
+        # Only admin can delete
+        if view.action == "destroy":
+            return role == "admin"
+        # List/retrieve: all roles can view, but queryset will be filtered
+        if view.action in ["list", "retrieve"]:
+            return True
+        return False
+
+
+class OvertimeRequestPermission(BasePermission):
+    """
+    Custom permission for OvertimeRequestViewSet.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user.is_authenticated or not hasattr(user, "basicinfo"):
+            return False
+
+        role = user.basicinfo.role.lower()
+
+        # Submit requests: Employee or Coordinator only
+        if view.action == "create":
+            return role in ["employee"] or (
+                hasattr(user, "employee") and user.employee.is_coordinator
+            )
+
+        # Approve/Reject/Pending: HR or Admin only
+        if view.action in ["approve", "reject", "pending"]:
+            return role in ["hr", "admin"]
+
+        # List/Retrieve: All authenticated users (filtered by queryset)
+        if view.action in ["list", "retrieve"]:
+            return True
+
+        # Update/Delete: HR or Admin only
+        if view.action in ["update", "partial_update", "destroy"]:
+            return role in ["hr", "admin"]
+
+        return False

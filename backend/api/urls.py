@@ -27,6 +27,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
+from .views_overtime_requests import OvertimeRequestViewSet
 
 router = DefaultRouter()
 
@@ -93,6 +94,9 @@ router.register(r"tasks", TaskViewSet, basename="tasks")
 
 # Attendance & Salary
 router.register(r"attendance", AttendanceViewSet, basename="attendance")
+router.register(
+    r"overtime-requests", OvertimeRequestViewSet, basename="overtime-requests"
+)
 router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
 
 urlpatterns = [
