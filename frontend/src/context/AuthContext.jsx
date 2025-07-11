@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { replace, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/config";
 
 // 1. إنشاء الـ Context
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        navigate("/login");
+        navigate("/", { replace: true });
       } finally {
         setLoading(false);
       }
@@ -60,7 +60,7 @@ const login = ({ username, role }) => {
     setUser(null);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    navigate("/login");
+    navigate("/", { replace: true });
   };
 
   return (
