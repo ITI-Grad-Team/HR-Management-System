@@ -50,7 +50,7 @@ from .serializers import (
     TaskSerializer,
     FileSerializer,
     PositionSerializer,
-    ReportSerializer,
+    ReportSerializer,EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
 
 from .permissions import IsHR, IsAdmin, IsHRorAdmin, IsEmployee, IsCoordinator
@@ -328,7 +328,6 @@ class PublicApplicantsViewSet(ModelViewSet):
 
             employee_data = {
                 "user": user,
-                "phone": phone,
                 "cv": cv,
                 "position": application_link.position,
                 "is_coordinator": is_coordinator,
@@ -357,7 +356,8 @@ class PublicApplicantsViewSet(ModelViewSet):
                 employee.skills.set(skills_list)
 
             BasicInfo.objects.create(
-                user=user, role="employee", username=email.split("@")[0]
+                user=user, role="employee", username=email.split("@")[0] , 
+                phone=phone,
             )
 
             application_link.number_remaining_applicants_to_limit -= 1
@@ -1253,3 +1253,46 @@ class CoordinatorViewEmployeesViewSet(ModelViewSet):
         if self.action == 'retrieve':
             return EmployeeSerializer
         return super().get_serializer_class()
+    
+
+
+class HRManageRegionsViewSet(ModelViewSet):
+    queryset = Region.objects.all()
+    serializer_class = RegionSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+    http_method_names = ["get", "post"]
+
+
+class AdminManageRegionsViewSet(ModelViewSet):
+    queryset = Region.objects.all()
+    serializer_class = RegionSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ["get", "post"]
+
+
+class HRManageEducationDegreesViewSet(ModelViewSet):
+    queryset = EducationDegree.objects.all()
+    serializer_class = EducationDegreeSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+    http_method_names = ["get", "post"]
+
+
+class AdminManageEducationDegreesViewSet(ModelViewSet):
+    queryset = EducationDegree.objects.all()
+    serializer_class = EducationDegreeSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ["get", "post"]
+
+
+class HRManageEducationFieldsViewSet(ModelViewSet):
+    queryset = EducationField.objects.all()
+    serializer_class = EducationFieldSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+    http_method_names = ["get", "post"]
+
+
+class AdminManageEducationFieldsViewSet(ModelViewSet):
+    queryset = EducationField.objects.all()
+    serializer_class = EducationFieldSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ["get", "post"]
