@@ -19,6 +19,12 @@ from .views import (
     AdminManageSkillsViewSet,
     AdminManagePositionsViewSet,
     AdminViewApplicationLinksViewSet,
+    AdminManageRegionsViewSet,
+    AdminManageEducationDegreesViewSet,
+    AdminManageEducationFieldsViewSet,
+    HRManageRegionsViewSet,
+    HRManageEducationDegreesViewSet,
+    HRManageEducationFieldsViewSet,
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -51,6 +57,9 @@ router.register(r"hr/skills", HRManageSkillsViewSet, basename="hr-manage-skills"
 router.register(
     r"hr/positions", HRManagePositionsViewSet, basename="hr-manage-positions"
 )
+router.register(r"hr/regions", HRManageRegionsViewSet, basename="hr-regions")
+router.register(r"hr/degrees", HRManageEducationDegreesViewSet, basename="hr-degrees")
+router.register(r"hr/fields", HRManageEducationFieldsViewSet, basename="hr-fields")
 
 router.register(
     r"hr/application-links",
@@ -65,6 +74,9 @@ router.register(
 )
 
 
+
+
+
 # Admin views
 router.register(r"admin/hrs", AdminViewHRsViewSet, basename="admin-hrs")
 router.register(
@@ -74,7 +86,9 @@ router.register(r"admin/skills", AdminManageSkillsViewSet, basename="admin-skill
 router.register(
     r"admin/positions", AdminManagePositionsViewSet, basename="admin-positions"
 )
-
+router.register(r"admin/regions", AdminManageRegionsViewSet, basename="admin-regions")
+router.register(r"admin/degrees", AdminManageEducationDegreesViewSet, basename="admin-degrees")
+router.register(r"admin/fields", AdminManageEducationFieldsViewSet, basename="admin-fields")
 
 router.register(
     r"admin/application-links",
