@@ -1,3 +1,4 @@
+import ProfileContainer from "../../components/BioCard/ProfileContainer"; 
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar";
 import { Outlet } from "react-router-dom";
@@ -16,8 +17,23 @@ export default function DashboardPage() {
         style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}
       >
         <HeaderBar />
+<<<<<<< HEAD
+        
+        <div className="my-4">
+          <ProfileContainer />
+        </div>
+
+        <StatCards />
+        <CandidateCharts />
+
+        <div className="my-4">
+          <RecruitersTable />
+        </div>
+=======
         <Outlet />
+>>>>>>> main
       </div>
     </div>
+    
   );
 }
