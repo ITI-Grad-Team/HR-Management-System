@@ -48,18 +48,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
-      if (
-        error.response?.data?.non_field_errors?.includes(
-          "No active account found with the given credentials"
-        ) ||
-        error.response?.data?.detail === "No active account found with the given credentials"
-      ) {
-        setAlert({
-          message: "Your account is not activated. Please check your email or resend the activation link.",
-          type: "danger",
-        });
-        setShowResend(true);
-      } else {
+      
         setAlert({
           message:
             error.response?.data?.non_field_errors?.[0] ||
@@ -67,7 +56,7 @@ const Login = () => {
             "Login failed. Please check your credentials.",
           type: "danger",
         });
-      }
+      
       setTimeout(() => setAlert({ message: "", type: "" }), 5000);
     } finally {
       setIsSubmitting(false);

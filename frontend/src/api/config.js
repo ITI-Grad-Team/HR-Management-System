@@ -43,6 +43,7 @@ axiosInstance.interceptors.response.use(
           "Authorization"
         ] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        window.dispatchEvent(new Event("tokenRefresh"));
         return axiosInstance(originalRequest);
       } catch (err) {
         console.error(
