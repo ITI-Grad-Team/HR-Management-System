@@ -25,7 +25,7 @@ from .models import (
     Task,
     File,
     Position,
-    Report,
+    Report,Region,EducationDegree,EducationField
 )
 from .models import Employee, HoliOrOnlineDayWeekday, HoliOrOnlineDayYearday
 from django.utils import timezone
@@ -431,6 +431,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     highest_education_degree = serializers.StringRelatedField()
     highest_education_field = serializers.StringRelatedField()
     skills = serializers.StringRelatedField(many=True)
+    basic_info = BasicInfoSerializer(source='user.basicinfo')
 
     class Meta:
         model = Employee
@@ -450,4 +451,24 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "interview_state",
             "skills",
             "interview_datetime",
+            "basic_info",  # Include the basic info (name and image)
         ]
+
+
+
+class RegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Region
+        fields = ['id', 'name', 'distance_to_work']
+
+
+class EducationDegreeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EducationDegree
+        fields = ['id', 'name']
+
+
+class EducationFieldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EducationField
+        fields = ['id', 'name']
