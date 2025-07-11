@@ -28,7 +28,7 @@ const Directories = () => {
 
         {/* Employees Section */}
         <div className="section">
-          <div className="section-heading">
+          <div className="section-heading filters">
             <h2>Employees</h2>
 
             <div className="filter-controls">
