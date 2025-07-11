@@ -21,7 +21,8 @@ export default function Sidebar() {
         </Nav.Link>
         <Nav.Link href="#" className="text-center text-muted">
           <FaUserFriends size={20} />
-        </Nav.Link>
+        </Nav.Link> 
+        
         <Nav.Link href="#" className="text-center text-muted">
           <FaChartBar size={20} />
         </Nav.Link>
