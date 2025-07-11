@@ -3,6 +3,7 @@ import "./App.css";
 import { lazy } from "react";
 import { Route, Router, Routes, Navigate } from "react-router-dom";
 import DashboardPage from "./pages/dashboard/dashboard";
+import Sidebar from "./components/sidebar/sidebar";
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashBoard = lazy(() => import("./pages/dashboard/dashboard"));
@@ -15,7 +16,6 @@ const RoleBasedDashboard = lazy(() =>
 function App() {
   return (
     <Suspense fallback={<div>Loading…</div>}>
-      <Sidebar />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/dashboard" element={<DashBoard />} />

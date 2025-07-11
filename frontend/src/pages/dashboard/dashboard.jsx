@@ -7,8 +7,7 @@ import RecruitersTable from "../../components/RecruitersTable/RecruitersTable";
 import { Container } from "react-bootstrap";
 
 export default function DashboardPage() {
-  
-   return (
+  return (
     <div className="d-flex">
       <Sidebar />
       <div
