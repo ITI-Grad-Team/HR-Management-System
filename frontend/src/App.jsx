@@ -9,6 +9,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard/dashboard'))
 const Admin = lazy(() => import('./pages/admin/admin'))
 const Settings = lazy(() => import('./pages/settings/settings'))
 const RoleBasedDashboard = lazy(() => import('./components/RoleBasedDashBoard/RoleBasedDashBoard'))
+const Employees = lazy(() => import('./pages/employees/employees'))
 
 function App() {
    return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="home" element={<RoleBasedDashboard />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<ProfileContainer />} />
+        <Route path="employees" element={<Employees />} />
         </Route>
 
       </Routes>

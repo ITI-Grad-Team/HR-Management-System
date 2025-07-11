@@ -1,6 +1,10 @@
 import "./employees.css";
+import { useAuth } from "../../context/AuthContext";
 
 const Directories = () => {
+
+  const { role } = useAuth();
+
   return (
     <div className="directories d-flex">
 
@@ -10,7 +14,8 @@ const Directories = () => {
       >
 
         {/* HR Section */}
-        <div className="section">
+        {role === "admin" && (
+           <div className="section">
         <div className="section-heading">
              <h2>HRs</h2>
         </div>
@@ -20,6 +25,8 @@ const Directories = () => {
             <div className="card-placeholder">HR Card</div>
           </div>
         </div>
+        )}
+       
 
         {/* Employees Section */}
         <div className="section">

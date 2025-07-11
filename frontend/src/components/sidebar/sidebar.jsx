@@ -1,35 +1,175 @@
 import { Nav } from "react-bootstrap";
-import { FaHome, FaUserFriends, FaChartBar, FaBell } from "react-icons/fa";
+import { Link, useLocation } from "react-router-dom";
+import {
+  FaHome,
+  FaUserFriends,
+  FaCalendarCheck,
+  FaSuitcase,
+  FaMoneyBillWave,
+  FaChartBar,
+  FaCog,
+  FaQuestionCircle,
+} from "react-icons/fa";
+import "./sidebar.css";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar() {
+  const { pathname } = useLocation();
+  const { role } = useAuth();
+
   return (
-    <div
-      style={{
-        height: "100vh",
-        width: "80px",
-        backgroundColor: "#fff",
-        borderRight: "1px solid #E5E7EB",
-        boxShadow: "0 0 10px rgba(0,0,0,0.05)",
-        paddingTop: "20px",
-      }}
-      className="d-flex flex-column align-items-center"
-    >
-      
-      <Nav defaultActiveKey="/home" className="flex-column gap-4">
-        <Nav.Link href="#" className="text-center text-muted">
-          <FaHome size={20} />
+    <div className="sidebar">
+      <h6>MAIN MENU</h6>
+
+      {role === "admin" && (
+        <>
+        <Nav className="flex-column">
+        <Nav.Link
+          as={Link}
+          to="/dashboard/home"
+          className={pathname === "/dashboard/home" ? "active" : ""}
+        >
+          <FaHome /> Dashboard
         </Nav.Link>
-        <Nav.Link href="#" className="text-center text-muted">
-          <FaUserFriends size={20} />
-        </Nav.Link> 
-        
-        <Nav.Link href="#" className="text-center text-muted">
-          <FaChartBar size={20} />
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/employees"
+          className={pathname === "/dashboard/employees" ? "active" : ""}
+        >
+          <FaUserFriends /> Employee Directory
         </Nav.Link>
-        <Nav.Link href="#" className="text-center text-muted">
-          <FaBell size={20} />
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/attendance"
+          className={pathname === "/dashboard/attendance" ? "active" : ""}
+        >
+          <FaCalendarCheck /> Attendance & Leave
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/recruitment"
+          className={pathname === "/dashboard/recruitment" ? "active" : ""}
+        >
+          <FaSuitcase /> Recruitment
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/payroll"
+          className={pathname === "/dashboard/payroll" ? "active" : ""}
+        >
+          <FaMoneyBillWave /> Payroll
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/performance"
+          className={pathname === "/dashboard/performance" ? "active" : ""}
+        >
+          <FaChartBar /> Performance
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/reports"
+          className={pathname === "/dashboard/reports" ? "active" : ""}
+        >
+          <FaChartBar style={{ transform: "scaleX(-1)" }} /> Reports & Analytics
         </Nav.Link>
       </Nav>
+
+      <div className="spacer" />
+
+      <h6>OTHER</h6>
+
+      <Nav className="flex-column">
+        <Nav.Link
+          as={Link}
+          to="/dashboard/settings"
+          className={pathname === "/dashboard/settings" ? "active" : ""}
+        >
+          <FaCog /> Settings
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/help"
+          className={pathname === "/dashboard/help" ? "active" : ""}
+        >
+          <FaQuestionCircle /> Help Center
+        </Nav.Link>
+      </Nav>
+      </>
+      )} 
+
+      {role === "hr" && (
+        <>
+        <Nav className="flex-column">
+        <Nav.Link
+          as={Link}
+          to="/dashboard/home"
+          className={pathname === "/dashboard/home" ? "active" : ""}
+        >
+          <FaHome /> Dashboard
+        </Nav.Link>
+        <Nav.Link
+          as={Link}
+          to="/dashboard/employees"
+          className={pathname === "/dashboard/employees" ? "active" : ""}
+        >
+          <FaUserFriends /> Employee Directory
+        </Nav.Link>
+        <Nav.Link
+          as={Link}
+          to="/dashboard/attendance"
+          className={pathname === "/dashboard/attendance" ? "active" : ""}
+        >
+          <FaCalendarCheck /> Attendance & Leave
+        </Nav.Link>
+        <Nav.Link
+          as={Link}
+          to="/dashboard/payroll"
+          className={pathname === "/dashboard/payroll" ? "active" : ""}
+        >
+          <FaMoneyBillWave /> Payroll
+        </Nav.Link>
+        <Nav.Link
+          as={Link}
+          to="/dashboard/performance"
+          className={pathname === "/dashboard/performance" ? "active" : ""}
+        >
+          <FaChartBar /> Performance
+        </Nav.Link>
+        </Nav>
+
+        <div className="spacer" />
+
+        <h6>OTHER</h6>
+
+      <Nav className="flex-column">
+        <Nav.Link
+          as={Link}
+          to="/dashboard/settings"
+          className={pathname === "/dashboard/settings" ? "active" : ""}
+        >
+          <FaCog /> Settings
+        </Nav.Link>
+
+        <Nav.Link
+          as={Link}
+          to="/dashboard/help"
+          className={pathname === "/dashboard/help" ? "active" : ""}
+        >
+          <FaQuestionCircle /> Help Center
+        </Nav.Link>
+      </Nav>
+        </>
+        )}
+      
     </div>
+      
   );
 }
