@@ -3,6 +3,7 @@ import axiosInstance from '../../api/config'
 import { Link } from "react-router-dom";
 import './login.css'
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 function parseJwt(token) {
   const base64Url = token.split(".")[1];
@@ -21,6 +22,7 @@ function parseJwt(token) {
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
     
     const [formData, setFormData] = useState({ username: "", password: "" });
      const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,6 +30,12 @@ const Login = () => {
     const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+   useEffect(() => {
+  if (user !== null) {
+    navigate("/dashboard", { replace: true });
+  }
+}, [user, navigate]);
 
     const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,7 +50,7 @@ const Login = () => {
         localStorage.setItem("access_token", res.data.access);
         localStorage.setItem("refresh_token", res.data.refresh);
         setAlert({ message: "Logged in successfully", type: "success" });
-        navigate("/dashboard");
+        window.location.replace("/dashboard");
       } else {
         throw new Error("Invalid response format: access or refresh token missing");
       }

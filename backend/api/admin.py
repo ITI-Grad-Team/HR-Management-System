@@ -28,7 +28,6 @@ from .models import (
     InterviewQuestion,
     Task,
     File,
-    Report,
 )
 
 
@@ -138,43 +137,13 @@ class FileAdmin(admin.ModelAdmin):
     search_fields = ("task__title",)
 
 
-@admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
-    list_display = (
-        "employee",
-        "basic_salary",
-        "overtime_hour_salary",
-        "shorttime_hour_penalty",
-        "absence_penalty",
-        "month",
-        "total",
-    )
-    search_fields = ("employee__user__username", "month")
-    list_filter = ("month",)
-
 
 from django.contrib import admin
 from .models import (
-    WorkDayConfig,
-    PublicHoliday,
     AttendanceRecord,
     OvertimeRequest,
     SalaryRecord,
 )
-
-
-@admin.register(WorkDayConfig)
-class WorkDayConfigAdmin(admin.ModelAdmin):
-    list_display = ("weekday", "is_workday", "is_weekend", "is_online")
-    list_filter = ("is_workday", "is_weekend", "is_online")
-    search_fields = ("weekday",)
-
-
-@admin.register(PublicHoliday)
-class PublicHolidayAdmin(admin.ModelAdmin):
-    list_display = ("date", "description")
-    search_fields = ("description",)
-    list_filter = ("date",)
 
 
 @admin.register(AttendanceRecord)

@@ -14,7 +14,7 @@ export default function Settings() {
 
       <AccountSettings />
 
-      {role === "admin" && <AdminSettings />}
+      {role === "admin" || role === "hr" && <AdminSettings />}
     </div>
   );
 }

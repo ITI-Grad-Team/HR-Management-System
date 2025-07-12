@@ -1,6 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
-// import HrDashboard from "./HrDashboard";
+import HrDashboard from "../HrDashboard/HrDashboard";
 // import EmployeeDashboard from "./EmployeeDashboard";
 
 export default function RoleBasedDashboard() {

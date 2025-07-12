@@ -1,32 +1,6 @@
 from django.db import models
 from django.conf import settings
-
-
-class WorkDayConfig(models.Model):
-    WEEKDAYS = [
-        (0, "Monday"),
-        (1, "Tuesday"),
-        (2, "Wednesday"),
-        (3, "Thursday"),
-        (4, "Friday"),
-        (5, "Saturday"),
-        (6, "Sunday"),
-    ]
-    weekday = models.IntegerField(choices=WEEKDAYS, unique=True)
-    is_workday = models.BooleanField(default=True)
-    is_weekend = models.BooleanField(default=False)
-    is_online = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.get_weekday_display()} (Workday: {self.is_workday}, Weekend: {self.is_weekend}, Online: {self.is_online})"
-
-
-class PublicHoliday(models.Model):
-    date = models.DateField(unique=True)
-    description = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.date}: {self.description}"
+import datetime
 
 
 class AttendanceRecord(models.Model):
@@ -47,6 +21,7 @@ class AttendanceRecord(models.Model):
     attendance_type = models.CharField(max_length=10, choices=ATTENDANCE_TYPE_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     mac_address = models.CharField(max_length=50, null=True, blank=True)
+    lateness_hours = models.FloatField(default=0)
     overtime_hours = models.FloatField(default=0)
     overtime_approved = models.BooleanField(default=False)
 
@@ -55,6 +30,18 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.date} ({self.status})"
+    
+    def save(self, *args, **kwargs):
+        # Calculate lateness_hours before saving
+        if self.check_in_time and hasattr(self.user, 'employee'):
+            expected_time = self.user.employee.expected_attend_time
+            if expected_time:
+                check_in_dt = datetime.datetime.combine(self.date, self.check_in_time)
+                expected_dt = datetime.datetime.combine(self.date, expected_time)
+                lateness = (check_in_dt - expected_dt).total_seconds() / 3600
+                self.lateness_hours = max(round(lateness, 2), 0.0)
+        
+        super().save(*args, **kwargs)
 
 
 class OvertimeRequest(models.Model):
@@ -235,22 +222,32 @@ class Employee(models.Model):
     interviewer_rating = models.FloatField(null=True, blank=True)
     interview_questions_avg_grade = models.FloatField(null=True, blank=True)
     join_date = models.DateField(null=True, blank=True)
+
     basic_salary = models.FloatField(null=True, blank=True)
     overtime_hour_salary = models.FloatField(null=True, blank=True)
     shorttime_hour_penalty = models.FloatField(null=True, blank=True)
     absence_penalty = models.FloatField(null=True, blank=True)
+
     expected_attend_time = models.TimeField(null=True, blank=True)
     expected_leave_time = models.TimeField(null=True, blank=True)
-    overtime_hours = models.FloatField(default=0)
-    lateness_hours = models.FloatField(default=0)
-    short_time_hours = models.FloatField(default=0)
-    number_of_absent_days = models.IntegerField(default=0)
-    last_attend_date = models.DateField(null=True, blank=True)
-    last_leave_date = models.DateField(null=True, blank=True)
-    avg_task_rating = models.FloatField(null=True, blank=True)
-    avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True)
-    avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
-    avg_absence_days = models.FloatField(null=True, blank=True)
+
+    overtime_hours = models.FloatField(default=0) #sum at approval
+    lateness_hours = models.FloatField(default=0) #sum at check-in
+    number_of_absent_days = models.IntegerField(default=0) #sum at found
+    # number of days is the count to divide by.. and it will be just calculated (in 3 functions for avg)
+
+    #task_ratings #sum at accept
+    #time_remaining_before_deadline #sum at accept
+    #.. and the count is either by .count() or also sum of each task getting accepted (in 2 functions for avg)
+
+    short_time_hours = models.FloatField(default=0) #remove it
+    last_attend_date = models.DateField(null=True, blank=True) #remove it 
+    last_leave_date = models.DateField(null=True, blank=True) #remove it 
+
+    avg_task_rating = models.FloatField(null=True, blank=True) #remove it - convert to function
+    avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True) #remove it - convert to function
+    avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True) #remove it - convert to function
+    avg_absence_days = models.FloatField(null=True, blank=True) #remove it - convert to function
     skills = models.ManyToManyField(Skill, blank=True)
 
 
@@ -286,34 +283,6 @@ class File(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
 
 
-class Report(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    basic_salary = models.FloatField()
-    overtime_hour_salary = models.FloatField()
-    shorttime_hour_penalty = models.FloatField()
-    absence_penalty = models.FloatField()
-    expected_attend_time = models.TimeField()
-    expected_leave_time = models.TimeField()
-    overtime_hours = models.FloatField()
-    short_time_hours = models.FloatField()
-    number_of_absent_days = models.IntegerField()
-    total_overtime_penalty = models.FloatField()
-    total_shortness_penalty = models.FloatField()
-    total_absence_penalty = models.FloatField()
-    total = models.FloatField()
-    month = models.CharField(max_length=20)
-
-
-class HoliOrOnlineDayYearday(models.Model):
-    month = models.IntegerField()
-    day = models.IntegerField()
-    employees = models.ManyToManyField(Employee)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["month", "day"], name="unique_month_day")
-        ]
-
 
 WEEKDAYS = [
     ("Monday", "Monday"),
@@ -325,7 +294,42 @@ WEEKDAYS = [
     ("Sunday", "Sunday"),
 ]
 
+class HolidayYearday(models.Model):
+    month = models.IntegerField()
+    day = models.IntegerField()
+    employees = models.ManyToManyField(Employee)
 
-class HoliOrOnlineDayWeekday(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["month", "day"], name="unique_holiday_month_day")
+        ]
+        verbose_name = "Yearly Holiday"
+        verbose_name_plural = "Yearly Holidays"
+
+class HolidayWeekday(models.Model):
     weekday = models.CharField(max_length=10, choices=WEEKDAYS, unique=True)
     employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        verbose_name = "Weekly Holiday"
+        verbose_name_plural = "Weekly Holidays"
+
+class OnlineDayYearday(models.Model):
+    month = models.IntegerField()
+    day = models.IntegerField()
+    employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["month", "day"], name="unique_online_month_day")
+        ]
+        verbose_name = "Yearly Online Day"
+        verbose_name_plural = "Yearly Online Days"
+
+class OnlineDayWeekday(models.Model):
+    weekday = models.CharField(max_length=10, choices=WEEKDAYS, unique=True)
+    employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        verbose_name = "Weekly Online Day"
+        verbose_name_plural = "Weekly Online Days"

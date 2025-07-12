@@ -1,0 +1,21 @@
+.view-links-wrapper {
+  background: #fefefe;
+}
+
+.view-links-wrapper .table-dark {
+  background-color: #344767 !important;
+}
+
+/* React-select overrides */
+.react-select__control {
+  border-radius: 0.5rem !important;
+}
+
+.react-select__option--is-focused {
+  background: #f7f8fd !important;
+}
+
+.react-select__multi-value {
+  background: #dde5ff !important;
+  border: none !important;
+}
