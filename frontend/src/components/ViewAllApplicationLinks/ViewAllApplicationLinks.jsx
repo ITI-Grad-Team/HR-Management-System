@@ -1,5 +1,5 @@
 // src/components/ApplicationLinkBox/ViewAllApplicationLinks.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from "react";
 import {
   Table,
   Form,
@@ -10,11 +10,11 @@ import {
   Pagination,
   Badge,
   InputGroup,
-} from 'react-bootstrap';
-import Select from 'react-select';
-import axiosInstance from '../../api/config';
-import './ViewAllApplicationLinks.css';
-import { useAuth } from '../../context/AuthContext';
+} from "react-bootstrap";
+import Select from "react-select";
+import axiosInstance from "../../api/config";
+import "./ViewAllApplicationLinks.css";
+import { useAuth } from "../../context/AuthContext";
 
 const PAGE_SIZE = 10;
 
@@ -24,14 +24,14 @@ const ViewAllApplicationLinks = () => {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [positions, setPositions] = useState([]);
   const [skills, setSkills] = useState([]);
   const [filterPosition, setFilterPosition] = useState(null);
   const [filterSkills, setFilterSkills] = useState([]);
 
   const { role } = useAuth();
-  const apiPrefix = role === 'admin' ? 'admin' : 'hr';
+  const apiPrefix = role === "admin" ? "admin" : "hr";
 
   /* ─────────────── Fetch filter options once ─────────────── */
   useEffect(() => {
@@ -42,20 +42,21 @@ const ViewAllApplicationLinks = () => {
           axiosInstance.get(`${apiPrefix}/skills/`),
         ]);
 
-        const posOpts = (Array.isArray(posRes.data) ? posRes.data : posRes.data.results).map(
-          (p) => ({ value: p.id, label: p.name })
-        );
-        const skOpts = (Array.isArray(skRes.data) ? skRes.data : skRes.data.results).map((s) => ({
+        const posOpts = (
+          Array.isArray(posRes.data) ? posRes.data : posRes.data.results
+        ).map((p) => ({ value: p.id, label: p.name }));
+        const skOpts = (
+          Array.isArray(skRes.data) ? skRes.data : skRes.data.results
+        ).map((s) => ({
           value: s.id,
           label: s.name,
         }));
         setPositions(posOpts);
         setSkills(skOpts);
       } catch (err) {
-        console.error('Error fetching filter options', err);
+        console.error("Error fetching filter options", err);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiPrefix]);
 
   /* ─────────────── Fetch Links ─────────────── */
@@ -67,15 +68,18 @@ const ViewAllApplicationLinks = () => {
           page,
           search,
           position: filterPosition?.value,
-          skills: filterSkills.map((s) => s.value).join(','),
+          skills: filterSkills.map((s) => s.value).join(","),
         };
         Object.keys(params).forEach((k) => !params[k] && delete params[k]);
 
-        const { data } = await axiosInstance.get(`${apiPrefix}/application-links/`, { params });
+        const { data } = await axiosInstance.get(
+          `${apiPrefix}/application-links/`,
+          { params }
+        );
         setLinks(data.results);
         setCount(data.count);
       } catch (err) {
-        console.error('Error fetching links', err);
+        console.error("Error fetching links", err);
       } finally {
         setLoading(false);
       }
@@ -90,14 +94,27 @@ const ViewAllApplicationLinks = () => {
   const renderPagination = () => (
     <Pagination className="justify-content-center mt-3">
       <Pagination.First disabled={page === 1} onClick={() => setPage(1)} />
-      <Pagination.Prev disabled={page === 1} onClick={() => setPage((p) => p - 1)} />
+      <Pagination.Prev
+        disabled={page === 1}
+        onClick={() => setPage((p) => p - 1)}
+      />
       {[...Array(totalPages).keys()].slice(0, 5).map((i) => (
-        <Pagination.Item key={i + 1} active={i + 1 === page} onClick={() => setPage(i + 1)}>
+        <Pagination.Item
+          key={i + 1}
+          active={i + 1 === page}
+          onClick={() => setPage(i + 1)}
+        >
           {i + 1}
         </Pagination.Item>
       ))}
-      <Pagination.Next disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} />
-      <Pagination.Last disabled={page === totalPages} onClick={() => setPage(totalPages)} />
+      <Pagination.Next
+        disabled={page === totalPages}
+        onClick={() => setPage((p) => p + 1)}
+      />
+      <Pagination.Last
+        disabled={page === totalPages}
+        onClick={() => setPage(totalPages)}
+      />
     </Pagination>
   );
 
@@ -116,7 +133,9 @@ const ViewAllApplicationLinks = () => {
                 setSearch(e.target.value);
               }}
             />
-            <Button variant="outline-secondary" onClick={() => setSearch('')}>Reset</Button>
+            <Button variant="outline-secondary" onClick={() => setSearch("")}>
+              Reset
+            </Button>
           </InputGroup>
         </Col>
         <Col md={4}>
@@ -170,14 +189,22 @@ const ViewAllApplicationLinks = () => {
               <tr key={link.id}>
                 <td>{link.id}</td>
                 <td>
-                  <a href={link.url} target="_blank" rel="noreferrer" className="text-decoration-none">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-decoration-none"
+                  >
                     {link.url}
                   </a>
                 </td>
                 <td>{link.distinction_name}</td>
-                <td>{link.is_coordinator ? 'Yes' : 'No'}</td>
+                <td>{link.is_coordinator ? "Yes" : "No"}</td>
                 <td>{link.number_remaining_applicants_to_limit}</td>
-                <td>{positions.find((p) => p.value === link.position)?.label || link.position}</td>
+                <td>
+                  {positions.find((p) => p.value === link.position)?.label ||
+                    link.position}
+                </td>
                 <td>
                   {link.skills.map((sid) => {
                     const sk = skills.find((s) => s.value === sid);

@@ -5,7 +5,6 @@ import ProfileContainer from "./components/BioCard/ProfileContainer";
 import { Route, Router, Routes, Navigate } from "react-router-dom";
 import PrivateRoute from "./pages/PrivateRoute";
 
-const Admin = lazy(() => import("./pages/admin/admin"));
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));

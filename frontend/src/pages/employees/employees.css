@@ -1,7 +1,6 @@
 .directories {
   background: #f7f7f7;
-  max-width: 1200px;
-  margin: auto;
+  width: 100%;
   display: flex;
 }
 

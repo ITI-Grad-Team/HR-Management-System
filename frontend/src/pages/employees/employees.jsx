@@ -1,10 +1,7 @@
+import "./employees.css";
 import { useState } from "react";
-import Sidebar from "../../components/sidebar/sidebar.jsx";
-import HeaderBar from "../../components/headerBar/headerBar.jsx";
-import "./admin.css";
 import { positions } from "../../lib/Positions.js";
 import { regions } from "../../lib/Regions.js";
-import "./employees.css";
 import { useAuth } from "../../context/AuthContext";
 
 const Directories = () => {
@@ -19,10 +16,8 @@ const Directories = () => {
 
   return (
     <div className="directories d-flex">
-      <Sidebar />
-
       <div
-        className="flex-grow-1 p-4"
+        className="flex-grow-1"
         style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}
       >
         {/* HR Section */}
