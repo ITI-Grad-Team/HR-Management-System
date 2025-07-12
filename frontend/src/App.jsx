@@ -1,22 +1,26 @@
+import React from "react";
 import { Suspense } from "react";
 import "./App.css";
 import { lazy } from "react";
 import ProfileContainer from "./components/BioCard/ProfileContainer";
 import { Route, Router, Routes, Navigate } from "react-router-dom";
 import PrivateRoute from "./pages/PrivateRoute";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack";
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
-const Admin = lazy(() => import("./pages/admin/admin"));
 const Settings = lazy(() => import("./pages/settings/settings"));
 const RoleBasedDashboard = lazy(() =>
   import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
 );
 const Employees = lazy(() => import("./pages/employees/employees"));
+const Applications = lazy(() => import("./pages/applications/Applications"));
 
 function App() {
   return (
-    <Suspense fallback={<div>Loading…</div>}>
+    <Suspense fallback={<DashboardFallback />}>
       <Routes>
         <Route path="/" element={<Login />} />
 
@@ -27,6 +31,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<ProfileContainer />} />
             <Route path="employees" element={<Employees />} />
+            <Route path="applications" element={<Applications />} />
           </Route>
         </Route>
       </Routes>

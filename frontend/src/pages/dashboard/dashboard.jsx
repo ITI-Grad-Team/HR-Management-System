@@ -1,3 +1,4 @@
+import React from 'react';
 import ProfileContainer from "../../components/BioCard/ProfileContainer"; 
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar";

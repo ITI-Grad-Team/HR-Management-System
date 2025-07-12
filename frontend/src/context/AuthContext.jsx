@@ -1,22 +1,18 @@
-// src/context/AuthContext.jsx
+import React from 'react';
+
 import { createContext, useContext, useEffect, useState } from "react";
-import { replace, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/config";
 
-// 1. إنشاء الـ Context
 const AuthContext = createContext();
-// 2. Hook مخصص عشان تسهّل الاستخدام
+
 export const useAuth = () => useContext(AuthContext);
 
-// 3. Provider
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // {username, role, ...}
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-
-  // 4. تحميل بيانات المستخدم من localStorage أو من API
-
 
     useEffect(() => {
     const fetchUser = async () => {
