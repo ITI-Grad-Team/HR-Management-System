@@ -231,23 +231,46 @@ class Employee(models.Model):
     expected_attend_time = models.TimeField(null=True, blank=True)
     expected_leave_time = models.TimeField(null=True, blank=True)
 
-    overtime_hours = models.FloatField(default=0) #sum at approval
-    lateness_hours = models.FloatField(default=0) #sum at check-in
-    number_of_absent_days = models.IntegerField(default=0) #sum at found
-    # number of days is the count to divide by.. and it will be just calculated (in 3 functions for avg)
+    total_overtime_hours = models.FloatField(default=0) #summed to at approval (some other place in the code)
+    total_lateness_hours = models.FloatField(default=0) #summed to at check-in (some other place in the code)
+    total_absent_days = models.IntegerField(default=0) #summed to when found absent (some other place in the code)
+    total_task_ratings = models.FloatField(default=0) #summed to at accept (some other place in the code)
+    total_time_remaining_before_deadline = models.FloatField(default=0)  #summed to at task accept (some other place in the code)
 
-    #task_ratings #sum at accept
-    #time_remaining_before_deadline #sum at accept
-    #.. and the count is either by .count() or also sum of each task getting accepted (in 2 functions for avg)
+    number_of_non_holiday_days_since_join = models.IntegerField(default=0) #summed to at marking absence .. if yesterday is about any case other than holiday, increment this (some other place in the code)
+    number_of_accepted_tasks = models.IntegerField(default=0) #summed to at task accept .. (some other place in the code)
 
-    short_time_hours = models.FloatField(default=0) #remove it
-    last_attend_date = models.DateField(null=True, blank=True) #remove it 
-    last_leave_date = models.DateField(null=True, blank=True) #remove it 
+    @property
+    def avg_task_ratings(self):
+        if self.number_of_accepted_tasks == 0:
+            return None
+        return round(self.total_task_ratings / self.number_of_accepted_tasks, 2)
 
-    avg_task_rating = models.FloatField(null=True, blank=True) #remove it - convert to function
-    avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True) #remove it - convert to function
-    avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True) #remove it - convert to function
-    avg_absence_days = models.FloatField(null=True, blank=True) #remove it - convert to function
+    @property
+    def avg_time_remaining_before_deadline(self):
+        if self.number_of_accepted_tasks == 0:
+            return None
+        return round(self.total_time_remaining_before_deadline / self.number_of_accepted_tasks, 2)
+
+    @property
+    def avg_overtime_hours(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_overtime_hours / self.number_of_non_holiday_days_since_join, 2)
+
+    @property
+    def avg_lateness_hours(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_lateness_hours / self.number_of_non_holiday_days_since_join, 2)
+
+    @property
+    def avg_absent_days(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_absent_days / self.number_of_non_holiday_days_since_join, 2)
+
+
     skills = models.ManyToManyField(Skill, blank=True)
 
 

@@ -110,6 +110,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             status=status_val,
             mac_address=mac_address_used,
         )
+
+
+        if record.status == "late" and record.lateness_hours > 0:
+            employee.total_lateness_hours += record.lateness_hours
+            employee.save(update_fields=["total_lateness_hours"])
+
+            
         serializer = self.get_serializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
