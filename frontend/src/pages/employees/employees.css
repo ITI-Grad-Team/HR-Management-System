@@ -1,11 +1,8 @@
-
 .directories {
   background: #f7f7f7;
-   max-width: 1200px;
-  margin: auto ;
+  width: 100%;
   display: flex;
 }
-
 
 .page-title {
   font-size: 2rem;
@@ -17,7 +14,7 @@
 }
 
 .section-heading {
-  border: 1px  #131212; 
+  border: 1px #131212;
   padding: 1rem 1.5rem;
   margin: 2rem 0;
   background-color: #fff;
@@ -27,7 +24,7 @@
 
 .section-heading h2 {
   margin: 0;
-  font-size: 1.25rem; 
+  font-size: 1.25rem;
   color: #333;
 }
 
@@ -44,4 +41,27 @@
   text-align: center;
   color: #777;
   border-radius: 8px;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  select {
+    border: 0.5px solid darkgray;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  .filter-controls {
+    display: flex;
+    gap: 1rem;
+
+    .is-coordinator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
 }

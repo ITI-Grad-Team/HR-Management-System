@@ -48,7 +48,7 @@ export default function Sidebar() {
               to="/dashboard/attendance"
               className={pathname === "/dashboard/attendance" ? "active" : ""}
             >
-              <FaCalendarCheck /> Attendance & Leave
+              <FaCalendarCheck /> Attendance & Leave
             </Nav.Link>
 
             <Nav.Link
@@ -133,7 +133,7 @@ export default function Sidebar() {
               to="/dashboard/attendance"
               className={pathname === "/dashboard/attendance" ? "active" : ""}
             >
-              <FaCalendarCheck /> Attendance & Leave
+              <FaCalendarCheck /> Attendance & Leave
             </Nav.Link>
             <Nav.Link
               as={Link}

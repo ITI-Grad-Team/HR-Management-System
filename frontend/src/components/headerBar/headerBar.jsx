@@ -8,10 +8,10 @@ export default function HeaderBar() {
       {/* Left controls */}
       <div className="d-flex gap-3">
         <Form.Select size="sm" style={{ width: "160px" }}>
-          <option>September 2025</option>
+          <option>September 2025</option>
         </Form.Select>
         <Form.Select size="sm" style={{ width: "160px" }}>
-          <option>All Companies</option>
+          <option>All Companies</option>
         </Form.Select>
       </div>
 
