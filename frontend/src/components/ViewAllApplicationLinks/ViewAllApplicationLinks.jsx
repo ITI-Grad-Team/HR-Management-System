@@ -26,14 +26,14 @@ const ViewAllApplicationLinks = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [positions, setPositions] = useState([]);
-  const [skills, setSkills] = useState([]);
+  const [skills, setSkills] = useState([]); // keep skills list for display
   const [filterPosition, setFilterPosition] = useState(null);
-  const [filterSkills, setFilterSkills] = useState([]);
+  const [filterCoordinator, setFilterCoordinator] = useState(null);
 
   const { role } = useAuth();
   const apiPrefix = role === "admin" ? "admin" : "hr";
 
-  /* ─────────────── Fetch filter options once ─────────────── */
+  /* ─────────────── Fetch Positions & Skills once ─────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -41,20 +41,23 @@ const ViewAllApplicationLinks = () => {
           axiosInstance.get(`${apiPrefix}/positions/`),
           axiosInstance.get(`${apiPrefix}/skills/`),
         ]);
-
         const posOpts = (
           Array.isArray(posRes.data) ? posRes.data : posRes.data.results
-        ).map((p) => ({ value: p.id, label: p.name }));
+        ).map((p) => ({
+          value: p.id,
+          label: p.name,
+        }));
+        setPositions(posOpts);
+
         const skOpts = (
           Array.isArray(skRes.data) ? skRes.data : skRes.data.results
         ).map((s) => ({
           value: s.id,
           label: s.name,
         }));
-        setPositions(posOpts);
         setSkills(skOpts);
       } catch (err) {
-        console.error("Error fetching filter options", err);
+        console.error("Error fetching positions/skills", err);
       }
     })();
   }, [apiPrefix]);
@@ -68,9 +71,16 @@ const ViewAllApplicationLinks = () => {
           page,
           search,
           position: filterPosition?.value,
-          skills: filterSkills.map((s) => s.value).join(","),
+          // skills: filterSkills.map((s) => s.value).join(","),
+          is_coordinator: filterCoordinator?.value,
         };
-        Object.keys(params).forEach((k) => !params[k] && delete params[k]);
+        Object.keys(params).forEach(
+          (k) =>
+            (params[k] === undefined ||
+              params[k] === "" ||
+              params[k] === null) &&
+            delete params[k]
+        );
 
         const { data } = await axiosInstance.get(
           `${apiPrefix}/application-links/`,
@@ -86,7 +96,7 @@ const ViewAllApplicationLinks = () => {
     };
 
     fetchLinks();
-  }, [page, search, filterPosition, filterSkills, apiPrefix]);
+  }, [page, search, filterPosition, filterCoordinator, apiPrefix]);
 
   /* ─────────────── Helpers ─────────────── */
   const totalPages = useMemo(() => Math.ceil(count / PAGE_SIZE) || 1, [count]);
@@ -126,7 +136,7 @@ const ViewAllApplicationLinks = () => {
         <Col md={4}>
           <InputGroup>
             <Form.Control
-              placeholder="Search by URL or Distinction…"
+              placeholder="Search by Distinction…"
               value={search}
               onChange={(e) => {
                 setPage(1);
@@ -153,14 +163,17 @@ const ViewAllApplicationLinks = () => {
         </Col>
         <Col md={4}>
           <Select
-            options={skills}
-            value={filterSkills}
-            isMulti
+            options={[
+              { value: true, label: "Coordinator" },
+              { value: false, label: "Non‑Coordinator" },
+            ]}
+            value={filterCoordinator}
             onChange={(v) => {
               setPage(1);
-              setFilterSkills(v);
+              setFilterCoordinator(v);
             }}
-            placeholder="Filter by Skills…"
+            placeholder="Filter by Coordinator…"
+            isClearable
             classNamePrefix="react-select"
           />
         </Col>
@@ -206,7 +219,7 @@ const ViewAllApplicationLinks = () => {
                     link.position}
                 </td>
                 <td>
-                  {link.skills.map((sid) => {
+                  {link.skills?.map((sid) => {
                     const sk = skills.find((s) => s.value === sid);
                     return (
                       <Badge bg="info" text="dark" key={sid} className="me-1">

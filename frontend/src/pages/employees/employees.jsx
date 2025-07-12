@@ -1,3 +1,4 @@
+import React from "react";
 import "./employees.css";
 import { useEffect, useState } from "react";
 import { positions } from "../../lib/Positions.js";

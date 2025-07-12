@@ -1,54 +1,76 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.contrib.auth import get_user_model
-from api.models import AttendanceRecord, WorkDayConfig, PublicHoliday
-
+from api.models import (
+    AttendanceRecord,
+    Employee,
+    HolidayYearday,
+    HolidayWeekday,
+    OnlineDayYearday,
+    OnlineDayWeekday
+)
 
 class Command(BaseCommand):
-    help = "Mark absent users who did not check in today."
+    help = "Mark employees absent for yesterday based on their personal schedules"
 
     def handle(self, *args, **options):
-        today = timezone.localdate()
-        User = get_user_model()
+        yesterday = timezone.localdate() - timezone.timedelta(days=1)
+        yesterday_weekday = yesterday.strftime("%A")  # e.g. "Monday"
         marked_absent = 0
 
-        # 1. Check if today is a public holiday
-        if PublicHoliday.objects.filter(date=today).exists():
-            self.stdout.write(
-                self.style.SUCCESS("Today is a public holiday. No absences marked.")
-            )
-            return
-
-        # 2. Get all users
-        users = User.objects.all()
-        weekday = today.weekday()  # Monday=0
-        try:
-            workday_cfg = WorkDayConfig.objects.get(weekday=weekday)
-        except WorkDayConfig.DoesNotExist:
-            self.stdout.write(self.style.WARNING("No WorkDayConfig for today."))
-            return
-
-        if not workday_cfg.is_workday:
-            self.stdout.write(
-                self.style.SUCCESS("Today is not a workday. No absences marked.")
-            )
-            return
-
-        # 3. For each user, check if they have an AttendanceRecord for today
-        for user in users:
-            if AttendanceRecord.objects.filter(user=user, date=today).exists():
+        for employee in Employee.objects.all():
+            
+            # 1. Skip if attended yesterday
+            if AttendanceRecord.objects.filter(
+                user=employee.user, 
+                date=yesterday
+            ).exists():
                 continue
-            # 4. Mark as absent
+
+            # 2. Check if yesterday was a personal holiday
+            is_holiday = (
+                HolidayYearday.objects.filter(
+                    month=yesterday.month,
+                    day=yesterday.day,
+                    employees=employee
+                ).exists() or
+                HolidayWeekday.objects.filter(
+                    weekday=yesterday_weekday,
+                    employees=employee
+                ).exists()
+            )
+            if is_holiday:
+                continue
+
+            # 3. Check if yesterday was a personal online day
+            is_online_day = (
+                OnlineDayYearday.objects.filter(
+                    month=yesterday.month,
+                    day=yesterday.day,
+                    employees=employee
+                ).exists() or
+                OnlineDayWeekday.objects.filter(
+                    weekday=yesterday_weekday,
+                    employees=employee
+                ).exists()
+            )
+
+
+
+            # 4. Create absent record
             AttendanceRecord.objects.create(
-                user=user,
-                date=today,
+                user=employee.user,
+                date=yesterday,
                 check_in_time=None,
                 status="absent",
-                attendance_type="online" if workday_cfg.is_online else "physical",
+                attendance_type="online" if is_online_day else "physical",
                 mac_address=None,
             )
             marked_absent += 1
+            self.stdout.write(
+                f"Marked absent: {employee.user.username} "
+                f"({'online' if is_online_day else 'physical'} day)"
+            )
 
         self.stdout.write(
-            self.style.SUCCESS(f"{marked_absent} users marked as absent for {today}")
+            self.style.SUCCESS(f"Marked {marked_absent} employees as absent for {yesterday}")
         )

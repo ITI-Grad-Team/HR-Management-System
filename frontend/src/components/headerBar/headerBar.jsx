@@ -1,3 +1,4 @@
+import React from 'react';
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch, FaRegBell } from "react-icons/fa";
 

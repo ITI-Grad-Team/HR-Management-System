@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import ApplicationLinkBox from '../../components/ApplicationLinkBox/ApplicationLinkBox';
 import { Container, Tabs, Tab } from 'react-bootstrap';

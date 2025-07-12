@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, Table, Badge } from "react-bootstrap";
 
 const rows = [
