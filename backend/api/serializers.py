@@ -1,6 +1,4 @@
 from .models import (
-    WorkDayConfig,
-    PublicHoliday,
     AttendanceRecord,
     OvertimeRequest,
     SalaryRecord,
@@ -25,9 +23,9 @@ from .models import (
     Task,
     File,
     Position,
-    Report,Region,EducationDegree,EducationField
+    Region,EducationDegree,EducationField
 )
-from .models import Employee, HoliOrOnlineDayWeekday, HoliOrOnlineDayYearday
+from .models import Employee, OnlineDayYearday, HolidayYearday, HolidayWeekday, OnlineDayWeekday
 from django.utils import timezone
 from django.core.mail import send_mail
 import string, random
@@ -133,20 +131,30 @@ class PositionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ReportSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Report
-        fields = "__all__"
-
-
 class EmployeeAcceptingSerializer(serializers.ModelSerializer):
-    weekdays = serializers.ListField(
-        child=serializers.CharField(), write_only=True, required=False
+    holiday_weekdays = serializers.ListField(
+        child=serializers.CharField(), 
+        write_only=True, 
+        required=False,
+        help_text="List of weekdays (e.g. ['Monday', 'Tuesday'])"
     )
-    yeardays = serializers.ListField(
+    holiday_yeardays = serializers.ListField(
         child=serializers.DictField(child=serializers.IntegerField()),
         write_only=True,
         required=False,
+        help_text="List of {'month':1-12, 'day':1-31} dicts"
+    )
+    online_weekdays = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="List of weekdays for online work"
+    )
+    online_yeardays = serializers.ListField(
+        child=serializers.DictField(child=serializers.IntegerField()),
+        write_only=True,
+        required=False,
+        help_text="List of {'month':1-12, 'day':1-31} for online days"
     )
 
     class Meta:
@@ -159,18 +167,28 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
             "absence_penalty",
             "expected_attend_time",
             "expected_leave_time",
-            "weekdays",
-            "yeardays",
+            "holiday_weekdays",
+            "holiday_yeardays",
+            "online_weekdays",
+            "online_yeardays",
         ]
 
     def update(self, instance, validated_data):
-        weekdays = validated_data.pop("weekdays", [])
-        yeardays = validated_data.pop("yeardays", [])
+        # Handle holiday days
+        holiday_weekdays = validated_data.pop("holiday_weekdays", [])
+        holiday_yeardays = validated_data.pop("holiday_yeardays", [])
+        
+        # Handle online days
+        online_weekdays = validated_data.pop("online_weekdays", [])
+        online_yeardays = validated_data.pop("online_yeardays", [])
+
+        # Set password and save user (unchanged)
         password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
         user = instance.user
         user.set_password(password)
         user.save()
 
+        # Update basic fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -178,6 +196,7 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
         instance.join_date = timezone.now()
         instance.save()
 
+        # Send welcome email (unchanged)
         send_mail(
             subject="Welcome to HR",
             message=f"Your account has been created.\nUsername: {user.username}\nPassword: {password}",
@@ -186,17 +205,30 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
             fail_silently=False,
         )
 
-        for weekday in weekdays:
-            day_obj, _ = HoliOrOnlineDayWeekday.objects.get_or_create(weekday=weekday)
+        # Process holiday weekdays (using new HolidayWeekday model)
+        for weekday in holiday_weekdays:
+            day_obj, _ = HolidayWeekday.objects.get_or_create(weekday=weekday)
             day_obj.employees.add(instance)
 
-        for yearday in yeardays:
+        # Process holiday yeardays (using new HolidayYearday model)
+        for yearday in holiday_yeardays:
             month = yearday.get("month")
             day = yearday.get("day")
             if month and day:
-                day_obj, _ = HoliOrOnlineDayYearday.objects.get_or_create(
-                    month=month, day=day
-                )
+                day_obj, _ = HolidayYearday.objects.get_or_create(month=month, day=day)
+                day_obj.employees.add(instance)
+
+        # Process online weekdays (using new OnlineDayWeekday model)
+        for weekday in online_weekdays:
+            day_obj, _ = OnlineDayWeekday.objects.get_or_create(weekday=weekday)
+            day_obj.employees.add(instance)
+
+        # Process online yeardays (using new OnlineDayYearday model)
+        for yearday in online_yeardays:
+            month = yearday.get("month")
+            day = yearday.get("day")
+            if month and day:
+                day_obj, _ = OnlineDayYearday.objects.get_or_create(month=month, day=day)
                 day_obj.employees.add(instance)
 
         return instance
@@ -210,33 +242,9 @@ class EmployeeRejectingSerializer(serializers.ModelSerializer):
 
 # --- Salary & Attendance System Serializers ---
 
-
-class WorkDayConfigSerializer(serializers.ModelSerializer):
-    weekday_display = serializers.CharField(
-        source="get_weekday_display", read_only=True
-    )
-
-    class Meta:
-        model = WorkDayConfig
-        fields = [
-            "id",
-            "weekday",
-            "weekday_display",
-            "is_workday",
-            "is_weekend",
-            "is_online",
-        ]
-
-
-class PublicHolidaySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PublicHoliday
-        fields = ["id", "date", "description"]
-
-
 class AttendanceRecordSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user_email = serializers.EmailField(source="user.username", read_only=True)
 
     class Meta:
         model = AttendanceRecord
@@ -291,100 +299,64 @@ class OvertimeRequestSerializer(serializers.ModelSerializer):
 
 
 class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
-    attendance_record_id = serializers.IntegerField(write_only=True)
-
     class Meta:
         model = OvertimeRequest
-        fields = ["attendance_record_id", "requested_hours"]
-
-    def validate_attendance_record_id(self, value):
-        try:
-            attendance_record = AttendanceRecord.objects.get(id=value)
-        except AttendanceRecord.DoesNotExist:
-            raise serializers.ValidationError("Attendance record not found.")
-
-        # Check if user owns this attendance record or is coordinator with access
-        user = self.context["request"].user
-        if attendance_record.user != user:
-            # Check if user is coordinator with access to this employee
-            if not (hasattr(user, "employee") and user.employee.is_coordinator):
-                raise serializers.ValidationError(
-                    "You can only request overtime for your own attendance."
-                )
-
-            # Check if coordinator has access to this employee
-            if (
-                hasattr(attendance_record.user, "employee")
-                and attendance_record.user.employee.position != user.employee.position
-            ):
-                raise serializers.ValidationError(
-                    "You can only request overtime for employees in your position."
-                )
-
-        # Check if overtime request already exists
-        if hasattr(attendance_record, "overtime_request"):
-            raise serializers.ValidationError(
-                "Overtime request already exists for this attendance record."
-            )
-
-        return value
-
-    def validate_requested_hours(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Requested hours must be positive.")
-        if value > 8:  # Maximum 8 hours overtime per day
-            raise serializers.ValidationError(
-                "Maximum 8 hours overtime allowed per day."
-            )
-        return value
+        fields = ["requested_hours"]  
 
     def validate(self, attrs):
-        attendance_record = AttendanceRecord.objects.get(
-            id=attrs["attendance_record_id"]
-        )
-        user = self.context["request"].user
+        """Automatically fetch and validate today's attendance record"""
+        request = self.context['request']
+        today = timezone.localdate()
+        
+        try:
+            attendance_record = AttendanceRecord.objects.get(
+                user=request.user,
+                date=today
+            )
+        except AttendanceRecord.DoesNotExist:
+            raise serializers.ValidationError(
+                "No attendance record found for today - check in first"
+            )
 
-        # Use the shared business logic function for overtime eligibility
-        can_request, reason = can_request_overtime(user, attendance_record)
+        # Move all your existing validation logic here
+        if hasattr(attendance_record, "overtime_request"):
+            raise serializers.ValidationError(
+                "Overtime request already exists for today"
+            )
+
+        # Use your existing can_request_overtime check
+        can_request, reason = can_request_overtime(request.user, attendance_record)
         if not can_request:
             raise serializers.ValidationError(reason)
 
+        attrs['attendance_record'] = attendance_record
         return attrs
 
     def create(self, validated_data):
-        attendance_record = AttendanceRecord.objects.get(
-            id=validated_data["attendance_record_id"]
-        )
-
-        # Calculate overtime hours from expected leave time
-        expected_leave_time = time(17, 0)  # Default 5:00 PM
-        if (
-            hasattr(attendance_record.user, "employee")
-            and attendance_record.user.employee.expected_leave_time
-        ):
+        """Modified to use the auto-fetched attendance record"""
+        attendance_record = validated_data['attendance_record']
+        
+        # Keep your existing overtime calculation logic
+        if (hasattr(attendance_record.user, "employee") and 
+            attendance_record.user.employee.expected_leave_time):
             expected_leave_time = attendance_record.user.employee.expected_leave_time
 
-        # Use current time as check_out_time if not set
         if not attendance_record.check_out_time:
             attendance_record.check_out_time = timezone.localtime().time()
             attendance_record.save()
 
-        # Calculate actual overtime hours
         if attendance_record.check_out_time > expected_leave_time:
-            checkout_dt = datetime.combine(
-                attendance_record.date, attendance_record.check_out_time
-            )
+            checkout_dt = datetime.combine(attendance_record.date, attendance_record.check_out_time)
             expected_dt = datetime.combine(attendance_record.date, expected_leave_time)
             overtime_delta = checkout_dt - expected_dt
             calculated_hours = round(overtime_delta.total_seconds() / 3600.0, 2)
-
-            # Use the minimum of requested hours and calculated hours
             final_hours = min(validated_data["requested_hours"], calculated_hours)
         else:
             final_hours = 0
 
         return OvertimeRequest.objects.create(
-            attendance_record=attendance_record, requested_hours=final_hours
+            attendance_record=attendance_record,
+            requested_hours=final_hours
         )
 
 
@@ -395,9 +367,6 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
 
 
 class SalaryRecordSerializer(serializers.ModelSerializer):
-    absent_days = serializers.SerializerMethodField()
-    late_days = serializers.SerializerMethodField()
-    overtime_hours = serializers.SerializerMethodField()
 
     class Meta:
         model = SalaryRecord
@@ -409,20 +378,8 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "base_salary",
             "final_salary",
             "details",
-            "absent_days",
-            "late_days",
-            "overtime_hours",
             "generated_at",
         ]
-
-    def get_absent_days(self, obj):
-        return obj.details.get("absent_days", 0)
-
-    def get_late_days(self, obj):
-        return obj.details.get("late_days", 0)
-
-    def get_overtime_hours(self, obj):
-        return obj.details.get("overtime_hours", 0)
 
 
 class EmployeeListSerializer(serializers.ModelSerializer):

@@ -4,12 +4,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils import timezone
 from datetime import time
-from .models import AttendanceRecord, WorkDayConfig, PublicHoliday
+from .models import AttendanceRecord, OnlineDayYearday, HolidayYearday, HolidayWeekday, OnlineDayWeekday
 from .utils.queryset_utils import get_role_based_queryset
 from .serializers import AttendanceRecordSerializer
 from .utils.overtime_utils import can_request_overtime
 from .permissions import AttendancePermission
-
+from datetime import datetime, timedelta
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = AttendanceRecord.objects.all()
@@ -22,6 +22,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     WORK_END = time(17, 0)
 
     def get_queryset(self):
+        """Special handling for can_request_overtime to bypass role filters"""
+        if self.action == "can_request_overtime":
+            # Bypass role filtering only for this action
+            return AttendanceRecord.objects.all()
+        # Normal role-based filtering for all other actions
         return get_role_based_queryset(self.request.user, AttendanceRecord)
 
     def create(self, request, *args, **kwargs):
@@ -38,56 +43,64 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         now_dt = timezone.localtime()
         today = now_dt.date()
         now = now_dt.time()
+        weekday_name = today.strftime("%A")  # Get weekday name for HolidayWeekday check
 
-        # Check for public holiday
-        if PublicHoliday.objects.filter(date=today).exists():
+        # Get employee record (added this since we need employee-specific data)
+        employee = user.employee
+
+        # Changed: Check for holidays using new Holiday models instead of PublicHoliday
+        if (HolidayYearday.objects.filter(month=today.month, day=today.day, employees=employee).exists() or
+            HolidayWeekday.objects.filter(weekday=weekday_name, employees=employee).exists()):
             return Response(
-                {"detail": "Today is a public holiday."},
+                {"detail": "Today is your holiday."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check for workday config
-        weekday = today.weekday()
-        try:
-            workday_cfg = WorkDayConfig.objects.get(weekday=weekday)
-        except WorkDayConfig.DoesNotExist:
+        # Changed: Check if today is an online day using new OnlineDay models
+        is_online_day = (OnlineDayYearday.objects.filter(month=today.month, day=today.day, employees=employee).exists() or
+                        OnlineDayWeekday.objects.filter(weekday=weekday_name, employees=employee).exists())
+
+        # Changed: Use employee's expected times instead of hardcoded WORK_START/END
+        if not employee.expected_attend_time or not employee.expected_leave_time:
             return Response(
-                {"detail": "Workday configuration not found for today."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not workday_cfg.is_workday:
-            return Response(
-                {"detail": "Today is not a working day."},
+                {"detail": "Your work schedule is not configured."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Prevent duplicate check-in
+        # Changed: Calculate grace period based on employee's expected time
+        grace_end = (datetime.combine(today, employee.expected_attend_time) + timedelta(minutes=15)).time()
+
+        # Prevent duplicate check-in (unchanged)
         if AttendanceRecord.objects.filter(user=user, date=today).exists():
             return Response(
                 {"detail": "Attendance already submitted for today."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # MAC address validation for physical days
-        attendance_type = "online" if workday_cfg.is_online else "physical"
-        mac_address_used = request.data.get("mac_address")
+        # Changed: Determine attendance type based on online day check
+        attendance_type = "online" if is_online_day else "physical"
         if attendance_type == "physical":
-            # Placeholder for MAC validation (commented out as in original)
-            pass
+            mac_address_used = request.data.get("mac_address")
+            if not mac_address_used:
+                return Response(
+                    {"detail": "MAC address is required for physical attendance!!!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         else:
             mac_address_used = None
 
-        # Determine status
-        if now <= self.GRACE_END:
+        # Changed: Status determination based on employee's expected times
+        if now <= grace_end:
             status_val = "present"
-        elif now > self.GRACE_END and now < self.WORK_END:
+        elif now > grace_end and now < employee.expected_leave_time:
             status_val = "late"
         else:
             return Response(
-                {"detail": "Check-in is not allowed after end of workday."},
+                {"detail": "Check-in is not allowed after end of your workday."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Record creation (unchanged except using new values)
         record = AttendanceRecord.objects.create(
             user=user,
             date=today,
@@ -100,18 +113,26 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(record)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=["patch"])
-    def check_out(self, request, pk=None):
-        """Employee only: Record check-out for an attendance record."""
-        record = self.get_object()
-        if record.user != request.user:
-            return Response(
-                {"detail": "You can only check out your own attendance."},
-                status=status.HTTP_403_FORBIDDEN,
+    @action(detail=False, methods=["patch"])
+    def check_out(self, request):
+        """Employee only: Record check-out for today's attendance record."""
+        today = timezone.localdate()
+        
+        try:
+            # Get today's attendance record for the current user
+            record = AttendanceRecord.objects.get(
+                user=request.user,
+                date=today
             )
+        except AttendanceRecord.DoesNotExist:
+            return Response(
+                {"detail": "No attendance record found for today. Check in first."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
         if record.check_out_time:
             return Response(
-                {"detail": "Check-out already recorded."},
+                {"detail": "Check-out already recorded for today."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -122,15 +143,41 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(record)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"])
-    def can_request_overtime(self, request, pk=None):
-        """Check if user can request overtime for this attendance record."""
-        attendance_record = self.get_object()
-        can_request, reason = can_request_overtime(request.user, attendance_record)
-        return Response(
-            {
+    @action(detail=False, methods=["get"])
+    def can_request_overtime(self, request):
+        """Check overtime eligibility for TODAY'S record of the current user"""
+        try:
+            today = timezone.localdate()
+            attendance_record = AttendanceRecord.objects.get(
+                user=request.user,
+                date=today
+            )
+            
+            # Manual timezone-aware check
+            if attendance_record.check_out_time:
+                check_out_dt = timezone.make_aware(
+                    datetime.combine(today, attendance_record.check_out_time)
+                )
+                if timezone.localtime() < check_out_dt:
+                    return Response(
+                        {"detail": "Cannot request overtime before checking out"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            can_request, reason = can_request_overtime(request.user, attendance_record)
+            return Response({
                 "can_request": can_request,
                 "reason": reason,
-                "has_existing_request": hasattr(attendance_record, "overtime_request"),
-            }
-        )
+                "has_existing_request": hasattr(attendance_record, "overtime_request")
+            })
+            
+        except AttendanceRecord.DoesNotExist:
+            return Response(
+                {"detail": "No attendance record found for today"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
