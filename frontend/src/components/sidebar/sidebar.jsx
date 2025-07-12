@@ -10,6 +10,7 @@ import {
   FaCog,
   FaQuestionCircle,
   FaSignOutAlt,
+  FaUserTie,
 } from "react-icons/fa";
 import "./sidebar.css";
 import { useAuth } from "../../context/AuthContext";
@@ -75,11 +76,10 @@ export default function Sidebar() {
 
             <Nav.Link
               as={Link}
-              to="/dashboard/reports"
-              className={pathname === "/dashboard/reports" ? "active" : ""}
+              to="/dashboard/applications"
+              className={pathname === "/dashboard/applications" ? "active" : ""}
             >
-              <FaChartBar style={{ transform: "scaleX(-1)" }} />{" "}
-              Reports & Analytics
+              <FaUserTie /> Applications
             </Nav.Link>
           </Nav>
 
@@ -147,6 +147,13 @@ export default function Sidebar() {
               className={pathname === "/dashboard/performance" ? "active" : ""}
             >
               <FaChartBar /> Performance
+            </Nav.Link>
+            <Nav.Link
+              as={Link}
+              to="/dashboard/applications"
+              className={pathname === "/dashboard/applications" ? "active" : ""}
+            >
+              <FaUserTie /> Applications
             </Nav.Link>
           </Nav>
 
