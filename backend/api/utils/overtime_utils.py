@@ -25,17 +25,17 @@ def can_request_overtime(user, attendance_record):
         return False, "Must check out before requesting overtime"
 
     # 3. Time calculations (all timezone-aware)
-    actual_leave_time = datetime.combine(today, attendance_record.check_out_time)
-    actual_leave_time = timezone.make_aware(actual_leave_time)  # Convert to aware datetime
+    expected_leave_time = datetime.combine(today, attendance_record.user.employee.expected_leave_time)
+    expected_leave_time = timezone.make_aware(expected_leave_time)  # Convert to aware datetime
     
     overtime_threshold = timedelta(minutes=getattr(employee, 'overtime_threshold_minutes', 30))
-    eligibility_time = actual_leave_time + overtime_threshold
+    eligibility_time = expected_leave_time + overtime_threshold
 
     # 4. Time comparisons
     if now < eligibility_time:
         return False, (
             f"Can request overtime after {eligibility_time.strftime('%H:%M')} "
-            f"({overtime_threshold.total_seconds()/60} minutes after your actual leave time)"
+            f"({overtime_threshold.total_seconds()/60} minutes after your expected leave time)"
         )
 
     return True, "Eligible for overtime request"
