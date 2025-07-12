@@ -204,6 +204,9 @@ class AdminViewApplicationLinksViewSet(ReadOnlyModelViewSet):
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['position', 'is_coordinator']
+    search_fields = ['distinction_name']
 
 
 class HRManageApplicationLinksViewSet(ModelViewSet):
@@ -216,6 +219,10 @@ class HRManageApplicationLinksViewSet(ModelViewSet):
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
     permission_classes = [IsAuthenticated, IsHR]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['position', 'is_coordinator']
+    search_fields = ['distinction_name']
+
     # in frontend, the URL will be constructed based on "distinction_name"
     # ex. if "junior-frontend-2025", then: "http://localhost:3000/apply/junior-frontend-2025/" → shown in a non-editable field
 
