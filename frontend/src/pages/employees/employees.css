@@ -48,6 +48,12 @@
   align-items: center;
   justify-content: space-between;
 
+  select {
+    border: 0.5px solid darkgray;
+    border-radius: 4px;
+    outline: none;
+  }
+
   .filter-controls {
     display: flex;
     gap: 1rem;
