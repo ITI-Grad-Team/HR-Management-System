@@ -33,7 +33,6 @@ from .models import (
     Task,
     File,
     Position,
-    Report,
 )
 
 from .serializers import (
@@ -50,7 +49,7 @@ from .serializers import (
     TaskSerializer,
     FileSerializer,
     PositionSerializer,
-    ReportSerializer,EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
+    EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
 
 from .permissions import IsHR, IsAdmin, IsHRorAdmin, IsEmployee, IsCoordinator
@@ -806,16 +805,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
         return Response({"detail": "Interview submitted successfully."})
 
 
-class HRSalaryReportsViewSet(ModelViewSet):
-    """
-    Views monthly salary reports
-    - Employee-wise breakdown
-    - Only accessible by HR role
-    """
-
-    queryset = Report.objects.all()
-    serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class EmployeeCheckInOutViewSet(ModelViewSet):
