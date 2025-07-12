@@ -29,7 +29,7 @@ export default function BioCard({
 }) {
   // Map backend role to display role and get styles
   const displayRole = roleDisplayMap[role?.toLowerCase()] || role;
-  const { icon } = roleStyles[displayRole] || roleStyles.Employee;
+  const { color, icon } = roleStyles[displayRole] || roleStyles.Employee;
 
   return (
     <div className="bio-card" data-role={displayRole}>

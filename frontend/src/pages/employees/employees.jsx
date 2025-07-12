@@ -1,15 +1,17 @@
-<<<<<<< HEAD:frontend/src/pages/admin/admin.jsx
 import { useState } from "react";
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar.jsx";
 import "./admin.css";
 import { positions } from "../../lib/Positions.js";
 import { regions } from "../../lib/Regions.js";
+import "./employees.css";
+import { useAuth } from "../../context/AuthContext";
 
 const Directories = () => {
   const [positionSelect, setPositionSelect] = useState("");
   const [regionSelect, setRegionSelect] = useState("");
   const [isCoordinatorValue, setIsCoordinatorValue] = useState(false);
+  const { role } = useAuth();
 
   console.log("Selected Position:", positionSelect);
   console.log("Selected Region:", regionSelect);
@@ -18,44 +20,24 @@ const Directories = () => {
   return (
     <div className="directories d-flex">
       <Sidebar />
-=======
-import "./employees.css";
-import { useAuth } from "../../context/AuthContext";
-
-const Directories = () => {
-
-  const { role } = useAuth();
-
-  return (
-    <div className="directories d-flex">
->>>>>>> 171650e589f64cfc4d06779d5d12ff979277ea7e:frontend/src/pages/employees/employees.jsx
 
       <div
         className="flex-grow-1 p-4"
         style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}
       >
-
         {/* HR Section */}
-<<<<<<< HEAD:frontend/src/pages/admin/admin.jsx
-        <div className="section">
-          <div className="section-heading">
-            <h2>HRs</h2>
-          </div>
-=======
         {role === "admin" && (
-           <div className="section">
-        <div className="section-heading">
-             <h2>HRs</h2>
-        </div>
->>>>>>> 171650e589f64cfc4d06779d5d12ff979277ea7e:frontend/src/pages/employees/employees.jsx
-          <div className="card-grid">
-            {/* HR cards go here */}
-            <div className="card-placeholder">HR Card</div>
-            <div className="card-placeholder">HR Card</div>
+          <div className="section">
+            <div className="section-heading">
+              <h2>HRs</h2>
+            </div>
+            <div className="card-grid">
+              {/* HR cards go here */}
+              <div className="card-placeholder">HR Card</div>
+              <div className="card-placeholder">HR Card</div>
+            </div>
           </div>
-        </div>
         )}
-       
 
         {/* Employees Section */}
         <div className="section">
