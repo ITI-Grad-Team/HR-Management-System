@@ -1086,6 +1086,16 @@ class TaskViewSet(ModelViewSet):
         task.time_remaining_before_deadline_when_accepted = time_remaining
         task.save()
 
+        employee = task.assigned_to
+        employee.total_task_ratings += rating
+        employee.total_time_remaining_before_deadline += time_remaining
+        employee.number_of_accepted_tasks += 1
+        employee.save(update_fields=[
+            "total_task_ratings",
+            "total_time_remaining_before_deadline",
+            "number_of_accepted_tasks",
+        ])
+
         return Response(
             {
                 "message": "Task accepted successfully.",
