@@ -63,15 +63,13 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
 
         # Check for existing SalaryRecord
         if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():
-            return Response(
-                {"detail": "Salary already calculated for this month"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Delete existing records for this user/month/year
+            SalaryRecord.objects.filter(user=user, year=year, month=month).delete()
+            print(f"Deleted existing salary record for {user.username} - {month}/{year}")
 
         records = AttendanceRecord.objects.filter(
             user=user, date__year=year, date__month=month
         )
-        print(records)
         absent_days = records.filter(status="absent").count()
         late_days = records.filter(status="late").count()
         lateness_hours = (
