@@ -1,5 +1,5 @@
 
-// src/components/settings/AdminSettings.jsx
+import React from "react";
 import { useState } from "react";
 import { Card, Form, Button, ListGroup } from "react-bootstrap";
 

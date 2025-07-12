@@ -1,5 +1,5 @@
 
-// src/components/settings/AccountSettings.jsx
+import React from "react";
 import { useState } from "react";
 import { Card, Form, Button } from "react-bootstrap";
 

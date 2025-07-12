@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "../../context/AuthContext";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
 import HrDashboard from "../HrDashboard/HrDashboard";

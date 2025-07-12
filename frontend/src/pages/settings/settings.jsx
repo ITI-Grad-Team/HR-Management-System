@@ -1,4 +1,4 @@
-// src/pages/Settings.jsx
+import React from "react";
 import { useAuth } from "../../context/AuthContext";
 import AccountSettings from "../../components/AccountSettings/AccountSettings";
 import AdminSettings from "../../components/AdminSettings/AdminSettings";
@@ -14,7 +14,7 @@ export default function Settings() {
 
       <AccountSettings />
 
-      {role === "admin" || role === "hr" && <AdminSettings />}
+      {(role === "admin" || role === "hr") && <AdminSettings />}
     </div>
   );
 }
