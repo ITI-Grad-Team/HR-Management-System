@@ -56,6 +56,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
         source="interviewquestion_set", many=True, read_only=True
     )
 
+    avg_task_ratings = serializers.FloatField(read_only=True)
+    avg_time_remaining_before_deadline = serializers.FloatField(read_only=True)
+    avg_overtime_hours = serializers.FloatField(read_only=True)
+    avg_lateness_hours = serializers.FloatField(read_only=True)
+    avg_absent_days = serializers.FloatField(read_only=True)
+
     class Meta:
         model = Employee
         fields = "__all__"
