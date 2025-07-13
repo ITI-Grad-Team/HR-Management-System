@@ -19,7 +19,7 @@ const Directories = () => {
       .then((res) => setEmployees(res.data.results))
       .catch((err) => console.error(err));
     console.log(employees);
-  }, []);
+  }, [employees]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesPosition = positionSelect
