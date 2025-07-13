@@ -1,4 +1,3 @@
-import React from "react";
 import "./employees.css";
 import { useEffect, useState } from "react";
 import { positions } from "../../lib/Positions.js";
@@ -20,7 +19,7 @@ const Directories = () => {
       .then((res) => setEmployees(res.data.results))
       .catch((err) => console.error(err));
     console.log(employees);
-  }, [employees]);
+  }, []);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesPosition = positionSelect
@@ -99,7 +98,6 @@ const Directories = () => {
 
           <div className="card-grid">
             {/* Employee cards go here */}
-            <div className="card-placeholder">Employee Card</div>
             <div className="card-placeholder">Employee Card</div>
 
             {filteredEmployees.map((employee) => (
