@@ -206,13 +206,6 @@ class Employee(models.Model):
     percentage_of_matching_skills = models.FloatField(null=True, blank=True)
     has_position_related_high_education = models.BooleanField(null=True, blank=True)
 
-    predicted_avg_task_rating = models.FloatField(null=True, blank=True)
-    predicted_avg_time_remaining_before_deadline = models.FloatField(
-        null=True, blank=True
-    )
-    predicted_avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
-    predicted_avg_absence_days = models.FloatField(null=True, blank=True)
-
     interview_datetime = models.DateTimeField(null=True, blank=True)
     interview_state = models.CharField(max_length=50, default="pending")
     interviewer = models.ForeignKey(HR, on_delete=models.SET_NULL, null=True)
@@ -272,7 +265,16 @@ class Employee(models.Model):
 
 
     skills = models.ManyToManyField(Skill, blank=True)
-
+    
+    predicted_avg_task_rating = models.FloatField(null=True, blank=True)
+    predicted_avg_time_remaining_before_deadline = models.FloatField(
+        null=True, blank=True
+    )
+    predicted_avg_lateness_hours = models.FloatField(null=True, blank=True)
+    predicted_avg_absent_days = models.FloatField(null=True, blank=True)
+    predicted_avg_overtime_hours = models.FloatField(null=True, blank=True)
+    predicted_basic_salary = models.FloatField(null=True, blank=True)
+    last_prediction_date = models.DateTimeField(null=True, blank=True)
 
 class InterviewQuestion(models.Model):
     text = models.TextField()
