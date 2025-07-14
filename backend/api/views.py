@@ -1,6 +1,6 @@
 # from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Avg
+from django.db.models import Avg,Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateformat import format as django_format
@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-
+from collections import defaultdict
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -33,7 +33,7 @@ from .models import (
     InterviewQuestion,
     Task,
     File,
-    Position,
+    Position,CompanyStatistics,SalaryRecord
 )
 
 from .serializers import (
@@ -46,7 +46,7 @@ from .serializers import (
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
-    InterviewQuestionSerializer,
+    CompanyStatisticsSerializer,
     TaskSerializer,
     FileSerializer,
     PositionSerializer,
@@ -70,6 +70,76 @@ def recalculate_interview_avg_grade(employee):
     employee.interview_questions_avg_grade = avg
     employee.save(update_fields=["interview_questions_avg_grade"])
 
+def calculate_statistics():
+    employees = Employee.objects.filter(interview_state='accepted')
+    total_employees = employees.count()
+    total_hrs = HR.objects.count()
+
+    positions = Position.objects.all()
+    position_stats = {}
+
+    for position in positions:
+        pos_employees = employees.filter(position=position)
+        pos_count = pos_employees.count()
+        if pos_count == 0:
+            continue
+
+        total_task_ratings = pos_employees.aggregate(sum=Sum('total_task_ratings'))['sum'] or 0
+        total_accepted_tasks = pos_employees.aggregate(sum=Sum('number_of_accepted_tasks'))['sum'] or 0
+        total_time_remaining = pos_employees.aggregate(sum=Sum('total_time_remaining_before_deadline'))['sum'] or 0
+        total_overtime = pos_employees.aggregate(sum=Sum('total_overtime_hours'))['sum'] or 0
+        total_lateness = pos_employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
+        total_absent = pos_employees.aggregate(sum=Sum('total_absent_days'))['sum'] or 0
+        total_non_holiday_days = pos_employees.aggregate(sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
+        avg_salary = pos_employees.aggregate(avg=Avg('basic_salary'))['avg']
+
+        position_stats[position.name] = {
+            'count': pos_count,
+            'avg_task_rating': round(total_task_ratings / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+            'avg_time_remaining': round(total_time_remaining / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+            'avg_overtime': round(total_overtime / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_absent_days': round(total_absent / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_salary': avg_salary,
+        }
+
+    total_task_ratings = employees.aggregate(sum=Sum('total_task_ratings'))['sum'] or 0
+    total_accepted_tasks = employees.aggregate(sum=Sum('number_of_accepted_tasks'))['sum'] or 0
+    total_time_remaining = employees.aggregate(sum=Sum('total_time_remaining_before_deadline'))['sum'] or 0
+    total_overtime = employees.aggregate(sum=Sum('total_overtime_hours'))['sum'] or 0
+    total_lateness = employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
+    total_absent = employees.aggregate(sum=Sum('total_absent_days'))['sum'] or 0
+    total_non_holiday_days = employees.aggregate(sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
+    avg_salary = employees.aggregate(avg=Avg('basic_salary'))['avg']
+
+    overall_stats = {
+        'overall_avg_task_rating': round(total_task_ratings / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+        'overall_avg_time_remaining': round(total_time_remaining / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+        'overall_avg_overtime': round(total_overtime / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_absent_days': round(total_absent / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_salary': avg_salary,
+    }
+
+    salary_records = SalaryRecord.objects.all()
+    monthly_totals = {}
+    for record in salary_records:
+        key = f"{record.year}-{record.month}"
+        monthly_totals[key] = monthly_totals.get(key, 0) + record.final_salary
+
+    monthly_salary_data = [{
+        'year': int(k.split('-')[0]),
+        'month': int(k.split('-')[1]),
+        'total_paid': v
+    } for k, v in monthly_totals.items()]
+
+    return {
+        'total_employees': total_employees,
+        'total_hrs': total_hrs,
+        'position_stats': position_stats,
+        'monthly_salary_totals': monthly_salary_data,
+        **overall_stats
+    }
 
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
@@ -1402,3 +1472,44 @@ class EmployeePredictionViewSet(ModelViewSet):
                 {"error": f"Prediction failed: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class AdminStatsViewSet(ModelViewSet):
+    """
+    GET: List historical company statistics snapshots.
+    POST: Calculate new statistics and create a new snapshot.
+    """
+    queryset = CompanyStatistics.objects.all().order_by('-generated_at')
+    serializer_class = CompanyStatisticsSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ['get', 'post']
+    
+    def create(self, request, *args, **kwargs):
+        # Calculate statistics on demand.
+        stats = calculate_statistics()
+        
+        # Save the new snapshot.
+        company_stats = CompanyStatistics.objects.create(
+            total_employees=stats['total_employees'],
+            total_hrs=stats['total_hrs'],
+            position_stats=stats['position_stats'],
+            monthly_salary_totals=stats['monthly_salary_totals'],
+            overall_avg_task_rating=stats['overall_avg_task_rating'],
+            overall_avg_time_remaining=stats['overall_avg_time_remaining'],
+            overall_avg_overtime=stats['overall_avg_overtime'],
+            overall_avg_lateness=stats['overall_avg_lateness'],
+            overall_avg_absent_days=stats['overall_avg_absent_days'],
+            overall_avg_salary=stats['overall_avg_salary'],
+        )
+        
+        serializer = self.get_serializer(company_stats)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'], url_path='latest')
+    def latest(self, request):
+        latest_stat = self.get_queryset().first()
+        if latest_stat:
+            serializer = self.get_serializer(latest_stat)
+            return Response(serializer.data)
+        return Response({"detail": "No statistics available."}, status=404)
+

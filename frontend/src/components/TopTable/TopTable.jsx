@@ -6,7 +6,7 @@ const rows = [
   { name: "Helga Miller", vacancies: 3, responses: 280, hired: "2 / 4", score: 50 },
 ];
 
-export default function RecruitersTable() {
+export default function TopTable() {
   return (
     <Card className="shadow-sm mt-4">
       <Card.Body>

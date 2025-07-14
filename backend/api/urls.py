@@ -24,7 +24,7 @@ from .views import (
     AdminManageEducationFieldsViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,
-    HRManageEducationFieldsViewSet,EmployeePredictionViewSet
+    HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -102,6 +102,7 @@ router.register(
     AdminPromoteEmployeeViewSet,
     basename="admin-promote-employee",
 )
+router.register(r'admin/company-statistics', AdminStatsViewSet, basename='company-statistics')
 
 
 # Employee

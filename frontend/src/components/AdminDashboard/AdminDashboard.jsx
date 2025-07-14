@@ -1,16 +1,14 @@
 import React from 'react'
-import StatCards from '../statCards/statCards'
-import CandidateCharts from '../CandidateCharts/CandidateCharts'
-import RecruitersTable from '../RecruitersTable/RecruitersTable'
+import AdminStats from "../AdminStats/AdminStats";
+import TopTable from "../TopTable/TopTable";
 
 const AdminDashboard = () => {
   return (
     <>
-    <StatCards />
-    <CandidateCharts />
-    <RecruitersTable />
+      <AdminStats />
+      <TopTable />
     </>
-  )
+  );
 }
 
 export default AdminDashboard
