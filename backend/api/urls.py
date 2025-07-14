@@ -24,7 +24,7 @@ from .views import (
     AdminManageEducationFieldsViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,
-    HRManageEducationFieldsViewSet,
+    HRManageEducationFieldsViewSet,EmployeePredictionViewSet
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -42,6 +42,7 @@ router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
 
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
+router.register(r'employees', EmployeePredictionViewSet, basename='employee')
 
 # Employee
 router.register(

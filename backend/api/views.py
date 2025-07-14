@@ -6,8 +6,9 @@ from django.utils import timezone
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
-from django.http import Http404
-
+import joblib
+import os
+import numpy as np
 from rest_framework.viewsets import ModelViewSet, ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -1302,3 +1303,102 @@ class AdminManageEducationFieldsViewSet(ModelViewSet):
     serializer_class = EducationFieldSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     http_method_names = ["get", "post"]
+
+class EmployeePredictionViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=True, methods=['post'], url_path='predict-and-update')
+    def predict_and_update_metrics(self, request, pk=None):
+        """
+        Predicts and updates all metrics for a specific employee
+        POST /api/employees/{id}/predict-and-update/
+        """
+        employee = self.get_object()
+        
+        # Validate required fields
+        required_fields = {
+            'region': employee.region,
+            'highest_education_degree': employee.highest_education_degree,
+            'highest_education_field': employee.highest_education_field,
+            'years_of_experience': employee.years_of_experience,
+            'had_leadership_role': employee.had_leadership_role,
+            'percentage_of_matching_skills': employee.percentage_of_matching_skills,
+            'has_position_related_high_education': employee.has_position_related_high_education,
+        }
+        
+        missing_fields = [field for field, value in required_fields.items() if value is None]
+        if missing_fields:
+            return Response(
+                {
+                    "error": "Cannot make predictions - missing required employee data",
+                    "missing_fields": missing_fields
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Prepare input data for prediction
+        input_data = np.array([[
+            employee.region.distance_to_work,
+            employee.highest_education_degree.id,
+            employee.highest_education_field.id,
+            employee.years_of_experience,
+            int(employee.had_leadership_role),
+            employee.percentage_of_matching_skills,
+            int(employee.has_position_related_high_education),
+        ]])
+        
+        # Load models and make predictions
+        MODELS_DIR = os.path.join('api', 'predictive_models')
+        predictions = {}
+        
+        try:
+            # Salary prediction
+            salary_model = joblib.load(os.path.join(MODELS_DIR, 'salary_model.pkl'))
+            predictions['predicted_basic_salary'] = float(salary_model.predict(input_data)[0])
+            
+            # Task rating prediction
+            task_model = joblib.load(os.path.join(MODELS_DIR, 'task_ratings_model.pkl'))
+            predictions['predicted_avg_task_rating'] = float(task_model.predict(input_data)[0])
+            
+            # Time remaining prediction
+            time_model = joblib.load(os.path.join(MODELS_DIR, 'time_remaining_model.pkl'))
+            predictions['predicted_avg_time_remaining_before_deadline'] = float(time_model.predict(input_data)[0])
+            
+            # Overtime prediction
+            overtime_model = joblib.load(os.path.join(MODELS_DIR, 'overtime_hours_model.pkl'))
+            predictions['predicted_avg_overtime_hours'] = float(overtime_model.predict(input_data)[0])
+            
+            # Lateness prediction
+            lateness_model = joblib.load(os.path.join(MODELS_DIR, 'lateness_hours_model.pkl'))
+            predictions['predicted_avg_lateness_hours'] = float(lateness_model.predict(input_data)[0])
+            
+            # Absence prediction
+            absence_model = joblib.load(os.path.join(MODELS_DIR, 'absent_days_model.pkl'))
+            predictions['predicted_avg_absent_days'] = float(absence_model.predict(input_data)[0])
+            
+            # Update employee with predictions
+            for field, value in predictions.items():
+                setattr(employee, field, value)
+            
+            # Update prediction timestamp
+            employee.last_prediction_date = timezone.now()
+            employee.save()
+            
+            # Return updated employee data
+            serializer = self.get_serializer(employee)
+            return Response({
+                "status": "Predictions updated successfully",
+            }, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            return Response(
+                {"error": f"Model file not found: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Prediction failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
