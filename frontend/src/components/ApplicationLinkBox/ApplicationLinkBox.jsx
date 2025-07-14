@@ -16,7 +16,6 @@ import axiosInstance from "../../api/config";
 
 export default function ApplicationLinkBox() {
   const [form, setForm] = useState({
-    url: "",
     distinction_name: "",
     position: null,
     is_coordinator: false,
@@ -29,7 +28,11 @@ export default function ApplicationLinkBox() {
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
   const [loadingOptions, setLoadingOptions] = useState(true);
-  const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    variant: "success",
+  });
 
   /* ────────────────────────────────────────────────────────────────────────── */
   /* Fetch dropdown data                                                       */
@@ -42,12 +45,16 @@ export default function ApplicationLinkBox() {
           axiosInstance.get("hr/skills/"),
         ]);
         setPositions(
-          (Array.isArray(positionsRes.data) ? positionsRes.data : positionsRes.data.results).map(
-            (p) => ({ value: p.id, label: p.name })
-          )
+          (Array.isArray(positionsRes.data)
+            ? positionsRes.data
+            : positionsRes.data.results
+          ).map((p) => ({ value: p.id, label: p.name }))
         );
         setSkillsOptions(
-          (Array.isArray(skillsRes.data) ? skillsRes.data : skillsRes.data.results).map((s) => ({
+          (Array.isArray(skillsRes.data)
+            ? skillsRes.data
+            : skillsRes.data.results
+          ).map((s) => ({
             value: s.id,
             label: s.name,
           }))
@@ -72,7 +79,8 @@ export default function ApplicationLinkBox() {
     } else {
       setForm({
         ...form,
-        [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
+        [field]:
+          e.target.type === "checkbox" ? e.target.checked : e.target.value,
       });
     }
   };
@@ -81,18 +89,27 @@ export default function ApplicationLinkBox() {
     e.preventDefault();
     setLoading(true);
     setGeneratedLink("");
+
+    // Generate the URL automatically
+    const generatedUrl = `${window.location.origin}/apply/${form.distinction_name}/`;
+
     try {
       const payload = {
-        url: form.url,
+        url: generatedUrl, // Use the auto-generated URL
         distinction_name: form.distinction_name,
         position: form.position?.value,
         is_coordinator: form.is_coordinator,
-        number_remaining_applicants_to_limit: Number(form.number_remaining_applicants_to_limit),
+        number_remaining_applicants_to_limit: Number(
+          form.number_remaining_applicants_to_limit
+        ),
         skills: form.skills.map((s) => s.value),
       };
 
-      const { data } = await axiosInstance.post("hr/application-links/", payload);
-      setGeneratedLink(data.url || "");
+      const { data } = await axiosInstance.post(
+        "hr/application-links/",
+        payload
+      );
+      setGeneratedLink(generatedUrl); // Show the auto-generated URL
       triggerToast("Link generated successfully!", "success");
     } catch (err) {
       console.error(err);
@@ -116,7 +133,10 @@ export default function ApplicationLinkBox() {
   /* Component                                                                 */
   /* ────────────────────────────────────────────────────────────────────────── */
   return (
-    <Card className="shadow-sm border-0 mt-4" style={{ maxWidth: 720, margin: "0 auto" }}>
+    <Card
+      className="shadow-sm border-0 mt-4"
+      style={{ maxWidth: 720, margin: "0 auto" }}
+    >
       <Card.Body className="p-md-5 p-4">
         <h4 className="mb-4 fw-semibold d-flex align-items-center gap-2">
           <FaLink /> Application Link Generator
@@ -128,17 +148,7 @@ export default function ApplicationLinkBox() {
           </div>
         ) : (
           <Form onSubmit={handleSubmit} className="gy-3">
-            {/* URL */}
-            <Form.Group className="mb-3">
-              <Form.Label>Application URL</Form.Label>
-              <Form.Control
-                type="text"
-                value={form.url}
-                onChange={handleChange("url")}
-                placeholder="https://your-site/apply/..."
-                required
-              />
-            </Form.Group>
+            {/* Removed URL input field */}
 
             {/* Distinction */}
             <Form.Group className="mb-3">
@@ -185,7 +195,9 @@ export default function ApplicationLinkBox() {
                   type="number"
                   min="1"
                   value={form.number_remaining_applicants_to_limit}
-                  onChange={handleChange("number_remaining_applicants_to_limit")}
+                  onChange={handleChange(
+                    "number_remaining_applicants_to_limit"
+                  )}
                   required
                 />
               </Form.Group>
@@ -200,7 +212,12 @@ export default function ApplicationLinkBox() {
             </Row>
 
             {/* Submit */}
-            <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-100"
+              disabled={loading}
+            >
               {loading ? "Generating…" : "Generate Link"}
             </Button>
           </Form>
@@ -228,7 +245,11 @@ export default function ApplicationLinkBox() {
 
       {/* Toast */}
       <ToastContainer position="top-end" className="p-3">
-        <Toast show={toast.show} bg={toast.variant} onClose={() => setToast({ ...toast, show: false })}>
+        <Toast
+          show={toast.show}
+          bg={toast.variant}
+          onClose={() => setToast({ ...toast, show: false })}
+        >
           <Toast.Body className="text-white small">{toast.message}</Toast.Body>
         </Toast>
       </ToastContainer>
