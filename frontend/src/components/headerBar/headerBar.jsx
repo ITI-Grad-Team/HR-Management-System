@@ -2,6 +2,9 @@ import React from 'react';
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch, FaRegBell } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
+import { useAuth } from '../../context/AuthContext';
+
+
 
 const pageTitles = {
   "/dashboard/home": "Dashboard",
@@ -13,6 +16,9 @@ const pageTitles = {
 };
 
 export default function HeaderBar() {
+  const { user } = useAuth();
+  console.log("Context user:", user);
+
   const location = useLocation();
   const title = pageTitles[location.pathname] || "Dashboard";
   return (
@@ -34,10 +40,16 @@ export default function HeaderBar() {
         </Button>
 
         <img
-          src="https://i.pravatar.cc/32"
-          alt="avatar"
-          className="rounded-circle"
-        />
+  src={
+    user?.basicinfo?.profile_image
+      ? `${import.meta.env.VITE_IMAGES_BASE_URL}${user.basicinfo.profile_image}`
+      : "https://i.pravatar.cc/36"
+  }
+  alt="avatar"
+  className="rounded-circle"
+  style={{ width: "36px", height: "36px", objectFit: "cover" }}
+/>
+
       </div>
     </div>
   );

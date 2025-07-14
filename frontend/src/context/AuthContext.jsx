@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         setUser({
           username: data.user.username,
           role: data.role,
+          basicinfo: data.basicinfo,
         });
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -46,8 +47,8 @@ export const AuthProvider = ({ children }) => {
 
 
 
-const login = ({ username, role }) => {
-    setUser({ username, role });
+const login = ({ username, role, basicinfo }) => {
+    setUser({ username, role, basicinfo });
   };
 
 
@@ -60,7 +61,7 @@ const login = ({ username, role }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role: user?.role, login, logout }}>
+    <AuthContext.Provider value={{ user, role: user?.role, basicinfo: user?.basicinfo, login, logout }}>
       {!loading && children}
     </AuthContext.Provider>
   );
