@@ -56,6 +56,20 @@ class EmployeeSerializer(serializers.ModelSerializer):
         source="interviewquestion_set", many=True, read_only=True
     )
 
+    # Display names instead of IDs for related fields
+    position = serializers.StringRelatedField()
+    region = serializers.StringRelatedField()
+    highest_education_degree = serializers.StringRelatedField()
+    highest_education_field = serializers.StringRelatedField()
+    
+    # For ManyToMany fields (skills)
+    skills = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field='name'
+    )
+
+    # Computed fields
     avg_task_ratings = serializers.FloatField(read_only=True)
     avg_time_remaining_before_deadline = serializers.FloatField(read_only=True)
     avg_overtime_hours = serializers.FloatField(read_only=True)
@@ -65,7 +79,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = "__all__"
-
 
 class HRSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
