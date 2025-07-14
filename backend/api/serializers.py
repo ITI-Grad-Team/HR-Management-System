@@ -81,25 +81,31 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class HRSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     user = UserSerializer(read_only=True)
     basicinfo = BasicInfoSerializer(read_only=True, source="user.basicinfo")
-
-    accepted_employees_avg_task_rating = serializers.FloatField(
-        allow_null=True, required=False
-    )
-    accepted_employees_avg_time_remaining = serializers.FloatField(
-        allow_null=True, required=False
-    )
-    accepted_employees_avg_lateness_hrs = serializers.FloatField(
-        allow_null=True, required=False
-    )
-    accepted_employees_avg_absence_days = serializers.FloatField(
-        allow_null=True, required=False
-    )
-
+    accepted_employees_count = serializers.IntegerField(read_only=True)
+    
     class Meta:
         model = HR
-        fields = "__all__"
+        fields = ['id',
+            'user',
+            'basicinfo',
+            'accepted_employees_avg_task_rating',
+            'accepted_employees_avg_time_remaining',
+            'accepted_employees_avg_lateness_hrs',
+            'accepted_employees_avg_absence_days',
+            'accepted_employees_avg_salary',
+            'accepted_employees_avg_overtime',
+            'accepted_employees_avg_interviewer_rating',
+            'interviewer_rating_to_task_rating_correlation',
+            'interviewer_rating_to_time_remaining_correlation',
+            'interviewer_rating_to_lateness_hrs_correlation',
+            'interviewer_rating_to_absence_days_correlation',
+            'interviewer_rating_to_avg_overtime_correlation',
+            'accepted_employees_count',
+        ]
+        read_only_fields = fields
 
 
 class ApplicationLinkSerializer(serializers.ModelSerializer):
@@ -471,3 +477,12 @@ class CompanyStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyStatistics
         fields = '__all__'
+
+class HRListSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    basicinfo = BasicInfoSerializer(source='user.basicinfo', read_only=True)
+
+    class Meta:
+        model = HR
+        fields = ['id', 'user', 'basicinfo']
+

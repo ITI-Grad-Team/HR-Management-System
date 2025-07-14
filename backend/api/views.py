@@ -16,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from collections import defaultdict
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -48,7 +47,7 @@ from .serializers import (
     SkillSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
-    FileSerializer,
+    HRListSerializer,
     PositionSerializer,
     EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
@@ -234,10 +233,14 @@ class AdminInviteHRViewSet(ModelViewSet):
 
 class AdminViewHRsViewSet(ModelViewSet):
     queryset = HR.objects.all()
-    serializer_class = HRSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [SearchFilter]
     search_fields = ["user__username", "user__email"]
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return HRListSerializer  
+        return HRSerializer
 
 
 class AdminViewUsersViewSet(ModelViewSet):
@@ -1513,3 +1516,42 @@ class AdminStatsViewSet(ModelViewSet):
             return Response(serializer.data)
         return Response({"detail": "No statistics available."}, status=404)
 
+class HRStatsViewSet(ModelViewSet):
+    """
+    Dedicated ViewSet for HR statistics calculations
+    Only allows HR users to calculate their own stats
+    """
+    queryset = HR.objects.all()
+    serializer_class = HRSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+
+    def get_queryset(self):
+        """HR users can only see their own profile"""
+        qs = super().get_queryset()
+        return qs.filter(user=self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='calculate-my-stats')
+    def calculate_my_stats(self, request):
+        """
+        Endpoint for HR users to recalculate their own statistics
+        POST /api/hr-stats/calculate-my-stats/
+        """
+        hr_profile = self.get_queryset().first()  # Gets the HR's own profile
+        
+        if not hr_profile:
+            return Response(
+                {"error": "HR profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        hr_profile.calculate_accepted_employees_stats()
+        
+        return Response(
+            {
+                "status": "success",
+                "message": "Your HR statistics have been recalculated",
+                "hr_id": hr_profile.id,
+                "user_id": request.user.id
+            },
+            status=status.HTTP_200_OK
+        )
