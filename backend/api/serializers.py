@@ -396,6 +396,11 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     skills = serializers.StringRelatedField(many=True)
     basic_info = BasicInfoSerializer(source='user.basicinfo')
 
+    avg_task_ratings = serializers.SerializerMethodField()
+    avg_time_remaining_before_deadline = serializers.SerializerMethodField()
+    avg_attendance_lateness_hrs = serializers.SerializerMethodField()
+    avg_absence_days = serializers.SerializerMethodField()
+
     class Meta:
         model = Employee
         fields = [
@@ -407,15 +412,27 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "highest_education_field",
             "years_of_experience",
             "percentage_of_matching_skills",
-            "avg_task_rating",
+            "avg_task_ratings",
             "avg_time_remaining_before_deadline",
             "avg_attendance_lateness_hrs",
             "avg_absence_days",
             "interview_state",
             "skills",
             "interview_datetime",
-            "basic_info",  # Include the basic info (name and image)
+            "basic_info",
         ]
+
+    def get_avg_task_ratings(self, obj):
+        return obj.avg_task_ratings
+
+    def get_avg_time_remaining_before_deadline(self, obj):
+        return obj.avg_time_remaining_before_deadline
+
+    def get_avg_attendance_lateness_hrs(self, obj):
+        return obj.avg_lateness_hours
+
+    def get_avg_absence_days(self, obj):
+        return obj.avg_absent_days
 
 
 
