@@ -5,7 +5,6 @@ import { lazy } from "react";
 import ProfileContainer from "./components/BioCard/ProfileContainer";
 import { Route, Router, Routes, Navigate } from "react-router-dom";
 import PrivateRoute from "./pages/PrivateRoute";
-import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack";
 import ApplicationPage from "./pages/public_application/ApplicationPage";
@@ -17,6 +16,9 @@ const RoleBasedDashboard = lazy(() =>
 );
 const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
+const EmployeeDetails = lazy(() =>
+  import("./pages/employeeDetails/EmployeeDetails")
+);
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
             <Route path="applications" element={<Applications />} />
           </Route>
         </Route>
+        <Route path="/employeeDetails/:id" element={<EmployeeDetails />} />
       </Routes>
     </Suspense>
   );

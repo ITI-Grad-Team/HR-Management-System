@@ -5,6 +5,7 @@ import { regions } from "../../lib/Regions.js";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
+import { Link } from "react-router-dom";
 
 const Directories = () => {
   const [employees, setEmployees] = useState([]);
@@ -102,17 +103,19 @@ const Directories = () => {
 
             {filteredEmployees.map((employee) => (
               <div key={employee.id}>
-                <BioCard
-                  name={employee.basic_info.username}
-                  role={employee.basic_info.role}
-                  email={employee.basic_info.email}
-                  phone={employee.basic_info.phone}
-                  avatar={employee.basic_info.profile_image || ""}
-                  department={employee.department}
-                  location={employee.region}
-                  bio={employee.bio}
-                  status={employee.status}
-                />
+                <Link to={`/employeeDetails/${employee.id}`}>
+                  <BioCard
+                    name={employee.basic_info.username}
+                    role={employee.basic_info.role}
+                    email={employee.basic_info.email}
+                    phone={employee.basic_info.phone}
+                    avatar={employee.basic_info.profile_image || ""}
+                    department={employee.department}
+                    location={employee.region}
+                    bio={employee.bio}
+                    status={employee.status}
+                  />
+                </Link>
               </div>
             ))}
           </div>

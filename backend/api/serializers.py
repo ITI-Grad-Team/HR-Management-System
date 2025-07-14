@@ -412,13 +412,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "highest_education_field",
             "years_of_experience",
             "percentage_of_matching_skills",
-<<<<<<< HEAD
-=======
             "avg_task_ratings",
             "avg_time_remaining_before_deadline",
             "avg_attendance_lateness_hrs",
             "avg_absence_days",
->>>>>>> people-filtering
             "interview_state",
             "skills",
             "interview_datetime",
