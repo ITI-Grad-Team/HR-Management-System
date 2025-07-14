@@ -358,3 +358,29 @@ class OnlineDayWeekday(models.Model):
     class Meta:
         verbose_name = "Weekly Online Day"
         verbose_name_plural = "Weekly Online Days"
+
+
+class CompanyStatistics(models.Model):
+    generated_at = models.DateTimeField(auto_now_add=True)
+    snapshot_date = models.DateField(auto_now_add=True)
+    
+    # Overall company stats
+    total_employees = models.IntegerField()
+    total_hrs = models.IntegerField()
+    
+    # Position-specific stats (stored as JSON)
+    position_stats = models.JSONField(default=dict)
+    
+    # Monthly salary totals (stored as JSON)
+    monthly_salary_totals = models.JSONField(default=list)
+    
+    # Overall averages
+    overall_avg_task_rating = models.FloatField(null=True)
+    overall_avg_time_remaining = models.FloatField(null=True)
+    overall_avg_overtime = models.FloatField(null=True)
+    overall_avg_lateness = models.FloatField(null=True)
+    overall_avg_absent_days = models.FloatField(null=True)
+    overall_avg_salary = models.FloatField(null=True)
+
+    def __str__(self):
+        return f"Company Stats - {self.snapshot_date}"

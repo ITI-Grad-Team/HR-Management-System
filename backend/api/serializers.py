@@ -23,7 +23,7 @@ from .models import (
     Task,
     File,
     Position,
-    Region,EducationDegree,EducationField
+    Region,EducationDegree,EducationField,CompanyStatistics
 )
 from .models import Employee, OnlineDayYearday, HolidayYearday, HolidayWeekday, OnlineDayWeekday
 from django.utils import timezone
@@ -431,3 +431,9 @@ class EducationFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationField
         fields = ['id', 'name']
+
+
+class CompanyStatisticsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyStatistics
+        fields = '__all__'
