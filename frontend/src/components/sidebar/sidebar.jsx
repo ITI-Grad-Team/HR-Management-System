@@ -69,14 +69,6 @@ export default function Sidebar() {
 
             <Nav.Link
               as={Link}
-              to="/dashboard/performance"
-              className={pathname === "/dashboard/performance" ? "active" : ""}
-            >
-              <FaChartBar /> Performance
-            </Nav.Link>
-
-            <Nav.Link
-              as={Link}
               to="/dashboard/applications"
               className={pathname === "/dashboard/applications" ? "active" : ""}
             >
@@ -95,14 +87,6 @@ export default function Sidebar() {
               className={pathname === "/dashboard/settings" ? "active" : ""}
             >
               <FaCog /> Settings
-            </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/help"
-              className={pathname === "/dashboard/help" ? "active" : ""}
-            >
-              <FaQuestionCircle /> Help Center
             </Nav.Link>
             <Nav.Link onClick={logout} className="text-danger mt-auto">
               <FaSignOutAlt /> Logout
@@ -144,13 +128,6 @@ export default function Sidebar() {
             </Nav.Link>
             <Nav.Link
               as={Link}
-              to="/dashboard/performance"
-              className={pathname === "/dashboard/performance" ? "active" : ""}
-            >
-              <FaChartBar /> Performance
-            </Nav.Link>
-            <Nav.Link
-              as={Link}
               to="/dashboard/applications"
               className={pathname === "/dashboard/applications" ? "active" : ""}
             >
@@ -169,14 +146,6 @@ export default function Sidebar() {
               className={pathname === "/dashboard/settings" ? "active" : ""}
             >
               <FaCog /> Settings
-            </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/help"
-              className={pathname === "/dashboard/help" ? "active" : ""}
-            >
-              <FaQuestionCircle /> Help Center
             </Nav.Link>
             <Nav.Link onClick={logout} className="text-danger mt-auto">
               <FaSignOutAlt /> Logout

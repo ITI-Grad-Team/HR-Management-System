@@ -13,7 +13,7 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 
-export default function AdminSettings() {
+export default function HrSettings() {
   /* ----------------------------- STATE -------------------------------- */
   const [positions, setPositions] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -40,11 +40,11 @@ export default function AdminSettings() {
     setLoading(true);
     try {
       const [posRes, skillRes, regionRes, degreeRes, eduRes] = await Promise.all([
-        axiosInstance.get("admin/positions/"),
-        axiosInstance.get("admin/skills/"),
-        axiosInstance.get("admin/regions/"),
-        axiosInstance.get("admin/degrees/"),
-        axiosInstance.get("admin/fields/"),
+        axiosInstance.get("hr/positions/"),
+        axiosInstance.get("hr/skills/"),
+        axiosInstance.get("hr/regions/"),
+        axiosInstance.get("hr/degrees/"),
+        axiosInstance.get("hr/fields/"),
       ]);
       setPositions(posRes.data.results);
       setSkills(skillRes.data.results);
@@ -90,17 +90,17 @@ export default function AdminSettings() {
   };
 
   /* --------------------------- HANDLERS ------------------------------- */
-  const handleAddPosition = createHandler("admin/positions/", setPositions, setNewPosition);
-  const handleAddSkill = createHandler("admin/skills/", setSkills, setNewSkill);
-  const handleAddRegion = createHandler("admin/regions/", setRegions, setNewRegion);
-  const handleAddDegree = createHandler("admin/degrees/", setDegrees, setNewDegree);
-  const handleAddEducation = createHandler("admin/fields/", setEducations, setNewEducation);
+  const handleAddPosition = createHandler("hr/positions/", setPositions, setNewPosition);
+  const handleAddSkill = createHandler("hr/skills/", setSkills, setNewSkill);
+  const handleAddRegion = createHandler("hr/regions/", setRegions, setNewRegion);
+  const handleAddDegree = createHandler("hr/degrees/", setDegrees, setNewDegree);
+  const handleAddEducation = createHandler("hr/fields/", setEducations, setNewEducation);
 
-  const handleRemovePosition = deleteHandler("admin/positions", setPositions);
-  const handleRemoveSkill = deleteHandler("admin/skills", setSkills);
-  const handleRemoveRegion = deleteHandler("admin/regions", setRegions);
-  const handleRemoveDegree = deleteHandler("admin/degrees", setDegrees);
-  const handleRemoveEducation = deleteHandler("admin/fields", setEducations);
+  const handleRemovePosition = deleteHandler("hr/positions", setPositions);
+  const handleRemoveSkill = deleteHandler("hr/skills", setSkills);
+  const handleRemoveRegion = deleteHandler("hr/regions", setRegions);
+  const handleRemoveDegree = deleteHandler("hr/degrees", setDegrees);
+  const handleRemoveEducation = deleteHandler("hr/fields", setEducations);
 
   /* --------------------------- RENDER --------------------------------- */
   if (loading) {
