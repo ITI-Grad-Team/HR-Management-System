@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 import datetime
-from django.db.models import Avg
+from django.db.models import Sum,Avg
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -139,7 +139,8 @@ class HR(models.Model):
     accepted_employees_avg_lateness_hrs = models.FloatField(null=True, blank=True)
     accepted_employees_avg_absence_days = models.FloatField(null=True, blank=True)
     accepted_employees_avg_salary = models.FloatField(null=True, blank=True)  
-    accepted_employees_avg_overtime = models.FloatField(null=True, blank=True)  
+    accepted_employees_avg_overtime = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_interviewer_rating = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"HR: {self.user.username}"
@@ -154,72 +155,49 @@ class HR(models.Model):
         return self.accepted_employees.count()
 
     def update_accepted_employees_stats(self):
-        """Updates all average fields for accepted employees"""
+        """Updates all average fields with precise field name matching and proper calculations"""
+        from django.db.models import Sum, Avg
+
         accepted = self.accepted_employees
         count = accepted.count()
-        
+
         if count == 0:
-            # Reset all averages if no employees
-            self.accepted_employees_avg_task_rating = 0
-            self.accepted_employees_avg_time_remaining = 0
-            self.accepted_employees_avg_lateness_hrs = 0
-            self.accepted_employees_avg_absence_days = 0
-            self.accepted_employees_avg_salary = 0
-            self.accepted_employees_avg_overtime = 0
+            # Reset all averages using exact model field names
+            self.accepted_employees_avg_task_rating = None
+            self.accepted_employees_avg_time_remaining = None
+            self.accepted_employees_avg_lateness_hrs = None
+            self.accepted_employees_avg_absence_days = None
+            self.accepted_employees_avg_salary = None
+            self.accepted_employees_avg_overtime = None
+            self.accepted_employees_avg_interviewer_rating = None
         else:
-            # Calculate proper averages
-            total_ratings = sum(e.total_task_ratings for e in accepted)
-            total_tasks = sum(e.number_of_accepted_tasks for e in accepted)
-            
-            self.accepted_employees_avg_task_rating = round(
-                (total_ratings / total_tasks) if total_tasks > 0 else 0, 2
+            # Single optimized query with correct field references
+            aggregates = accepted.aggregate(
+                total_ratings=Sum('total_task_ratings'),
+                total_tasks=Sum('number_of_accepted_tasks'),
+                total_time=Sum('total_time_remaining_before_deadline'),
+                total_lateness=Sum('total_lateness_hours'),
+                total_absence=Sum('total_absent_days'),
+                avg_salary=Avg('basic_salary'),
+                total_overtime=Sum('total_overtime_hours'),
+                total_days=Sum('number_of_non_holiday_days_since_join'),
+                avg_interviewer_rating=Avg('interviewer_rating') 
             )
-            self.accepted_employees_avg_time_remaining = round(
-                accepted.aggregate(avg=Avg('avg_time_remaining_before_deadline'))['avg'] or 0, 2
-            )
-            self.accepted_employees_avg_lateness_hrs = round(
-                accepted.aggregate(avg=Avg('avg_lateness_hours'))['avg'] or 0, 2
-            )
-            self.accepted_employees_avg_absence_days = round(
-                accepted.aggregate(avg=Avg('avg_absent_days'))['avg'] or 0, 2
-            )
-            self.accepted_employees_avg_salary = round(
-                accepted.aggregate(avg=Avg('basic_salary'))['avg'] or 0, 2
-            )
-            self.accepted_employees_avg_overtime = round(
-                accepted.aggregate(avg=Avg('avg_overtime_hours'))['avg'] or 0, 2
-            )
-        
+
+            # Calculate with proper null handling
+            total_tasks = aggregates.get('total_tasks') or 0
+            total_days = aggregates.get('total_days') or 0
+
+            # Set all fields using exact model field names
+            self.accepted_employees_avg_task_rating = round(aggregates['total_ratings'] / total_tasks, 2) if total_tasks > 0 else None
+            self.accepted_employees_avg_time_remaining = round(aggregates['total_time'] / total_tasks, 2) if total_tasks > 0 else None
+            self.accepted_employees_avg_lateness_hrs = round(aggregates['total_lateness'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_absence_days = round(aggregates['total_absence'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_salary = round(aggregates.get('avg_salary'), 2) if aggregates.get('avg_salary') is not None else None
+            self.accepted_employees_avg_overtime = round(aggregates['total_overtime'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_interviewer_rating = round(aggregates.get('avg_interviewer_rating'), 2) if aggregates.get('avg_interviewer_rating') is not None else None
+
         self.save()
-
-    @property
-    def accepted_employees_stats(self):
-        """Returns dictionary with all stats"""
-        accepted = self.accepted_employees
-        aggregates = accepted.aggregate(
-            avg_rating=Avg('total_task_ratings') / Avg('number_of_accepted_tasks'),  # Fixed calculation
-            avg_time=Avg('avg_time_remaining_before_deadline'),
-            avg_lateness=Avg('avg_lateness_hours'),
-            avg_absence=Avg('avg_absent_days'),
-            avg_salary=Avg('basic_salary'),
-            avg_overtime=Avg('avg_overtime_hours')
-        )
-        
-        return {
-            'count': self.accepted_employees_count,
-            'avg_task_rating': aggregates['avg_rating'],
-            'avg_time_remaining': aggregates['avg_time'],
-            'avg_lateness': aggregates['avg_lateness'],
-            'avg_absence': aggregates['avg_absence'],
-            'avg_salary': aggregates['avg_salary'],
-            'avg_overtime': aggregates['avg_overtime'],
-        }
-
-    def save(self, *args, **kwargs):
-        """Update stats when saving if needed"""
-        if self.pk:  # Only update if already exists
-            self.update_accepted_employees_stats()
-        super().save(*args, **kwargs)
 
 
 class Position(models.Model):
