@@ -24,7 +24,7 @@ from .views import (
     AdminManageEducationFieldsViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,
-    HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet
+    HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -73,7 +73,7 @@ router.register(
 router.register(
     r"hr/reject-employee", HRRejectEmployeeViewSet, basename="hr-reject-employee"
 )
-
+router.register(r'hr/statistics', HRStatsViewSet, basename='hr-statistics')
 
 
 

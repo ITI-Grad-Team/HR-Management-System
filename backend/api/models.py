@@ -2,6 +2,9 @@ from django.db import models
 from django.conf import settings
 import datetime
 from django.db.models import Sum,Avg
+from django.db.models.functions import Cast
+from django.db.models import FloatField
+import pandas as pd
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -141,9 +144,11 @@ class HR(models.Model):
     accepted_employees_avg_salary = models.FloatField(null=True, blank=True)  
     accepted_employees_avg_overtime = models.FloatField(null=True, blank=True)
     accepted_employees_avg_interviewer_rating = models.FloatField(null=True, blank=True)
-
-    def __str__(self):
-        return f"HR: {self.user.username}"
+    interviewer_rating_to_task_rating_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_time_remaining_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_lateness_hrs_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_absence_days_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_avg_overtime_correlation = models.FloatField(null=True, blank=True)
 
     @property
     def accepted_employees(self):
@@ -154,15 +159,16 @@ class HR(models.Model):
     def accepted_employees_count(self):
         return self.accepted_employees.count()
 
-    def update_accepted_employees_stats(self):
-        """Updates all average fields with precise field name matching and proper calculations"""
-        from django.db.models import Sum, Avg
+    def calculate_accepted_employees_stats(self):
+        """Updates all average and correlation fields"""
 
         accepted = self.accepted_employees
         count = accepted.count()
 
         if count == 0:
-            # Reset all averages using exact model field names
+            print('\n Found No Employees')
+
+            # Reset all fields
             self.accepted_employees_avg_task_rating = None
             self.accepted_employees_avg_time_remaining = None
             self.accepted_employees_avg_lateness_hrs = None
@@ -170,8 +176,16 @@ class HR(models.Model):
             self.accepted_employees_avg_salary = None
             self.accepted_employees_avg_overtime = None
             self.accepted_employees_avg_interviewer_rating = None
+            
+            # Reset correlation fields
+            self.interviewer_rating_to_task_rating_correlation = None
+            self.interviewer_rating_to_time_remaining_correlation = None
+            self.interviewer_rating_to_lateness_hrs_correlation = None
+            self.interviewer_rating_to_absence_days_correlation = None
+            self.interviewer_rating_to_avg_overtime_correlation = None
         else:
-            # Single optimized query with correct field references
+            print('\n Found Employees')
+            # Get all aggregates
             aggregates = accepted.aggregate(
                 total_ratings=Sum('total_task_ratings'),
                 total_tasks=Sum('number_of_accepted_tasks'),
@@ -181,14 +195,13 @@ class HR(models.Model):
                 avg_salary=Avg('basic_salary'),
                 total_overtime=Sum('total_overtime_hours'),
                 total_days=Sum('number_of_non_holiday_days_since_join'),
-                avg_interviewer_rating=Avg('interviewer_rating') 
+                avg_interviewer_rating=Avg('interviewer_rating')
             )
 
-            # Calculate with proper null handling
+            # Calculate averages
             total_tasks = aggregates.get('total_tasks') or 0
             total_days = aggregates.get('total_days') or 0
 
-            # Set all fields using exact model field names
             self.accepted_employees_avg_task_rating = round(aggregates['total_ratings'] / total_tasks, 2) if total_tasks > 0 else None
             self.accepted_employees_avg_time_remaining = round(aggregates['total_time'] / total_tasks, 2) if total_tasks > 0 else None
             self.accepted_employees_avg_lateness_hrs = round(aggregates['total_lateness'] / total_days, 2) if total_days > 0 else None
@@ -196,6 +209,55 @@ class HR(models.Model):
             self.accepted_employees_avg_salary = round(aggregates.get('avg_salary'), 2) if aggregates.get('avg_salary') is not None else None
             self.accepted_employees_avg_overtime = round(aggregates['total_overtime'] / total_days, 2) if total_days > 0 else None
             self.accepted_employees_avg_interviewer_rating = round(aggregates.get('avg_interviewer_rating'), 2) if aggregates.get('avg_interviewer_rating') is not None else None
+
+            # Task-based correlations (require tasks > 0)
+            task_based_qs = accepted.filter(
+                interviewer_rating__isnull=False,
+                number_of_accepted_tasks__gt=0,
+            )
+            print(f"→ Found Task-based eligible employees: {task_based_qs.count()}")
+
+            task_df = pd.DataFrame(list(task_based_qs.annotate(
+                task_rating=Cast('total_task_ratings', FloatField()) / Cast('number_of_accepted_tasks', FloatField()),
+                time_remaining=Cast('total_time_remaining_before_deadline', FloatField()) / Cast('number_of_accepted_tasks', FloatField())
+            ).values('interviewer_rating', 'task_rating', 'time_remaining')))
+
+            self.interviewer_rating_to_task_rating_correlation = (
+                round(task_df['interviewer_rating'].corr(task_df['task_rating']), 4)
+                if len(task_df) >= 2 else None
+            )
+            self.interviewer_rating_to_time_remaining_correlation = (
+                round(task_df['interviewer_rating'].corr(task_df['time_remaining']), 4)
+                if len(task_df) >= 2 else None
+            )
+
+            # Day-based correlations (require non-holiday days > 0)
+            day_based_qs = accepted.filter(
+                interviewer_rating__isnull=False,
+                number_of_non_holiday_days_since_join__gt=0,
+            )
+            print(f"→ Found Day-based eligible employees: {day_based_qs.count()}")
+
+
+            day_df = pd.DataFrame(list(day_based_qs.annotate(
+                lateness=Cast('total_lateness_hours', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField()),
+                absence=Cast('total_absent_days', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField()),
+                overtime=Cast('total_overtime_hours', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField())
+            ).values('interviewer_rating', 'lateness', 'absence', 'overtime')))
+
+            self.interviewer_rating_to_lateness_hrs_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['lateness']), 4)
+                if len(day_df) >= 2 else None
+            )
+            self.interviewer_rating_to_absence_days_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['absence']), 4)
+                if len(day_df) >= 2 else None
+            )
+            self.interviewer_rating_to_avg_overtime_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['overtime']), 4)
+                if len(day_df) >= 2 else None
+            )
+
 
         self.save()
 
