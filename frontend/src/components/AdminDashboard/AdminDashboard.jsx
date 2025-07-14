@@ -1,11 +1,11 @@
 import React from 'react'
-import Charts from '../Charts/Charts'
+import AdminStats from "../AdminStats/AdminStats";
 import TopTable from "../TopTable/TopTable";
 
 const AdminDashboard = () => {
   return (
     <>
-      <Charts />
+      <AdminStats />
       <TopTable />
     </>
   );

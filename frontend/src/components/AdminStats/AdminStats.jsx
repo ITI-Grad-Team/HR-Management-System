@@ -26,7 +26,7 @@ const pieColors = [
   "#D8B4FE", // Very Light Purple (purple-300)
 ];
 
-export default function Charts() {
+export default function AdminStats() {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
 
