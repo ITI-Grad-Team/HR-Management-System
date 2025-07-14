@@ -40,7 +40,12 @@ export default function Charts() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !snapshot) return <Spinner animation="border" />;
+  if (loading || !snapshot)
+    return (
+      <div className="text-center justify-content-center align-items-center">
+        <Spinner animation="border" />
+      </div>
+    );
 
   const positionStats = snapshot.position_stats || {};
 
