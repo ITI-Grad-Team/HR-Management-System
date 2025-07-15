@@ -1,20 +1,23 @@
-import React from "react";
 import { Suspense } from "react";
 import "./App.css";
 import { lazy } from "react";
 import ProfileContainer from "./components/BioCard/ProfileContainer";
-import { Route, Router, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import PrivateRoute from "./pages/PrivateRoute";
 import "react-loading-skeleton/dist/skeleton.css";
 import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack";
 import ApplicationPage from "./pages/public_application/ApplicationPage";
 import { ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));
-const RoleBasedDashboard = lazy(() => import("./components/RoleBasedDashBoard/RoleBasedDashBoard"));
-const CandidateDetails = lazy(() => import("./pages/CandidateDetails/CandidateDetails"));
+const RoleBasedDashboard = lazy(() =>
+  import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
+);
+const CandidateDetails = lazy(() =>
+  import("./pages/CandidateDetails/CandidateDetails")
+);
 
 const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
@@ -36,10 +39,7 @@ function App() {
             <Route path="profile" element={<ProfileContainer />} />
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
-            <Route
-              path="dashboard/employeeDetails/:id"
-              element={<EmployeeDetails />}
-            />
+            <Route path="employeeDetails/:id" element={<EmployeeDetails />} />
           </Route>
           <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>

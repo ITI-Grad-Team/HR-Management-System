@@ -15,12 +15,19 @@ const Directories = () => {
   const { role } = useAuth();
 
   useEffect(() => {
-    axiosInstance
-      .get("/admin/employees/?interview_state=accepted")
-      .then((res) => setEmployees(res.data.results))
-      .catch((err) => console.error(err));
+    role === "admin"
+      ? axiosInstance
+          .get("/admin/employees/?interview_state=accepted")
+          .then((res) => setEmployees(res.data.results))
+          .catch((err) => console.error(err))
+      : role === "hr"
+      ? axiosInstance
+          .get("/hr/employees/?interview_state=accepted")
+          .then((res) => setEmployees(res.data.results))
+          .catch((err) => console.error(err))
+      : "";
     console.log(employees);
-  }, [employees]);
+  }, [employees, role]);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesPosition = positionSelect
@@ -103,7 +110,7 @@ const Directories = () => {
 
             {filteredEmployees.map((employee) => (
               <div key={employee.id}>
-                <Link to={`/employeeDetails/${employee.id}`}>
+                <Link to={`/dashboard/employeeDetails/${employee.id}`}>
                   <BioCard
                     name={employee.basic_info.username}
                     role={employee.basic_info.role}

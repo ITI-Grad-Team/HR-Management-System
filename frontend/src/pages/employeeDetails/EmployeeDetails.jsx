@@ -3,16 +3,25 @@ import "./EmployeeDetails.css";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/config";
 import { Card, Col, Row } from "react-bootstrap";
+import { useAuth } from "../../context/AuthContext";
 
 const EmployeeDetails = () => {
+  const { role } = useAuth();
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
 
   useEffect(() => {
-    axiosInstance.get(`/admin/employees/${id}/`).then((response) => {
-      setEmployee(response.data);
-      console.log(employee);
-    });
+    role === "admin"
+      ? axiosInstance.get(`/admin/employees/${id}/`).then((response) => {
+          setEmployee(response.data);
+          console.log(employee);
+        })
+      : role === "hr"
+      ? axiosInstance.get(`/hr/employees/${id}/`).then((response) => {
+          setEmployee(response.data);
+          console.log(employee);
+        })
+      : "";
   });
 
   return (
