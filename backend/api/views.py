@@ -619,7 +619,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if employee.scheduling_interviewer and employee.scheduling_interviewer != hr:
             return Response(
                 {
-                    "detail": f"Interview already scheduled by {hr_name}, contact him for any scheduling updates"
+                    "detail": f"Interview already scheduled by {employee.scheduling_interviewer.user.basicinfo.username}, contact him for any scheduling updates"
                 },
                 status=400,
             )
