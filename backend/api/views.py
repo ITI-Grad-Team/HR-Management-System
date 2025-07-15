@@ -681,6 +681,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
             return Response({"detail": "Current user is not an HR."}, status=403)
 
         employee.interviewer = hr
+        employee.interview_state = "taken"
         employee.save()
 
         return Response({"detail": "Interviewee taken successfully."})
