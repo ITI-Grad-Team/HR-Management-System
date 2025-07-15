@@ -8,12 +8,14 @@ import PrivateRoute from "./pages/PrivateRoute";
 import "react-loading-skeleton/dist/skeleton.css";
 import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack";
 import ApplicationPage from "./pages/public_application/ApplicationPage";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));
-const RoleBasedDashboard = lazy(() =>
-  import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
-);
+const RoleBasedDashboard = lazy(() => import("./components/RoleBasedDashBoard/RoleBasedDashBoard"));
+const CandidateDetails = lazy(() => import("./pages/CandidateDetails/CandidateDetails"));
+
 const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
 const EmployeeDetails = lazy(() =>
@@ -39,8 +41,10 @@ function App() {
               element={<EmployeeDetails />}
             />
           </Route>
+          <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>
       </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
     </Suspense>
   );
 }
