@@ -15,21 +15,26 @@ const Directories = () => {
   const { role } = useAuth();
 
   useEffect(() => {
+    if (employees) return;
+
     role === "admin"
       ? axiosInstance
           .get("/admin/employees/?interview_state=accepted")
           .then((res) => setEmployees(res.data.results))
+          .then(localStorage.setItem("employees", JSON.stringify(employees)))
           .catch((err) => console.error(err))
       : role === "hr"
       ? axiosInstance
           .get("/hr/employees/?interview_state=accepted")
           .then((res) => setEmployees(res.data.results))
           .catch((err) => console.error(err))
+          .finally(localStorage.setItem("employees", JSON.stringify(employees)))
       : "";
     console.log(employees);
   }, [employees, role]);
-
-  const filteredEmployees = employees.filter((employee) => {
+  const filteredEmployees = JSON.parse(
+    localStorage.getItem("employees")
+  ).filter((employee) => {
     const matchesPosition = positionSelect
       ? employee.position === positionSelect
       : true;
