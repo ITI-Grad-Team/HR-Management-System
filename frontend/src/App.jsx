@@ -9,6 +9,8 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack";
 import ApplicationPage from "./pages/public_application/ApplicationPage";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));
@@ -36,6 +38,7 @@ function App() {
           <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>
       </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
     </Suspense>
   );
 }
