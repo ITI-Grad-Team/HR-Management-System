@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Spinner } from "react-bootstrap";
+import { Card, Row, Col, Spinner, Button } from "react-bootstrap";
 import {
   BarChart,
   Bar,
@@ -14,6 +14,7 @@ import axiosInstance from "../../api/config";
 const HRStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recalculating, setRecalculating] = useState(false);
 
   useEffect(() => {
     axiosInstance
@@ -22,6 +23,21 @@ const HRStats = () => {
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+  const recalculateStats = () => {
+    setRecalculating(true);
+    axiosInstance
+      .post("/hr/statistics/calculate-my-stats/")
+      .then(() => {
+        // Refresh data after recalculation
+        axiosInstance
+          .get("/view-self")
+          .then((res) => setStats(res.data.hr))
+          .catch((err) => console.error(err));
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setRecalculating(false));
+  };
 
   if (loading)
     return <Spinner animation="border" className="d-block mx-auto my-5" />;
@@ -106,7 +122,25 @@ const HRStats = () => {
 
   return (
     <div className="container-fluid py-4">
-      <h3 className="mb-4">Your hires stats</h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3>Your hires stats</h3>
+        <div className="text-end">
+          <Button
+            variant="primary"
+            onClick={recalculateStats}
+            disabled={recalculating}
+            className="mb-2"
+          >
+            {recalculating ? "Recalculating..." : "Recalculate My Stats"}
+          </Button>
+          {stats.last_stats_calculation_time && (
+            <div className="text-muted small">
+              Last at:{" "}
+              {new Date(stats.last_stats_calculation_time).toLocaleString()}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Key Metrics Row */}
       <Row className="g-4 mb-4">
@@ -165,7 +199,7 @@ const HRStats = () => {
                               : entry.value > 0
                               ? "#3B82F6" // Weak positive
                               : entry.value < -0.5
-                              ? "#EF4444" // Strong negative
+                              ? "#ef44a8ff" // Strong negative
                               : "#6366F1" // Weak negative
                           }
                         />
