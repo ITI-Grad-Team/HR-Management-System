@@ -244,12 +244,7 @@ export default function CandidateDetailsCard({ candidate, loggedInHrId, onTake, 
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}
         />
-        {percentage_of_matching_skills > 70 && (
-          <div className="position-absolute top-0 end-0 bg-success rounded-circle p-1" 
-               style={{ transform: 'translate(10%, -10%)' }}>
-            <FaCheck className="text-white" size={12} />
-          </div>
-        )}
+        
       </div>
       <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
       <p className="text-muted mb-2">{position}</p>
