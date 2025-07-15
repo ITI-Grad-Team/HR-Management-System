@@ -12,9 +12,9 @@ import ApplicationPage from "./pages/public_application/ApplicationPage";
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));
-const RoleBasedDashboard = lazy(() =>
-  import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
-);
+const RoleBasedDashboard = lazy(() => import("./components/RoleBasedDashBoard/RoleBasedDashBoard"));
+const CandidateDetails = lazy(() => import("./pages/CandidateDetails/CandidateDetails"));
+
 const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
 
@@ -33,6 +33,7 @@ function App() {
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
           </Route>
+          <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>
       </Routes>
     </Suspense>
