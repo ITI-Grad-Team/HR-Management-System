@@ -137,6 +137,7 @@ class BasicInfo(models.Model):
 
 
 class HR(models.Model):
+    rank = models.IntegerField(null=True, blank=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     accepted_employees_avg_task_rating = models.FloatField(null=True, blank=True)
     accepted_employees_avg_time_remaining = models.FloatField(null=True, blank=True)
@@ -356,6 +357,7 @@ class Employee(models.Model):
 
     number_of_non_holiday_days_since_join = models.IntegerField(default=0) #summed to at marking absence .. if yesterday is about any case other than holiday, increment this (some other place in the code)
     number_of_accepted_tasks = models.IntegerField(default=0) #summed to at task accept .. (some other place in the code)
+    rank = models.IntegerField(null=True, blank=True)
 
     @property
     def avg_task_ratings(self):
