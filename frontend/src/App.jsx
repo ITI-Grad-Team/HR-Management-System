@@ -34,9 +34,12 @@ function App() {
             <Route path="profile" element={<ProfileContainer />} />
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
+            <Route
+              path="dashboard/employeeDetails/:id"
+              element={<EmployeeDetails />}
+            />
           </Route>
         </Route>
-        <Route path="/employeeDetails/:id" element={<EmployeeDetails />} />
       </Routes>
     </Suspense>
   );
