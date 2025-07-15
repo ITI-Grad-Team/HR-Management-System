@@ -29,7 +29,7 @@ export default function CandidateDetails() {
 
     if (
       res.data.interviewer === user.hr?.id &&
-      res.data.interview_state === "taken"
+      (res.data.interview_state == "scheduled" || res.data.interview_state == "pending")
     ) {
       setShowForm(true);
     }

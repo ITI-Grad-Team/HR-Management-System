@@ -165,45 +165,44 @@ export default function CandidateDetailsCard({ candidate, loggedInHrId, onTake, 
           </Button>
         </>
       );
-    } else if (localState === "done" && interviewer !== loggedInHrId) {
-      return <span className="text-muted">Interview Completed</span>;
     }
 
-    if (localState === "pending" || !localState) {
-      return (
-        <>
-          <Button variant="outline-success" onClick={() => setShowScheduleModal(true)}>Schedule Interview</Button>
+    return (
+      <div className="d-flex gap-2">
+        {(!candidate.scheduling_interviewer || 
+          candidate.scheduling_interviewer === loggedInHrId) && candidate.interview_state !== "done" && (
+          <Button
+            variant="outline-success"
+            onClick={() => setShowScheduleModal(true)}
+          >
+            {candidate.scheduling_interviewer === loggedInHrId
+              ? "Re-Schedule Interview"
+              : "Schedule Interview"}
+          </Button>
+        )}
+        {/* Take Interview Button - Only show if scheduled but no interviewer assigned */}
+        {!candidate.interviewer && (
           <Button variant="success" onClick={onTake} disabled={loadingProp}>
-            <Spinner
-              as="span"
-              animation="border"
-              size="sm"
-              role="status"
-              aria-hidden="true"
-              style={{ display: loadingProp ? "inline-block" : "none" }}
-            />
-            <span style={{ display: loadingProp ? "none" : "inline-block" }}>
-              Take Interview
-            </span>
-            
-            </Button>
-        </>
-      );
-    }
-
-    if (localState === "scheduled" && interviewer !== loggedInHrId) {
-      return <Button variant="success" onClick={onTake}>Take Interview</Button>;
-    }
-
-    if (localState === "taken") {
-      return interviewer === loggedInHrId ? (
-        <span className="text-muted">You are conducting this interview.</span>
-      ) : (
-        <span className="text-muted">Interview in progress.</span>
-      );
-    }
-
-    return <span className="text-muted">Interview {localState}</span>;
+            {loadingProp ? (
+              <Spinner as="span" size="sm" animation="border" />
+            ) : (
+              "Take Interview"
+            )}
+          </Button>
+        )}
+        {/* Status Indicators */}
+        {candidate.scheduling_interviewer && (
+          <Badge bg="success" className="align-self-center">
+            Scheduled
+          </Badge>
+        )}
+        {candidate.interviewer && (
+          <Badge bg="success" className="align-self-center">
+            Taken
+          </Badge>
+        )}
+      </div>
+    );
   };
 
   const badgeVariant = {
@@ -343,12 +342,6 @@ export default function CandidateDetailsCard({ candidate, loggedInHrId, onTake, 
         </h6>
         <div className="d-flex gap-3 flex-wrap mb-3">
           {renderInterviewActions()}
-        </div>
-
-        <div className="d-flex align-items-center gap-3">
-          <p className="mb-0 fw-semibold text-muted">Status:</p>
-          {interview_state || "Not scheduled"}
-          
         </div>
       </div>
     </Col>
