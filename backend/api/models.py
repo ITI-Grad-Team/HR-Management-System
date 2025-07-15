@@ -5,6 +5,7 @@ from django.db.models import Sum,Avg
 from django.db.models.functions import Cast
 from django.db.models import FloatField
 import pandas as pd
+from django.utils import timezone
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -149,6 +150,7 @@ class HR(models.Model):
     interviewer_rating_to_lateness_hrs_correlation = models.FloatField(null=True, blank=True)
     interviewer_rating_to_absence_days_correlation = models.FloatField(null=True, blank=True)
     interviewer_rating_to_avg_overtime_correlation = models.FloatField(null=True, blank=True)
+    last_stats_calculation_time = models.DateTimeField(null=True, blank=True)
 
     @property
     def accepted_employees(self):
@@ -258,7 +260,7 @@ class HR(models.Model):
                 if len(day_df) >= 2 else None
             )
 
-
+        self.last_stats_calculation_time = timezone.now()
         self.save()
 
 

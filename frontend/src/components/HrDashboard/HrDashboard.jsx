@@ -1,12 +1,10 @@
 import React from "react";
-// import StatCards from '../statCards/statCards'
-// import CandidateCharts from '../CandidateCharts/CandidateCharts'
+import HRStats from "../HRStats/HRStats";
 
 const HrDashboard = () => {
   return (
     <>
-      {/* <StatCards />
-    <CandidateCharts /> */}
+      <HRStats />
     </>
   );
 };

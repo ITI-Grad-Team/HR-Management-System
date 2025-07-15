@@ -103,7 +103,7 @@ class HRSerializer(serializers.ModelSerializer):
             'interviewer_rating_to_lateness_hrs_correlation',
             'interviewer_rating_to_absence_days_correlation',
             'interviewer_rating_to_avg_overtime_correlation',
-            'accepted_employees_count',
+            'accepted_employees_count','last_stats_calculation_time'
         ]
         read_only_fields = fields
 
