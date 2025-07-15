@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Spinner } from "react-bootstrap";
+import { Card, Row, Col, Spinner, Button } from "react-bootstrap";
 import {
   BarChart,
   Bar,
@@ -12,7 +12,6 @@ import {
   Legend,
 } from "recharts";
 import axiosInstance from "../../api/config";
-
 const pieColors = [
   "rgb(13, 202, 240)", // Cyan
   "#A855F7", // Violet (purple-500)
@@ -29,6 +28,7 @@ const pieColors = [
 export default function AdminStats() {
   const [snapshot, setSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recalculating, setRecalculating] = useState(false);
 
   useEffect(() => {
     axiosInstance
@@ -39,6 +39,22 @@ export default function AdminStats() {
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+
+  const recalculateStats = () => {
+    setRecalculating(true);
+    axiosInstance
+      .post("/admin/company-statistics/")
+      .then(() => {
+        // Refresh the data after recalculation
+        axiosInstance
+          .get("/admin/company-statistics/latest/")
+          .then((res) => setSnapshot(res.data))
+          .catch((err) => console.error(err));
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setRecalculating(false));
+  };
 
   if (loading || !snapshot) return <Spinner animation="border" />;
 
@@ -124,7 +140,24 @@ export default function AdminStats() {
 
   return (
     <>
-      <h3 className="mb-4">Your company stats</h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3>Your company stats</h3>
+        <div className="text-end">
+          <Button
+            variant="primary"
+            onClick={recalculateStats}
+            disabled={recalculating}
+            className="mb-2"
+          >
+            {recalculating ? "Recalculating..." : "Recalculate Stats"}
+          </Button>
+          {snapshot.generated_at && (
+            <div className="text-muted small">
+              Last at: {new Date(snapshot.generated_at).toLocaleString()}
+            </div>
+          )}
+        </div>
+      </div>
       <Row className="g-3 mb-4">
         {[
           {
