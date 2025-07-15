@@ -129,57 +129,80 @@ export default function AdminStats() {
 
   return (
     <>
+      <h3 className="mb-4">Your company stats</h3>
       <Row className="g-3 mb-4">
         {[
           {
-            label: "Avg Task Rating",
+            title: "Number of Employees",
+            value: snapshot.total_employees,
+            description: "Total employees in you company",
+          },
+          {
+            title: "Number of HRs",
+            value: snapshot.total_hrs,
+            description: "Total HRs in you company",
+          },
+          {
+            title: "Avg Task Rating",
             value: snapshot.overall_avg_task_rating,
-            unit: "% / task",
+            unit: "% per task",
+            description: "Average task rating",
           },
           {
-            label: "Avg Hours Before Deadline",
+            title: "Avg Time Saved Before Task Deadline",
             value: snapshot.overall_avg_time_remaining,
-            unit: "hours / task",
+            unit: "hrs per task",
+            description: "Average time left at task submission",
           },
           {
-            label: "Avg Overtime Hours",
+            title: "Avg Overtime",
             value: snapshot.overall_avg_overtime,
-            unit: "hours / work day",
+            unit: "hrs per work day",
+            description: "Average overtime hours",
           },
           {
-            label: "Avg Lateness Hours",
+            title: "Avg Lateness",
             value: snapshot.overall_avg_lateness,
-            unit: "hours / work day",
+            unit: "hrs per work day",
+            description: "Average late hours",
           },
           {
-            label: "Avg Absence Days",
+            title: "Avg Absence",
             value: snapshot.overall_avg_absent_days,
-            unit: "days / work day",
+            unit: "days per work day",
+            description: "Average absence days",
           },
           {
-            label: "Avg Salary Amount",
+            title: "Avg Salary",
             value: snapshot.overall_avg_salary,
-            unit: "$ / employee",
+            unit: "$",
+            description: "Average employee salary",
           },
-        ].map((item, idx) => (
-          <Col key={idx} md={4} lg={2}>
-            <Card className="h-100 text-center shadow-sm">
-              <Card.Body className="p-2">
-                <small className="text-muted d-block mb-1">{item.label}</small>
-                <h5 className="mb-0" style={{ color: "#3B82F6" }}>
-                  {item.value?.toFixed(2) ?? "-"}
-                  <small
-                    className="text-muted d-block"
-                    style={{ fontSize: "0.85rem" }}
-                  >
-                    {item.unit}
-                  </small>
-                </h5>
+        ].map((metric, idx) => (
+          <Col key={idx} md={6} lg={3}>
+            <Card className="h-100 shadow-sm">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 className="text-muted mb-1">{metric.title}</h6>
+                    <h3 className="mb-0">
+                      {metric.value?.toFixed(metric.unit === "$" ? 2 : 1) ??
+                        "N/A"}
+                      {metric.unit && (
+                        <small className="text-muted ms-1">{metric.unit}</small>
+                      )}
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-muted small mt-2 mb-0">
+                  {metric.description}
+                </p>
               </Card.Body>
             </Card>
           </Col>
         ))}
       </Row>
+
       <Row className="g-4">
         <Col lg={12}>
           <Card className="shadow-sm">
@@ -220,7 +243,7 @@ export default function AdminStats() {
           4
         )}
         {renderPieCard(
-          "Avg Task Submission Speed (hrs remaining / task)",
+          "Avg Task Submission Timing (hrs remaining)",
           processPieData("avg_time_remaining"),
           5
         )}
