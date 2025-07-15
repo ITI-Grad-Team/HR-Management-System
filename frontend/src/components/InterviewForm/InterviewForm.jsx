@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Button, Spinner, Modal, Row, Col, InputGroup } from "react-bootstrap";
 import { toast } from "react-toastify";
 import axiosInstance from "../../api/config";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaQuestionCircle, FaStar, FaTrash } from "react-icons/fa";
 
 export default function InterviewForm({ candidateId, onSubmitted }) {
   const [questions, setQuestions] = useState([]);
@@ -127,70 +127,145 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
   };
 
   return (
-    <div className="mt-4">
-      <h6 className="fw-bold mb-3">Interview Questions</h6>
-      {questions.map((q, idx) => (
-        <Row key={idx} className="align-items-center g-2 mb-2">
-          <Col md={8}>
-            <Form.Control
-              placeholder="Question text"
-              value={q.text}
-              onChange={(e) => updateField(idx, "text", e.target.value)}
-            />
-          </Col>
-          <Col md={3}>
-            <InputGroup>
-              <Form.Control
-                type="number"
-                placeholder="Grade"
-                value={q.grade}
-                onChange={(e) => updateField(idx, "grade", e.target.value)}
-              />
-            </InputGroup>
-          </Col>
-          <Col md={1} className="text-end">
-            {questions.length > 1 && (
-              <Button variant="outline-danger" size="sm" onClick={() => removeQuestionField(idx)}>
-                <FaTrash />
-              </Button>
-            )}
-          </Col>
-        </Row>
-      ))}
-      <Button variant="outline-secondary" size="sm" onClick={addQuestionField} className="mb-3">
-        <FaPlus className="me-1" /> Add Question
-      </Button>
+    <div className="mt-4 p-4 rounded-3" style={{ backgroundColor: '#f8f9fa', border: '1px solid rgba(0,0,0,0.05)' }}>
+  <div className="d-flex justify-content-between align-items-center mb-4">
+    <h6 className="fw-bold mb-0 text-primary">
+      <FaQuestionCircle className="me-2" /> Interview Questions
+    </h6>
+    <Button 
+      variant="outline-primary" 
+      size="sm" 
+      onClick={addQuestionField}
+      className="rounded-pill"
+    >
+      <FaPlus className="me-1" /> Add Question
+    </Button>
+  </div>
 
-      <div className="text-end">
-        <Button onClick={handleSubmitQuestions} disabled={loading}>
-          {loading ? <Spinner size="sm" animation="border" /> : "Submit Questions"}
-        </Button>
-      </div>
-
-      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Rate Interview</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Average Questions Grade: <strong>{avgGrade}</strong></p>
-          <Form.Group>
-            <Form.Label>Interview Rating (0-100)</Form.Label>
+  <div className="mb-4">
+    {questions.map((q, idx) => (
+      <div 
+        key={idx} 
+        className="d-flex align-items-center gap-3 mb-3 p-3 rounded-3" 
+        style={{ 
+          backgroundColor: '#fff', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <div className="flex-grow-1">
+          <Form.Control
+            placeholder="Enter question text..."
+            value={q.text}
+            onChange={(e) => updateField(idx, "text", e.target.value)}
+            className="border-2 mb-2"
+            style={{ borderRadius: '8px' }}
+          />
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted small">Grade:</span>
             <Form.Control
               type="number"
-              min={0}
-              max={100}
-              value={rating}
-              onChange={(e) => setRating(e.target.value)}
+              placeholder="0-100"
+              value={q.grade}
+              onChange={(e) => updateField(idx, "grade", e.target.value)}
+              min="0"
+              max="100"
+              className="border-2"
+              style={{ width: '100px', borderRadius: '8px' }}
             />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRatingModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleSubmitRating} disabled={loading}>
-            {loading ? <Spinner size="sm" animation="border" /> : "Submit Rating"}
+          </div>
+        </div>
+        {questions.length > 1 && (
+          <Button 
+            variant="outline-danger" 
+            size="sm" 
+            onClick={() => removeQuestionField(idx)}
+            className="rounded-circle p-2"
+            style={{ width: '36px', height: '36px' }}
+          >
+            <FaTrash size={12} />
           </Button>
-        </Modal.Footer>
-      </Modal>
-    </div>
+        )}
+      </div>
+    ))}
+  </div>
+
+  <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+    <small className="text-muted">
+      {questions.length} question{questions.length !== 1 ? 's' : ''} added
+    </small>
+    <Button 
+      onClick={handleSubmitQuestions} 
+      disabled={loading}
+      variant="primary"
+      className="rounded-pill px-4"
+    >
+      {loading ? (
+        <>
+          <Spinner size="sm" animation="border" className="me-2" />
+          Submitting...
+        </>
+      ) : (
+        "Submit Questions"
+      )}
+    </Button>
+  </div>
+
+  {/* Rating Modal */}
+  <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
+    <Modal.Header closeButton className="border-0 pb-0">
+      <Modal.Title className="fw-bold">
+        <FaStar className="me-2 text-warning" /> Rate Interview
+      </Modal.Title>
+    </Modal.Header>
+    <Modal.Body className="pt-0">
+      <div className="alert alert-light mb-4">
+        <div className="d-flex justify-content-between">
+          <span>Average Questions Grade:</span>
+          <strong className={avgGrade > 70 ? 'text-success' : avgGrade > 50 ? 'text-warning' : 'text-danger'}>
+            {avgGrade}
+          </strong>
+        </div>
+      </div>
+      
+      <Form.Group className="mb-4">
+        <Form.Label className="fw-semibold text-muted">Final Interview Rating (0-100)</Form.Label>
+        <Form.Control
+          type="number"
+          min={0}
+          max={100}
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+          className="border-2 py-2"
+        />
+      </Form.Group>
+      
+      <div className="d-flex justify-content-end gap-3">
+        <Button 
+          variant="outline-secondary" 
+          onClick={() => setShowRatingModal(false)}
+          className="rounded-pill px-4"
+        >
+          Cancel
+        </Button>
+        <Button 
+          variant="primary" 
+          onClick={handleSubmitRating} 
+          disabled={loading}
+          className="rounded-pill px-4"
+        >
+          {loading ? (
+            <>
+              <Spinner size="sm" animation="border" className="me-2" />
+              Submitting
+            </>
+          ) : (
+            "Submit Rating"
+          )}
+        </Button>
+      </div>
+    </Modal.Body>
+  </Modal>
+</div>
   );
 }
