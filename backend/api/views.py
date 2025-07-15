@@ -1696,8 +1696,8 @@ class AdminViewTopViewSet(ModelViewSet):
             avg_absent = round(emp.total_absent_days / num_days, 2) if num_days else None
 
             result.append({
-                "username": emp.user.basicinfo.username,  # Assuming basicinfo holds the display username
                 "rank": emp.rank,
+                "username": emp.user.basicinfo.username,  # Assuming basicinfo holds the display username
                 "avg_task_rating": avg_task_rating,
                 "avg_time_remaining": avg_time_remaining,
                 "avg_overtime": avg_overtime,
@@ -1716,20 +1716,20 @@ class AdminViewTopViewSet(ModelViewSet):
         result = []
         for hr in top_hrs:
             result.append({
-                "username": hr.user.basicinfo.username,
                 "rank": hr.rank,
-                "accepted_employees_avg_task_rating": hr.accepted_employees_avg_task_rating,
-                "accepted_employees_avg_time_remaining": hr.accepted_employees_avg_time_remaining,
-                "accepted_employees_avg_lateness_hrs": hr.accepted_employees_avg_lateness_hrs,
-                "accepted_employees_avg_absence_days": hr.accepted_employees_avg_absence_days,
-                "accepted_employees_avg_salary": hr.accepted_employees_avg_salary,
-                "accepted_employees_avg_overtime": hr.accepted_employees_avg_overtime,
-                "accepted_employees_avg_interviewer_rating": hr.accepted_employees_avg_interviewer_rating,
-                "interviewer_rating_to_task_rating_correlation": hr.interviewer_rating_to_task_rating_correlation,
-                "interviewer_rating_to_time_remaining_correlation": hr.interviewer_rating_to_time_remaining_correlation,
-                "interviewer_rating_to_lateness_hrs_correlation": hr.interviewer_rating_to_lateness_hrs_correlation,
-                "interviewer_rating_to_absence_days_correlation": hr.interviewer_rating_to_absence_days_correlation,
-                "interviewer_rating_to_avg_overtime_correlation": hr.interviewer_rating_to_avg_overtime_correlation,
+                "username": hr.user.basicinfo.username,
+                "avg_task_rating": hr.accepted_employees_avg_task_rating,
+                "avg_time_remaining": hr.accepted_employees_avg_time_remaining,
+                "avg_lateness_hrs": hr.accepted_employees_avg_lateness_hrs,
+                "avg_absence_days": hr.accepted_employees_avg_absence_days,
+                "avg_salary": hr.accepted_employees_avg_salary,
+                "avg_overtime": hr.accepted_employees_avg_overtime,
+                "avg_interviewer_rating": hr.accepted_employees_avg_interviewer_rating,
+                "rating_to_task_rating_correlation": hr.interviewer_rating_to_task_rating_correlation,
+                "rating_to_time_remaining_correlation": hr.interviewer_rating_to_time_remaining_correlation,
+                "rating_to_lateness_hrs_correlation": hr.interviewer_rating_to_lateness_hrs_correlation,
+                "rating_to_absence_days_correlation": hr.interviewer_rating_to_absence_days_correlation,
+                "rating_to_avg_overtime_correlation": hr.interviewer_rating_to_avg_overtime_correlation,
             })
 
         return Response(result)
