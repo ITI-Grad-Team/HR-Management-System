@@ -7,6 +7,10 @@ import BioCard from "../../components/BioCard/BioCard.jsx";
 import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
 import Filters from "../../components/Filters/Filters.jsx";
 import Slider from "react-slick";
+import { FaSpinner } from "react-icons/fa";
+import { Spinner } from "react-bootstrap";
+import { toast } from "react-toastify";
+import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -24,6 +28,9 @@ const [candidateFilters, setCandidateFilters] = useState({
   region: "",
 });
 
+const [loading, setLoading] = useState(true);
+
+
 
 useEffect(() => {
   const fetchEmployees = async () => {
@@ -32,8 +39,8 @@ useEffect(() => {
         ? "/admin/employees/?interview_state=accepted"
         : "/hr/employees/?interview_state=accepted";
       const candidateEndpoint = role === "hr"
-        ? "/hr/employees/?interview_state=not_accepted"
-        : "/hr/employees/?interview_state=not_accepted";
+        ? "/hr/employees/?interview_state!=accepted"
+        : "/hr/employees/?interview_state!=accepted";
 
       const employeeRes = await axiosInstance.get(employeeEndpoint);
       setEmployees(employeeRes.data.results);
@@ -51,7 +58,12 @@ useEffect(() => {
       }
     } catch (err) {
       console.error(err);
+      toast.error("Failed to load employees");
+    } finally {
+      setLoading(false);
     }
+
+    
   };
 
   fetchEmployees();
@@ -94,9 +106,16 @@ useEffect(() => {
         }
       ]
     };
+    if (loading) {
+    return (
+
+        <EmployeesFallBack />
+
+    );
+  }
 
   return (
-    <div className="directories d-flex">
+     <div className="directories d-flex">
       <div
         className="flex-grow-1"
         style={{ backgroundColor: "#F8FAFC", minHeight: "100vh" }}
@@ -118,7 +137,7 @@ useEffect(() => {
                         role={hr.basic_info.role}
                         email={hr.basic_info.email}
                         phone={hr.basic_info.phone}
-                        avatar={hr.basic_info.profile_image || ""}
+                        avatar={hr.basic_info.profile_image || "/default.jpg"}
                         department={hr.department}
                         location={hr.region}
                         bio={hr.bio}
@@ -171,13 +190,13 @@ useEffect(() => {
                         <BioCard
                           name={employee.basic_info.username}
                           role={employee.basic_info.role}
-                          email={employee.basic_info.email}
+                          email={employee.user?.username}
                           phone={employee.basic_info.phone}
-                          avatar={employee.basic_info.profile_image || ""}
-                          department={employee.department}
+                          avatar={employee.basic_info.profile_image || "/default.jpg"}
+                          department={employee.position}
                           location={employee.region}
-                          bio={employee.bio}
-                          status={employee.status}
+                          {...employee.basic_info.role === "employee" && { experience: employee.years_of_experience }}
+                          {...(employee.basic_info.role === "employee" && employee.interview_state !== "accepted") && { status: employee.interview_state }}
                         />
                       </Link>
                     </div>
@@ -219,17 +238,18 @@ useEffect(() => {
                 <Slider {...sliderSettings}>
                   {filteredCandidates.map((candidate) => (
                     <div key={candidate.id}>
-                      <Link to={`/dashboard/candidateDetails/${candidate.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                      <Link to={`/candidates/${candidate.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                         <BioCard
                           name={candidate.basic_info.username}
                           role={candidate.basic_info.role}
-                          email={candidate.basic_info.email}
+                          email={candidate.username}
                           phone={candidate.basic_info.phone}
-                          avatar={candidate.basic_info.profile_image || ""}
-                          department={candidate.department}
+                          avatar={candidate.basic_info.profile_image || "/default.jpg"}
+                          department={candidate.position}
                           location={candidate.region}
-                          bio={candidate.bio}
-                          status={candidate.status}
+                          education={candidate.highest_education_field}
+                          {...candidate.basic_info.role === "employee" && { experience: candidate.years_of_experience }}
+                          {...(candidate.basic_info.role === "employee" && candidate.interview_state !== "accepted") && { status: candidate.interview_state }}
                         />
                       </Link>
                     </div>

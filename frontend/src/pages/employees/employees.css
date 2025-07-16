@@ -63,10 +63,6 @@
   align-items: center;
   gap: 0.5rem;
 }
-.slider-wrapper {
-  margin: 2rem 0;
-  padding: 0 2rem;
-}
 
 .slider-container {
   max-width: 1200px;
@@ -82,7 +78,6 @@
 }
 .slider-wrapper,
 .profile-container {
-  padding: 10px 40px;
   display: flex;
   justify-content: left;
   flex-wrap: wrap;
