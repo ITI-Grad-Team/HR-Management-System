@@ -1,5 +1,13 @@
 import React from "react";
 import "./BioCard.css";
+import {
+  FaEnvelope,
+  FaPhone,
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaGraduationCap,
+  FaThumbtack,
+} from "react-icons/fa";
 
 export default function BioCard({
   name,
@@ -9,48 +17,53 @@ export default function BioCard({
   avatar,
   department,
   location,
-  bio,
+  education,
   status,
+  experience,
 }) {
   return (
-    <div className="bio-card" onClick={() => console.log('Clicked')}>
-      <div className="bio-card-image">
-        <img src={avatar || "https://via.placeholder.com/180x180?text=No+Image"} alt={name} />
+    <div className="bio-card">
+      <div className="bio-card-header">
+        <div className="bio-card-avatar">
+          <img src={avatar || "/default-avatar.png"} alt="avatar" />
+        </div>
+        <div className="bio-card-name-section">
+          <h2 className="bio-card-name">{name}</h2>
+          <p className="bio-card-role">{department}</p>
+          
+        </div>
+        
       </div>
 
-      <div className="bio-card-content">
-        <h3>{name}</h3>
-        <p className="role">{role}</p>
-
-        <div className="info">
-          {email && (
-            <p className="email">
-              <span>{email}</span>
-            </p>
-          )}
-          {phone && (
-            <p className="phone">
-              <span>{phone}</span>
-            </p>
-          )}
-          {department && (
-            <p className="department">
-              <span>{department}</span>
-            </p>
-          )}
-          {location && (
-            <p className="location">
-              <span>{location}</span>
-            </p>
-          )}
-          {status && (
-            <p className="status">
-              <span>{status}</span>
-            </p>
-          )}
+       <div className="bio-card-info-item">
+          <FaEnvelope className="bio-card-info-icon" />
+          <span className="bio-card-email-text">{email || "N/A"}</span>
         </div>
 
-        {bio && <p className="bio">{bio}</p>}
+      <div className="bio-card-info-grid">
+       
+        <div className="bio-card-info-item">
+          <FaPhone className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{phone || "N/A"}</span>
+        </div>
+        <div className="bio-card-info-item">
+          <FaMapMarkerAlt className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{location || "N/A"}</span>
+        </div>
+        <div className="bio-card-info-item">
+          <FaGraduationCap className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{education || "N/A"}</span>
+        </div>
+        {status && (
+          <div className="bio-card-info-item">
+            <FaThumbtack className="bio-card-info-icon" />
+            <span className="bio-card-info-text">{status}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="bio-card-footer">
+        <strong>Years of Experience:</strong> {experience}
       </div>
     </div>
   );

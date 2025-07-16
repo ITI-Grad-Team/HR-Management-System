@@ -7,6 +7,9 @@ import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
 import Filters from "../../components/Filters/Filters.jsx";
 import Slider from "react-slick";
 const Employees = () => {
+import { Link } from "react-router-dom";
+
+const Directories = () => {
   const [employees, setEmployees] = useState([]);
   const [positionSelect, setPositionSelect] = useState("");
   const [regionSelect, setRegionSelect] = useState("");
@@ -21,6 +24,26 @@ const Employees = () => {
   }, []);
 
   const filteredEmployees = employees.filter((employee) => {
+    if (employees) return;
+
+    role === "admin"
+      ? axiosInstance
+          .get("/admin/employees/?interview_state=accepted")
+          .then((res) => setEmployees(res.data.results))
+          .then(localStorage.setItem("employees", JSON.stringify(employees)))
+          .catch((err) => console.error(err))
+      : role === "hr"
+      ? axiosInstance
+          .get("/hr/employees/?interview_state=accepted")
+          .then((res) => setEmployees(res.data.results))
+          .catch((err) => console.error(err))
+          .finally(localStorage.setItem("employees", JSON.stringify(employees)))
+      : "";
+    console.log(employees);
+  }, [employees, role]);
+  const filteredEmployees = JSON.parse(
+    localStorage.getItem("employees")
+  ).filter((employee) => {
     const matchesPosition = positionSelect
       ? employee.position === positionSelect
       : true;
@@ -129,6 +152,72 @@ export default Employees;
 
 /*   {/* Candidates Section *//*}*/
       /*  {/* <div className="section">
+        <div className="section">
+          <div className="section-heading filters">
+            <h2>Employees</h2>
+
+            <div className="filter-controls">
+              <span>Filters : </span>
+
+              <div className="position-select">
+                <select onChange={(e) => setPositionSelect(e.target.value)}>
+                  <option value="">Position</option>
+                  {positions.map((position) => (
+                    <option key={position.id} value={position.name}>
+                      {position.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="region-select">
+                <select onChange={(e) => setRegionSelect(e.target.value)}>
+                  <option value="">Region</option>
+                  {regions.map((region) => (
+                    <option key={region.id} value={region.name}>
+                      {region.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="is-coordinator">
+                <label htmlFor="">Is Coordinator</label>
+                <input
+                  type="checkbox"
+                  checked={isCoordinatorValue}
+                  onChange={() => setIsCoordinatorValue(!isCoordinatorValue)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="card-grid">
+            {/* Employee cards go here */}
+            <div className="card-placeholder">Employee Card</div>
+
+            {filteredEmployees.map((employee) => (
+              <div key={employee.id}>
+                <Link to={`/dashboard/employeeDetails/${employee.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                  <BioCard
+                    name={employee.basic_info.username}
+                    email={employee.user?.username}
+                    phone={employee.basic_info.phone}
+                    avatar={employee.basic_info.profile_image || ""}
+                    department={employee.position}
+                    location={employee.region}
+                    education={employee.highest_education_field}
+                    {...employee.basic_info.role === "employee" && { experience: employee.years_of_experience }}
+                    {...employee.basic_info.role === "employee" && employee.interview_state !== "accepted" && { status: employee.interview_state }}
+                  />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Candidates Section */}
+        {/* <div className="section">
           <div className="section-heading">
             <h2>Candidates</h2>
           </div>

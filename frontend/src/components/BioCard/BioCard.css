@@ -1,88 +1,114 @@
 .bio-card {
   width: 100%;
-  max-width: 300px;         /* Slightly wider */
-  min-height: 100%;          /* Make card stretch to container */
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  cursor: pointer;
+  max-width: 280px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  margin: auto;
+  justify-content: space-between;
+  height: 100%;
+  transition: transform 0.2s ease-in-out;
 }
 .bio-card:hover {
-  transform: translateY(-6px) scale(1.03);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
 }
 
+.bio-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
 
-.bio-card-image {
-  width: 100%;
-  height: 180px;
+.bio-card-avatar {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 50%;
   overflow: hidden;
+  margin-right: 12px;
+  border: 1px solid #ddd;
 }
 
-.bio-card-image img {
+.bio-card-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.bio-card-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex-grow: 1;
+.bio-card-name-section {
+  flex: 1;
+  min-width: 0;
 }
 
-.bio-card-content h3 {
-  font-size: 1.2rem;
+.bio-card-name {
+  font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: #333;
   margin: 0;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.bio-card-content .role {
-  font-size: 0.9rem;
-  color: #3b82f6;
-  font-weight: 500;
+.bio-card-role {
+  font-size: 0.8rem;
+  color: #777;
+  text-transform: capitalize;
 }
 
-.bio-card-content .info p {
-  font-size: 0.85rem;
-  color: #4b5563;
+.bio-card-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 8px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.bio-card-info-item {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-}
-
-.bio-card-content .info p::before {
-  font-size: 1rem;
-  color: #6b7280;
-}
-
-.bio-card-content .info p.phone::before { content: "📞"; }
-.bio-card-content .info p.email::before { content: "📧"; }
-.bio-card-content .info p.department::before { content: "🏢"; }
-.bio-card-content .info p.location::before { content: "📍"; }
-.bio-card-content .info p.status::before { content: "📊"; }
-
-.bio-card-content .bio {
   font-size: 0.8rem;
-  color: #6b7280;
-  line-height: 1.5;
-  margin-top: auto;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  color: #555;
+}
+
+.bio-card-info-text {
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: justify;
+  white-space: nowrap;
+  display: block;
+  max-width: 160px;
 }
+
+.bio-card-email-text{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 180px;
+}
+
+.bio-card-info-icon {
+  margin-right: 6px;
+  font-size: 1rem;
+  color: #3b82f6;
+}
+
+.bio-card-footer {
+  font-size: 0.85rem;
+  color: #444;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.bio-card a,
+.bio-card a:visited,
+.bio-card a:hover,
+.bio-card a:focus,
+.bio-card a:active {
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
