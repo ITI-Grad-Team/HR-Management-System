@@ -38,9 +38,55 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class BasicInfoSerializer(serializers.ModelSerializer):
+    profile_image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+        max_length=None
+    )
+    username = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=150
+    )
+    phone = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        max_length=15
+    )
+
     class Meta:
         model = BasicInfo
-        fields = "__all__"
+        fields = ['profile_image', 'phone', 'role', 'username']
+        extra_kwargs = {
+            'role': {'read_only': True}  # Keep role read-only if it shouldn't be changed
+        }
+
+    def validate_username(self, value):
+        """Ensure username is unique and valid when provided"""
+        if value and value != self.instance.username:
+            if BasicInfo.objects.filter(username__iexact=value).exists():
+                raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_phone(self, value):
+        """Add phone number validation if needed"""
+        if value:
+            # Add any phone number format validation here
+            value = value.strip()
+        return value
+
+    def update(self, instance, validated_data):
+        """Handle profile image updates efficiently"""
+        profile_image = validated_data.pop('profile_image', None)
+        
+        # Delete old image if new one is provided or if null is explicitly set
+        if profile_image is not None:
+            if instance.profile_image and instance.profile_image.name != 'profile_images/default.jpg':
+                instance.profile_image.delete(save=False)
+            instance.profile_image = profile_image
+        
+        return super().update(instance, validated_data)
 
 
 class InterviewQuestionSerializer(serializers.ModelSerializer):
@@ -407,18 +453,10 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
         ]
 
 class EmployeeListSerializer(serializers.ModelSerializer):
-    position = serializers.StringRelatedField()
-    region = serializers.StringRelatedField()
-    highest_education_degree = serializers.StringRelatedField()
-    highest_education_field = serializers.StringRelatedField()
-    skills = serializers.StringRelatedField(many=True)
+    position = serializers.CharField(source='position.name', read_only=True) 
+    region = serializers.CharField(source='region.name', read_only=True)
     user = UserSerializer(read_only=True)
-    basic_info = BasicInfoSerializer(source='user.basicinfo')
-
-    avg_task_ratings = serializers.SerializerMethodField()
-    avg_time_remaining_before_deadline = serializers.SerializerMethodField()
-    avg_attendance_lateness_hrs = serializers.SerializerMethodField()
-    avg_absence_days = serializers.SerializerMethodField()
+    basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
 
     class Meta:
         model = Employee
@@ -427,32 +465,12 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "position",
             "region",
             "is_coordinator",
-            "highest_education_degree",
-            "highest_education_field",
-            "years_of_experience",
-            "percentage_of_matching_skills",
-            "avg_task_ratings",
-            "avg_time_remaining_before_deadline",
-            "avg_attendance_lateness_hrs",
-            "avg_absence_days",
-            "interview_state",
             "interview_datetime",
-            "skills",
             "user",         
             "basic_info",  
         ]
 
-    def get_avg_task_ratings(self, obj):
-        return obj.avg_task_ratings
 
-    def get_avg_time_remaining_before_deadline(self, obj):
-        return obj.avg_time_remaining_before_deadline
-
-    def get_avg_attendance_lateness_hrs(self, obj):
-        return obj.avg_lateness_hours
-
-    def get_avg_absence_days(self, obj):
-        return obj.avg_absent_days
 
 
 class RegionSerializer(serializers.ModelSerializer):
