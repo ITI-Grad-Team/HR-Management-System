@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import "./App.css";
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 import { lazy } from "react";
-import ProfileContainer from "./components/BioCard/ProfileContainer";
 import { Route, Routes, Navigate } from "react-router-dom";
 import PrivateRoute from "./pages/PrivateRoute";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -36,7 +37,6 @@ function App() {
             <Route index element={<Navigate to="home" />} />
             <Route path="home" element={<RoleBasedDashboard />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="profile" element={<ProfileContainer />} />
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
             <Route path="employeeDetails/:id" element={<EmployeeDetails />} />

@@ -1,298 +1,71 @@
 .bio-card {
+  width: 100%;
+  max-width: 280px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 24px;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  padding: 32px;
-  max-width: 420px;
-  min-height: 280px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  align-items: center; 
+  text-align: center; 
+  height: 100%;
+  margin: 0 auto;  
 }
-
-.bio-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-  border-radius: 24px 24px 0 0;
+.bio-card-name-section {
+  width: 100%;
+  text-align: center;
+  padding: 0 10px;  
 }
-
-.bio-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
 .bio-card-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 24px;
-  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 .bio-card-avatar {
-  position: relative;
-  margin-right: 20px;
-}
-
-.bio-card-avatar img {
-  width: 80px;
-  height: 80px;
-  border-radius: 20px;
-  object-fit: cover;
-  border: 3px solid #ffffff;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: transform 0.3s ease;
-}
-
-.bio-card-avatar img:hover {
-  transform: scale(1.05);
-}
-
-.bio-card-avatar::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
-  border-radius: 22px;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.bio-card-avatar:hover::after {
-  opacity: 1;
-}
-
-.bio-card-name-section {
-  flex: 1;
-}
-
-.bio-card-name {
-  margin: 0 0 8px 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1.2;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.bio-card-role {
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin: 0;
-  padding: 6px 12px;
-  border-radius: 20px;
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.bio-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 12px; 
 }
 
 .bio-card-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 12px 8px;
+  width: 100%;
+  margin: 16px 0;
+  justify-items: center;  
 }
 
 .bio-card-info-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgba(248, 250, 252, 0.8);
-  border-radius: 12px;
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  transition: all 0.2s ease;
+  width: 100%;
 }
 
-.bio-card-info-item:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(59, 130, 246, 0.2);
-  transform: translateY(-1px);
+.bio-card-footer {
+  width: 100%;
+  text-align: center;
+  margin-top: auto; 
 }
 
-.bio-card-info-icon {
-  font-size: 1.1rem;
-  opacity: 0.7;
-  min-width: 20px;
-}
-
-.bio-card-info-text {
-  font-size: 0.875rem;
-  color: #475569;
-  font-weight: 500;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bio-card-department,
-.bio-card-location {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: rgba(241, 245, 249, 0.6);
-  border-radius: 8px;
-  border-left: 3px solid #3b82f6;
-}
-
-.bio-card-status {
-  font-size: 0.875rem;
+.bio-card-name {
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
-  border: 1px solid #fbbf24;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 0.75rem;
-}
-
-.bio-card-bio {
-  margin: 0;
-  padding: 16px;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-  border-radius: 12px;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-style: italic;
-  line-height: 1.5;
-  border-left: 4px solid #3b82f6;
-}
-
-/* Role-specific styling */
-.bio-card[data-role="HR"] .bio-card-role {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1e40af;
-}
-
-.bio-card[data-role="Employee"] .bio-card-role {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-}
-
-.bio-card[data-role="Admin"] .bio-card-role {
-  background: linear-gradient(135deg, #fecaca, #fca5a5);
-  color: #991b1b;
-}
-
-.bio-card[data-role="Candidate"] .bio-card-role {
-  background: linear-gradient(135deg, #fed7aa, #fdba74);
-  color: #92400e;
-}
-
-/* Loading spinner */
-.spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-  border-radius: 24px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(59, 130, 246, 0.1);
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive design */
-@media (max-width: 480px) {
-  .bio-card {
-    padding: 24px;
-    max-width: 100%;
-  }
-  
-  .bio-card-info-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+}@media (max-width: 768px) {
   .bio-card-name {
-    font-size: 1.5rem;
-  }
-  
-  .bio-card-avatar img {
-    width: 70px;
-    height: 70px;
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .bio-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-color: rgba(51, 65, 85, 0.8);
-    color: #f1f5f9;
-  }
-  
-  .bio-card-name {
-    color: #f8fafc;
-  }
-  
-  .bio-card-info-item {
-    background: rgba(51, 65, 85, 0.8);
-    border-color: rgba(71, 85, 105, 0.6);
-    color: #cbd5e1;
-  }
-  
-  .bio-card-info-text {
-    color: #cbd5e1;
-  }
-  
-  .bio-card-department,
-  .bio-card-location {
-    background: rgba(51, 65, 85, 0.6);
-    color: #94a3b8;
-  }
-  
-  .bio-card-bio {
-    background: linear-gradient(135deg, #334155, #475569);
-    color: #94a3b8;
+    font-size: 0.9rem;
   }
 }

@@ -1,20 +1,13 @@
 import React from "react";
 import "./BioCard.css";
-
-const roleStyles = {
-  HR: { color: "#2E86C1", icon: "👔" },
-  Employee: { color: "#27AE60", icon: "💼" },
-  Admin: { color: "#E74C3C", icon: "👑" },
-  Candidate: { color: "#F39C12", icon: "🎯" },
-};
-
-// Map backend role values to display names
-const roleDisplayMap = {
-  hr: "HR",
-  employee: "Employee",
-  admin: "Admin",
-  candidate: "Candidate",
-};
+import {
+  FaEnvelope,
+  FaPhone,
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaGraduationCap,
+  FaThumbtack,
+} from "react-icons/fa";
 
 export default function BioCard({
   name,
@@ -24,59 +17,61 @@ export default function BioCard({
   avatar,
   department,
   location,
-  bio,
-  status, // For Candidate
+  education,
+  status,
+  experience,
 }) {
-  // Map backend role to display role and get styles
-  const displayRole = roleDisplayMap[role?.toLowerCase()] || role;
-  const { color, icon } = roleStyles[displayRole] || roleStyles.Employee;
-
   return (
-    <div className="bio-card" data-role={displayRole}>
+    <div className="bio-card">
       <div className="bio-card-header">
         <div className="bio-card-avatar">
-          <img src={avatar || "/default-avatar.png"} alt={`${name}'s avatar`} />
+         <img 
+            src={avatar || "/default-avatar.png"} 
+            alt="avatar"
+            onError={(e) => {
+              e.target.src = "/default-avatar.png";
+              e.target.alt = "Default Avatar";
+            }}
+          />
         </div>
         <div className="bio-card-name-section">
-          <h2 className="bio-card-name">
-            {icon} {name}
+          <h2 className="bio-card-name" title={name}>
+            {name || "No Name Provided"}
           </h2>
-          <p className="bio-card-role">{displayRole}</p>
+          <p className="bio-card-role">{department || "Position Not Specified"}</p>
         </div>
+        
       </div>
 
-      <div className="bio-card-content">
-        <div className="bio-card-info-grid">
-          <div className="bio-card-info-item">
-            <span className="bio-card-info-icon">📧</span>
-            <p className="bio-card-info-text">{email}</p>
-          </div>
-          {phone && (
-            <div className="bio-card-info-item">
-              <span className="bio-card-info-icon">📞</span>
-              <p className="bio-card-info-text">{phone}</p>
-            </div>
-          )}
+       <div className="bio-card-info-item">
+          <FaEnvelope className="bio-card-info-icon" />
+          <span className="bio-card-email-text">{email || "N/A"}</span>
         </div>
 
-        {(department || location) && (
-          <div className="bio-card-info-grid">
-            {department && (
-              <div className="bio-card-department">
-                <span>🏢</span> {department}
-              </div>
-            )}
-            {location && (
-              <div className="bio-card-location">
-                <span>📍</span> {location}
-              </div>
-            )}
+      <div className="bio-card-info-grid">
+       
+        <div className="bio-card-info-item">
+          <FaPhone className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{phone || "N/A"}</span>
+        </div>
+        <div className="bio-card-info-item">
+          <FaMapMarkerAlt className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{location || "N/A"}</span>
+        </div>
+        <div className="bio-card-info-item">
+          <FaGraduationCap className="bio-card-info-icon" />
+          <span className="bio-card-info-text">{education || "N/A"}</span>
+        </div>
+        {status && (
+          <div className="bio-card-info-item">
+            <FaThumbtack className="bio-card-info-icon" />
+            <span className="bio-card-info-text">{status}</span>
           </div>
         )}
+      </div>
 
-        {status && <div className="bio-card-status">Status: {status}</div>}
-
-        {bio && <div className="bio-card-bio">{bio}</div>}
+      <div className="bio-card-footer">
+        <strong>Years of Experience:</strong> {experience}
       </div>
     </div>
   );
