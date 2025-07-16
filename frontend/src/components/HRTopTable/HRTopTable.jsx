@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Badge, Spinner, Accordion, Alert } from "react-bootstrap";
 import axiosInstance from "../../api/config";
+import HrAdminLowerFallback from "../DashboardFallBack/HrAdminLowerFallback";
 
 
 const formatHeader = (str) => {
@@ -74,7 +75,7 @@ export default function HRTopTable() {
 
       {loading ? (
         <div className="text-center my-5">
-          <Spinner animation="border" variant="primary" />
+          <HrAdminLowerFallback />
           <p className="mt-2">Loading employee data...</p>
         </div>
       ) : data.length === 0 ? (

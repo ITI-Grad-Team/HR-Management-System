@@ -26,10 +26,10 @@ export default function BioCard({
       <div className="bio-card-header">
         <div className="bio-card-avatar">
          <img 
-            src={avatar || "/default-avatar.png"} 
+            src={avatar || "/default.jpg"} 
             alt="avatar"
             onError={(e) => {
-              e.target.src = "/default-avatar.png";
+              e.target.src = "/default.jpg";
               e.target.alt = "Default Avatar";
             }}
           />

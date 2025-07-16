@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import axiosInstance from "../../api/config";
+import HrAdminUpperFallback from "../DashboardFallBack/HrAdminUpperFallback";
 
 const HRStats = () => {
   const [stats, setStats] = useState(null);
@@ -40,7 +41,7 @@ const HRStats = () => {
   };
 
   if (loading)
-    return <Spinner animation="border" className="d-block mx-auto my-5" />;
+    return <HrAdminUpperFallback />;
   if (!stats)
     return <div className="text-center my-5">No HR statistics available</div>;
 

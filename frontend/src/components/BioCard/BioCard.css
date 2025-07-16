@@ -1,71 +1,114 @@
 .bio-card {
   width: 100%;
-  max-width: 280px;
+  max-width: 300px;
   background: #fff;
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  text-align: center; 
+  justify-content: space-between;
   height: 100%;
-  margin: 0 auto;  
+  transition: transform 0.2s ease-in-out;
 }
-.bio-card-name-section {
-  width: 100%;
-  text-align: center;
-  padding: 0 10px;  
+
+.bio-card:hover {
+  transform: translateY(-4px);
 }
+
 .bio-card-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
   margin-bottom: 16px;
 }
 
 .bio-card-avatar {
   width: 50px;
   height: 50px;
+  flex-shrink: 0;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 12px; 
+  margin-right: 12px;
+  border: 1px solid #ddd;
 }
 
-.bio-card-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 8px;
+.bio-card-avatar img {
   width: 100%;
-  margin: 16px 0;
-  justify-items: center;  
+  height: 100%;
+  object-fit: cover;
 }
 
-.bio-card-info-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.bio-card-footer {
-  width: 100%;
-  text-align: center;
-  margin-top: auto; 
+.bio-card-name-section {
+  flex: 1;
+  min-width: 0;
 }
 
 .bio-card-name {
   font-size: 1rem;
   font-weight: 600;
+  color: #333;
   margin: 0;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  white-space: nowrap;
+}
+
+.bio-card-role {
+  font-size: 0.8rem;
+  color: #777;
+  text-transform: capitalize;
+}
+
+.bio-card-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 12px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.bio-card-info-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.bio-card-info-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   display: block;
-}@media (max-width: 768px) {
-  .bio-card-name {
-    font-size: 0.9rem;
-  }
+  max-width: 160px;
+}
+
+.bio-card-email-text{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 180px;
+}
+
+.bio-card-info-icon {
+  margin-right: 6px;
+  font-size: 1rem;
+  color: #3b82f6;
+}
+
+.bio-card-footer {
+  font-size: 0.85rem;
+  color: #444;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.bio-card a,
+.bio-card a:visited,
+.bio-card a:hover,
+.bio-card a:focus,
+.bio-card a:active {
+  text-decoration: none !important;
+  color: inherit !important;
 }
