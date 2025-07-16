@@ -2,7 +2,7 @@ import axios from "axios";
 
 const axiosInstance = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
-  timeout: 8000,
+  timeout: 20000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -43,6 +43,7 @@ axiosInstance.interceptors.response.use(
           "Authorization"
         ] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        window.dispatchEvent(new Event("tokenRefresh"));
         return axiosInstance(originalRequest);
       } catch (err) {
         console.error(

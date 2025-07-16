@@ -23,8 +23,8 @@ from .views import (
     AdminManageEducationDegreesViewSet,
     AdminManageEducationFieldsViewSet,
     HRManageRegionsViewSet,
-    HRManageEducationDegreesViewSet,
-    HRManageEducationFieldsViewSet,
+    HRManageEducationDegreesViewSet,AdminViewTopViewSet,
+    HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet,AdminRankViewSet
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -42,6 +42,7 @@ router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
 
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
+router.register(r'employees', EmployeePredictionViewSet, basename='employee')
 
 # Employee
 router.register(
@@ -72,7 +73,14 @@ router.register(
 router.register(
     r"hr/reject-employee", HRRejectEmployeeViewSet, basename="hr-reject-employee"
 )
+router.register(r'hr/statistics', HRStatsViewSet, basename='hr-statistics')
+from .views import HRViewTopInterviewedEmployeesViewSet
 
+router.register(
+    r'hr/top-interviewed-employees',
+    HRViewTopInterviewedEmployeesViewSet,
+    basename='hr-top-interviewed-employees'
+)
 
 
 
@@ -101,7 +109,9 @@ router.register(
     AdminPromoteEmployeeViewSet,
     basename="admin-promote-employee",
 )
-
+router.register(r'admin/company-statistics', AdminStatsViewSet, basename='company-statistics')
+router.register(r'admin/rank', AdminRankViewSet, basename='admin-rank')
+router.register(r'admin/top', AdminViewTopViewSet, basename='admin-top-employees')
 
 # Employee
 router.register(r"tasks", TaskViewSet, basename="tasks")
@@ -118,3 +128,4 @@ urlpatterns = [
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
+

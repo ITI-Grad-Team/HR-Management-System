@@ -75,6 +75,10 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
         attendance_record.overtime_approved = True
         attendance_record.save()
 
+        employee = attendance_record.user.employee
+        employee.total_overtime_hours += overtime_request.requested_hours
+        employee.save(update_fields=["total_overtime_hours"])
+
         response_serializer = OvertimeRequestSerializer(overtime_request)
         return Response(response_serializer.data)
 

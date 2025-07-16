@@ -1,8 +1,10 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import axiosInstance from '../../api/config'
 import { Link } from "react-router-dom";
 import './login.css'
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 function parseJwt(token) {
   const base64Url = token.split(".")[1];
@@ -21,6 +23,7 @@ function parseJwt(token) {
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
     
     const [formData, setFormData] = useState({ username: "", password: "" });
      const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,6 +31,12 @@ const Login = () => {
     const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+   useEffect(() => {
+  if (user !== null) {
+    navigate("/dashboard", { replace: true });
+  }
+}, [user, navigate]);
 
     const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,24 +51,13 @@ const Login = () => {
         localStorage.setItem("access_token", res.data.access);
         localStorage.setItem("refresh_token", res.data.refresh);
         setAlert({ message: "Logged in successfully", type: "success" });
-        navigate("/dashboard");
+        window.location.replace("/dashboard");
       } else {
         throw new Error("Invalid response format: access or refresh token missing");
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
-      if (
-        error.response?.data?.non_field_errors?.includes(
-          "No active account found with the given credentials"
-        ) ||
-        error.response?.data?.detail === "No active account found with the given credentials"
-      ) {
-        setAlert({
-          message: "Your account is not activated. Please check your email or resend the activation link.",
-          type: "danger",
-        });
-        setShowResend(true);
-      } else {
+      
         setAlert({
           message:
             error.response?.data?.non_field_errors?.[0] ||
@@ -67,7 +65,7 @@ const Login = () => {
             "Login failed. Please check your credentials.",
           type: "danger",
         });
-      }
+      
       setTimeout(() => setAlert({ message: "", type: "" }), 5000);
     } finally {
       setIsSubmitting(false);

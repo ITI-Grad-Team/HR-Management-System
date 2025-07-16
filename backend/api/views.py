@@ -1,13 +1,15 @@
 # from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Avg
+from django.db.models import Avg,Sum,FloatField,Count,Q
+from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
-from django.http import Http404
-
+import joblib
+import os
+import numpy as np
 from rest_framework.viewsets import ModelViewSet, ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -15,9 +17,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-
 from django.contrib.auth import get_user_model
-
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 User = get_user_model()
 
 from .models import (
@@ -32,8 +34,7 @@ from .models import (
     InterviewQuestion,
     Task,
     File,
-    Position,
-    Report,
+    Position,CompanyStatistics,SalaryRecord
 )
 
 from .serializers import (
@@ -46,11 +47,11 @@ from .serializers import (
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
-    InterviewQuestionSerializer,
+    CompanyStatisticsSerializer,
     TaskSerializer,
-    FileSerializer,
+    HRListSerializer,
     PositionSerializer,
-    ReportSerializer,EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
+    EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
 
 from .permissions import IsHR, IsAdmin, IsHRorAdmin, IsEmployee, IsCoordinator
@@ -70,6 +71,76 @@ def recalculate_interview_avg_grade(employee):
     employee.interview_questions_avg_grade = avg
     employee.save(update_fields=["interview_questions_avg_grade"])
 
+def calculate_statistics():
+    employees = Employee.objects.filter(interview_state='accepted')
+    total_employees = employees.count()
+    total_hrs = HR.objects.count()
+
+    positions = Position.objects.all()
+    position_stats = {}
+
+    for position in positions:
+        pos_employees = employees.filter(position=position)
+        pos_count = pos_employees.count()
+        if pos_count == 0:
+            continue
+
+        total_task_ratings = pos_employees.aggregate(sum=Sum('total_task_ratings'))['sum'] or 0
+        total_accepted_tasks = pos_employees.aggregate(sum=Sum('number_of_accepted_tasks'))['sum'] or 0
+        total_time_remaining = pos_employees.aggregate(sum=Sum('total_time_remaining_before_deadline'))['sum'] or 0
+        total_overtime = pos_employees.aggregate(sum=Sum('total_overtime_hours'))['sum'] or 0
+        total_lateness = pos_employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
+        total_absent = pos_employees.aggregate(sum=Sum('total_absent_days'))['sum'] or 0
+        total_non_holiday_days = pos_employees.aggregate(sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
+        avg_salary = pos_employees.aggregate(avg=Avg('basic_salary'))['avg']
+
+        position_stats[position.name] = {
+            'count': pos_count,
+            'avg_task_rating': round(total_task_ratings / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+            'avg_time_remaining': round(total_time_remaining / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+            'avg_overtime': round(total_overtime / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_absent_days': round(total_absent / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+            'avg_salary': avg_salary,
+        }
+
+    total_task_ratings = employees.aggregate(sum=Sum('total_task_ratings'))['sum'] or 0
+    total_accepted_tasks = employees.aggregate(sum=Sum('number_of_accepted_tasks'))['sum'] or 0
+    total_time_remaining = employees.aggregate(sum=Sum('total_time_remaining_before_deadline'))['sum'] or 0
+    total_overtime = employees.aggregate(sum=Sum('total_overtime_hours'))['sum'] or 0
+    total_lateness = employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
+    total_absent = employees.aggregate(sum=Sum('total_absent_days'))['sum'] or 0
+    total_non_holiday_days = employees.aggregate(sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
+    avg_salary = employees.aggregate(avg=Avg('basic_salary'))['avg']
+
+    overall_stats = {
+        'overall_avg_task_rating': round(total_task_ratings / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+        'overall_avg_time_remaining': round(total_time_remaining / total_accepted_tasks, 2) if total_accepted_tasks > 0 else None,
+        'overall_avg_overtime': round(total_overtime / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_absent_days': round(total_absent / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None,
+        'overall_avg_salary': avg_salary,
+    }
+
+    salary_records = SalaryRecord.objects.all()
+    monthly_totals = {}
+    for record in salary_records:
+        key = f"{record.year}-{record.month}"
+        monthly_totals[key] = monthly_totals.get(key, 0) + record.final_salary
+
+    monthly_salary_data = [{
+        'year': int(k.split('-')[0]),
+        'month': int(k.split('-')[1]),
+        'total_paid': v
+    } for k, v in monthly_totals.items()]
+
+    return {
+        'total_employees': total_employees,
+        'total_hrs': total_hrs,
+        'position_stats': position_stats,
+        'monthly_salary_totals': monthly_salary_data,
+        **overall_stats
+    }
 
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
@@ -164,10 +235,14 @@ class AdminInviteHRViewSet(ModelViewSet):
 
 class AdminViewHRsViewSet(ModelViewSet):
     queryset = HR.objects.all()
-    serializer_class = HRSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [SearchFilter]
     search_fields = ["user__username", "user__email"]
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return HRListSerializer  
+        return HRSerializer
 
 
 class AdminViewUsersViewSet(ModelViewSet):
@@ -205,6 +280,9 @@ class AdminViewApplicationLinksViewSet(ReadOnlyModelViewSet):
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['position', 'is_coordinator']
+    search_fields = ['distinction_name']
 
 
 class HRManageApplicationLinksViewSet(ModelViewSet):
@@ -217,6 +295,10 @@ class HRManageApplicationLinksViewSet(ModelViewSet):
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
     permission_classes = [IsAuthenticated, IsHR]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['position', 'is_coordinator']
+    search_fields = ['distinction_name']
+
     # in frontend, the URL will be constructed based on "distinction_name"
     # ex. if "junior-frontend-2025", then: "http://localhost:3000/apply/junior-frontend-2025/" → shown in a non-editable field
 
@@ -539,7 +621,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if employee.scheduling_interviewer and employee.scheduling_interviewer != hr:
             return Response(
                 {
-                    "detail": f"Interview already scheduled by {hr_name}, contact him for any scheduling updates"
+                    "detail": f"Interview already scheduled by {employee.scheduling_interviewer.user.basicinfo.username}, contact him for any scheduling updates"
                 },
                 status=400,
             )
@@ -806,16 +888,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
         return Response({"detail": "Interview submitted successfully."})
 
 
-class HRSalaryReportsViewSet(ModelViewSet):
-    """
-    Views monthly salary reports
-    - Employee-wise breakdown
-    - Only accessible by HR role
-    """
-
-    queryset = Report.objects.all()
-    serializer_class = ReportSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class EmployeeCheckInOutViewSet(ModelViewSet):
@@ -1090,6 +1162,16 @@ class TaskViewSet(ModelViewSet):
         task.time_remaining_before_deadline_when_accepted = time_remaining
         task.save()
 
+        employee = task.assigned_to
+        employee.total_task_ratings += rating
+        employee.total_time_remaining_before_deadline += time_remaining
+        employee.number_of_accepted_tasks += 1
+        employee.save(update_fields=[
+            "total_task_ratings",
+            "total_time_remaining_before_deadline",
+            "number_of_accepted_tasks",
+        ])
+
         return Response(
             {
                 "message": "Task accepted successfully.",
@@ -1296,3 +1378,394 @@ class AdminManageEducationFieldsViewSet(ModelViewSet):
     serializer_class = EducationFieldSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     http_method_names = ["get", "post"]
+
+class EmployeePredictionViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=True, methods=['post'], url_path='predict-and-update')
+    def predict_and_update_metrics(self, request, pk=None):
+        """
+        Predicts and updates all metrics for a specific employee
+        POST /api/employees/{id}/predict-and-update/
+        """
+        employee = self.get_object()
+        
+        # Validate required fields
+        required_fields = {
+            'region': employee.region,
+            'highest_education_degree': employee.highest_education_degree,
+            'highest_education_field': employee.highest_education_field,
+            'years_of_experience': employee.years_of_experience,
+            'had_leadership_role': employee.had_leadership_role,
+            'percentage_of_matching_skills': employee.percentage_of_matching_skills,
+            'has_position_related_high_education': employee.has_position_related_high_education,
+        }
+        
+        missing_fields = [field for field, value in required_fields.items() if value is None]
+        if missing_fields:
+            return Response(
+                {
+                    "error": "Cannot make predictions - missing required employee data",
+                    "missing_fields": missing_fields
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Prepare input data for prediction
+        input_data = np.array([[
+            employee.region.distance_to_work,
+            employee.highest_education_degree.id,
+            employee.highest_education_field.id,
+            employee.years_of_experience,
+            int(employee.had_leadership_role),
+            employee.percentage_of_matching_skills,
+            int(employee.has_position_related_high_education),
+        ]])
+        
+        # Load models and make predictions
+        MODELS_DIR = os.path.join('api', 'predictive_models')
+        predictions = {}
+        
+        try:
+            # Salary prediction
+            salary_model = joblib.load(os.path.join(MODELS_DIR, 'salary_model.pkl'))
+            predictions['predicted_basic_salary'] = float(salary_model.predict(input_data)[0])
+            
+            # Task rating prediction
+            task_model = joblib.load(os.path.join(MODELS_DIR, 'task_ratings_model.pkl'))
+            predictions['predicted_avg_task_rating'] = float(task_model.predict(input_data)[0])
+            
+            # Time remaining prediction
+            time_model = joblib.load(os.path.join(MODELS_DIR, 'time_remaining_model.pkl'))
+            predictions['predicted_avg_time_remaining_before_deadline'] = float(time_model.predict(input_data)[0])
+            
+            # Overtime prediction
+            overtime_model = joblib.load(os.path.join(MODELS_DIR, 'overtime_hours_model.pkl'))
+            predictions['predicted_avg_overtime_hours'] = float(overtime_model.predict(input_data)[0])
+            
+            # Lateness prediction
+            lateness_model = joblib.load(os.path.join(MODELS_DIR, 'lateness_hours_model.pkl'))
+            predictions['predicted_avg_lateness_hours'] = float(lateness_model.predict(input_data)[0])
+            
+            # Absence prediction
+            absence_model = joblib.load(os.path.join(MODELS_DIR, 'absent_days_model.pkl'))
+            predictions['predicted_avg_absent_days'] = float(absence_model.predict(input_data)[0])
+            
+            # Update employee with predictions
+            for field, value in predictions.items():
+                setattr(employee, field, value)
+            
+            # Update prediction timestamp
+            employee.last_prediction_date = timezone.now()
+            employee.save()
+            
+            # Return updated employee data
+            serializer = self.get_serializer(employee)
+            return Response({
+                "status": "Predictions updated successfully",
+            }, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            return Response(
+                {"error": f"Model file not found: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Prediction failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class AdminStatsViewSet(ModelViewSet):
+    """
+    GET: List historical company statistics snapshots.
+    POST: Calculate new statistics and create a new snapshot.
+    """
+    queryset = CompanyStatistics.objects.all().order_by('-generated_at')
+    serializer_class = CompanyStatisticsSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    http_method_names = ['get', 'post']
+    
+    def create(self, request, *args, **kwargs):
+        # Calculate statistics on demand.
+        stats = calculate_statistics()
+        
+        # Save the new snapshot.
+        company_stats = CompanyStatistics.objects.create(
+            total_employees=stats['total_employees'],
+            total_hrs=stats['total_hrs'],
+            position_stats=stats['position_stats'],
+            monthly_salary_totals=stats['monthly_salary_totals'],
+            overall_avg_task_rating=stats['overall_avg_task_rating'],
+            overall_avg_time_remaining=stats['overall_avg_time_remaining'],
+            overall_avg_overtime=stats['overall_avg_overtime'],
+            overall_avg_lateness=stats['overall_avg_lateness'],
+            overall_avg_absent_days=stats['overall_avg_absent_days'],
+            overall_avg_salary=stats['overall_avg_salary'],
+        )
+        
+        serializer = self.get_serializer(company_stats)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'], url_path='latest')
+    def latest(self, request):
+        latest_stat = self.get_queryset().first()
+        if latest_stat:
+            serializer = self.get_serializer(latest_stat)
+            return Response(serializer.data)
+        return Response({"detail": "No statistics available."}, status=404)
+
+class HRStatsViewSet(ModelViewSet):
+    """
+    Dedicated ViewSet for HR statistics calculations
+    Only allows HR users to calculate their own stats
+    """
+    queryset = HR.objects.all()
+    serializer_class = HRSerializer
+    permission_classes = [IsAuthenticated, IsHR]
+
+    def get_queryset(self):
+        """HR users can only see their own profile"""
+        qs = super().get_queryset()
+        return qs.filter(user=self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='calculate-my-stats')
+    def calculate_my_stats(self, request):
+        """
+        Endpoint for HR users to recalculate their own statistics
+        POST /api/hr-stats/calculate-my-stats/
+        """
+        hr_profile = self.get_queryset().first()  # Gets the HR's own profile
+        
+        if not hr_profile:
+            return Response(
+                {"error": "HR profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        hr_profile.calculate_accepted_employees_stats()
+        
+        return Response(
+            {
+                "status": "success",
+                "message": "Your HR statistics have been recalculated",
+                "hr_id": hr_profile.id,
+                "user_id": request.user.id
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+
+
+
+
+class AdminRankViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = Employee.objects.none()  # Required by ModelViewSet, but unused
+
+    @action(detail=False, methods=['post'], url_path='rank-employees')
+    def rank_employees(self, request):
+        expected_fields = {
+            "avg_task_rating", "avg_time_remaining", "avg_overtime", "avg_lateness", "avg_absent"
+        }
+        weights = request.data.get("weights", {})
+
+        if not expected_fields.issubset(weights):
+            return Response({"detail": f"Missing weights: {expected_fields - set(weights)}"}, status=400)
+
+        for key, val in weights.items():
+            try:
+                fval = float(val)
+                if fval < -1 or fval > 1:
+                    return Response({"detail": f"Weight {key} must be between -1 and 1."}, status=400)
+            except:
+                return Response({"detail": f"Weight {key} must be a number."}, status=400)
+
+        employees = Employee.objects.filter(interview_state='accepted')
+        ranked = []
+
+        for emp in employees:
+            num_tasks = emp.number_of_accepted_tasks
+            num_days = emp.number_of_non_holiday_days_since_join
+
+            avg_task_rating = emp.total_task_ratings / num_tasks if num_tasks else 0
+            avg_time_remaining = emp.total_time_remaining_before_deadline / num_tasks if num_tasks else 0
+            avg_overtime = emp.total_overtime_hours / num_days if num_days else 0
+            avg_lateness = emp.total_lateness_hours / num_days if num_days else 0
+            avg_absent = emp.total_absent_days / num_days if num_days else 0
+
+            score = (
+                avg_task_rating * float(weights["avg_task_rating"]) +
+                avg_time_remaining * float(weights["avg_time_remaining"]) +
+                avg_overtime * float(weights["avg_overtime"]) +
+                avg_lateness * float(weights["avg_lateness"]) +
+                avg_absent * float(weights["avg_absent"])
+            )
+
+            ranked.append((emp, score))
+
+        ranked.sort(key=lambda x: x[1], reverse=True)
+
+        for i, (emp, _) in enumerate(ranked, start=1):
+            emp.rank = i
+            emp.save(update_fields=['rank'])
+
+        return Response({"detail": f"{len(ranked)} employees ranked successfully."})
+
+    @action(detail=False, methods=['post'], url_path='rank-hrs')
+    def rank_hrs(self, request):
+        available_fields = {
+            "accepted_employees_avg_task_rating",
+            "accepted_employees_avg_time_remaining",
+            "accepted_employees_avg_lateness_hrs",
+            "accepted_employees_avg_absence_days",
+            "accepted_employees_avg_salary",
+            "accepted_employees_avg_overtime",
+            "accepted_employees_avg_interviewer_rating",
+            "interviewer_rating_to_task_rating_correlation",
+            "interviewer_rating_to_time_remaining_correlation",
+            "interviewer_rating_to_lateness_hrs_correlation",
+            "interviewer_rating_to_absence_days_correlation",
+            "interviewer_rating_to_avg_overtime_correlation",
+        }
+
+        weights = request.data.get("weights", {})
+        if not weights:
+            return Response({"detail": "Missing 'weights' object in request."}, status=400)
+
+        unknown = set(weights.keys()) - available_fields
+        if unknown:
+            return Response({"detail": f"Invalid fields: {unknown}"}, status=400)
+
+        for key, val in weights.items():
+            try:
+                fval = float(val)
+                if fval < -1 or fval > 1:
+                    return Response({"detail": f"Weight {key} must be between -1 and 1."}, status=400)
+            except:
+                return Response({"detail": f"Weight {key} must be a number."}, status=400)
+
+        hrs = HR.objects.exclude(accepted_employees_avg_task_rating__isnull=True)
+        ranked = []
+
+        for hr in hrs:
+            score = 0
+            for field, weight in weights.items():
+                val = getattr(hr, field, 0)
+                score += float(weight) * (val if val is not None else 0)
+            ranked.append((hr, score))
+
+        ranked.sort(key=lambda x: x[1], reverse=True)
+
+        for i, (hr, _) in enumerate(ranked, start=1):
+            hr.rank = i
+            hr.save(update_fields=['rank'])
+
+        return Response({"detail": f"{len(ranked)} HRs ranked successfully."})
+
+
+
+
+
+class AdminViewTopViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = None
+
+    @action(detail=False, methods=['get'], url_path='top-employees')
+    def top_employees(self, request):
+        top_emps = Employee.objects.filter(
+            interview_state='accepted',
+            rank__isnull=False
+        ).select_related('user').order_by('rank')[:10]
+
+        result = []
+
+        for emp in top_emps:
+            num_tasks = emp.number_of_accepted_tasks
+            num_days = emp.number_of_non_holiday_days_since_join
+
+            avg_task_rating = round(emp.total_task_ratings / num_tasks, 2) if num_tasks else None
+            avg_time_remaining = round(emp.total_time_remaining_before_deadline / num_tasks, 2) if num_tasks else None
+            avg_overtime = round(emp.total_overtime_hours / num_days, 2) if num_days else None
+            avg_lateness = round(emp.total_lateness_hours / num_days, 2) if num_days else None
+            avg_absent = round(emp.total_absent_days / num_days, 2) if num_days else None
+
+            result.append({
+                "rank": emp.rank,
+                "username": emp.user.basicinfo.username,  # Assuming basicinfo holds the display username
+                "avg_task_rating": avg_task_rating,
+                "avg_time_remaining": avg_time_remaining,
+                "avg_overtime": avg_overtime,
+                "avg_lateness": avg_lateness,
+                "avg_absent": avg_absent,
+            })
+
+        return Response(result)
+    
+    @action(detail=False, methods=['get'], url_path='top-hrs')
+    def top_hrs(self, request):
+        top_hrs = HR.objects.filter(
+            rank__isnull=False
+        ).select_related('user').order_by('rank')[:10]
+
+        result = []
+        for hr in top_hrs:
+            result.append({
+                "rank": hr.rank,
+                "username": hr.user.basicinfo.username,
+                "avg_task_rating": hr.accepted_employees_avg_task_rating,
+                "avg_time_remaining": hr.accepted_employees_avg_time_remaining,
+                "avg_lateness_hrs": hr.accepted_employees_avg_lateness_hrs,
+                "avg_absence_days": hr.accepted_employees_avg_absence_days,
+                "avg_salary": hr.accepted_employees_avg_salary,
+                "avg_overtime": hr.accepted_employees_avg_overtime,
+                "avg_interviewer_rating": hr.accepted_employees_avg_interviewer_rating,
+                "rating_to_task_rating_correlation": hr.interviewer_rating_to_task_rating_correlation,
+                "rating_to_time_remaining_correlation": hr.interviewer_rating_to_time_remaining_correlation,
+                "rating_to_lateness_hrs_correlation": hr.interviewer_rating_to_lateness_hrs_correlation,
+                "rating_to_absence_days_correlation": hr.interviewer_rating_to_absence_days_correlation,
+                "rating_to_avg_overtime_correlation": hr.interviewer_rating_to_avg_overtime_correlation,
+            })
+
+        return Response(result)
+    
+class HRViewTopInterviewedEmployeesViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    permission_classes = [IsAuthenticated, IsHR]
+    serializer_class = None  # not used
+
+    def list(self, request, *args, **kwargs):
+        top_emps = Employee.objects.filter(
+            interviewer=request.user.hr,
+            interview_state='accepted',
+            rank__isnull=False
+        ).select_related('user', 'user__basicinfo').order_by('rank')[:10]
+
+        result = []
+
+        for emp in top_emps:
+            num_tasks = emp.number_of_accepted_tasks
+            num_days = emp.number_of_non_holiday_days_since_join
+
+            avg_task_rating = round(emp.total_task_ratings / num_tasks, 2) if num_tasks else None
+            avg_time_remaining = round(emp.total_time_remaining_before_deadline / num_tasks, 2) if num_tasks else None
+            avg_overtime = round(emp.total_overtime_hours / num_days, 2) if num_days else None
+            avg_lateness = round(emp.total_lateness_hours / num_days, 2) if num_days else None
+            avg_absent = round(emp.total_absent_days / num_days, 2) if num_days else None
+
+            result.append({
+                "username": emp.user.basicinfo.username,
+                "rank": emp.rank,
+                "avg_task_rating": avg_task_rating,
+                "avg_time_remaining": avg_time_remaining,
+                "avg_overtime": avg_overtime,
+                "avg_lateness": avg_lateness,
+                "avg_absent": avg_absent,
+            })
+
+        return Response(result)

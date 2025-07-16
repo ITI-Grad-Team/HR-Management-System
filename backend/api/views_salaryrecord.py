@@ -63,16 +63,20 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
 
         # Check for existing SalaryRecord
         if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():
-            return Response(
-                {"detail": "Salary already calculated for this month"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Delete existing records for this user/month/year
+            SalaryRecord.objects.filter(user=user, year=year, month=month).delete()
+            print(f"Deleted existing salary record for {user.username} - {month}/{year}")
 
         records = AttendanceRecord.objects.filter(
             user=user, date__year=year, date__month=month
         )
         absent_days = records.filter(status="absent").count()
         late_days = records.filter(status="late").count()
+        lateness_hours = (
+            records.filter(status="late")
+                .aggregate(total=models.Sum("lateness_hours"))["total"] 
+            or 0
+        )
         # Overtime: sum overtime_hours from AttendanceRecord where overtime_approved=True and overtime_hours > 0
         overtime_hours = (
             records.filter(overtime_approved=True, overtime_hours__gt=0).aggregate(
@@ -81,34 +85,34 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             or 0
         )
         # Short time: sum short_time_hours where check_out_time is before expected_leave_time
-        short_time_hours = 0
-        short_time_penalty_total = 0
-        for rec in records:
-            # Only count if expected_leave_time and check_out_time are set
-            expected_leave = getattr(rec.user.employee, "expected_leave_time", None)
-            if (
-                expected_leave
-                and rec.check_out_time
-                and rec.check_out_time < expected_leave
-            ):
-                # Calculate short time in hours
-                delta = (expected_leave.hour * 60 + expected_leave.minute) - (
-                    rec.check_out_time.hour * 60 + rec.check_out_time.minute
-                )
-                hours = delta / 60.0
-                if hours > 0:
-                    short_time_hours += hours
-        short_time_hours = round(short_time_hours, 2)
-        short_time_penalty_total = round(short_time_hours * shorttime_hour_penalty, 2)
+        # short_time_hours = 0
+        # short_time_penalty_total = 0
+        # for rec in records:
+        #     # Only count if expected_leave_time and check_out_time are set
+        #     expected_leave = getattr(rec.user.employee, "expected_leave_time", None)
+        #     if (
+        #         expected_leave
+        #         and rec.check_out_time
+        #         and rec.check_out_time < expected_leave
+        #     ):
+        #         # Calculate short time in hours
+        #         delta = (expected_leave.hour * 60 + expected_leave.minute) - (
+        #             rec.check_out_time.hour * 60 + rec.check_out_time.minute
+        #         )
+        #         hours = delta / 60.0
+        #         if hours > 0:
+        #             short_time_hours += hours
+        # short_time_hours = round(short_time_hours, 2)
+        # short_time_penalty_total = round(short_time_hours * shorttime_hour_penalty, 2)
 
         absent_penalty_total = absent_days * absence_penalty
-        late_penalty_total = late_days * shorttime_hour_penalty
+        late_penalty_total = lateness_hours * shorttime_hour_penalty
         overtime_bonus_total = overtime_hours * overtime_hour_salary
         final_salary = round(
             base_salary
             - absent_penalty_total
             - late_penalty_total
-            - short_time_penalty_total
+            # - short_time_penalty_total
             + overtime_bonus_total,
             2,
         )
@@ -116,15 +120,16 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         details = {
             "absent_days": absent_days,
             "late_days": late_days,
+            "lateness_hours": round(lateness_hours, 2),
             "overtime_hours": round(overtime_hours, 2),
-            "absence_penalty": absence_penalty,
+            "absence_day_penalty": absence_penalty,
             "shorttime_hour_penalty": shorttime_hour_penalty,
             "overtime_hour_salary": overtime_hour_salary,
-            "absent_penalty": round(absent_penalty_total, 2),
-            "late_penalty": round(late_penalty_total, 2),
-            "short_time_hours": short_time_hours,
-            "short_time_penalty": short_time_penalty_total,
-            "overtime_bonus": round(overtime_bonus_total, 2),
+            "total_absence_penalty": round(absent_penalty_total, 2),
+            "total_late_penalty": round(late_penalty_total, 2),
+            # "short_time_hours": short_time_hours,
+            # "short_time_penalty": short_time_penalty_total,
+            "total_overtime_salary": round(overtime_bonus_total, 2),
         }
 
         salary_record = SalaryRecord.objects.create(

@@ -1,33 +1,11 @@
 from django.db import models
 from django.conf import settings
-
-
-class WorkDayConfig(models.Model):
-    WEEKDAYS = [
-        (0, "Monday"),
-        (1, "Tuesday"),
-        (2, "Wednesday"),
-        (3, "Thursday"),
-        (4, "Friday"),
-        (5, "Saturday"),
-        (6, "Sunday"),
-    ]
-    weekday = models.IntegerField(choices=WEEKDAYS, unique=True)
-    is_workday = models.BooleanField(default=True)
-    is_weekend = models.BooleanField(default=False)
-    is_online = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.get_weekday_display()} (Workday: {self.is_workday}, Weekend: {self.is_weekend}, Online: {self.is_online})"
-
-
-class PublicHoliday(models.Model):
-    date = models.DateField(unique=True)
-    description = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.date}: {self.description}"
-
+import datetime
+from django.db.models import Sum,Avg
+from django.db.models.functions import Cast
+from django.db.models import FloatField
+import pandas as pd
+from django.utils import timezone
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -47,6 +25,7 @@ class AttendanceRecord(models.Model):
     attendance_type = models.CharField(max_length=10, choices=ATTENDANCE_TYPE_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     mac_address = models.CharField(max_length=50, null=True, blank=True)
+    lateness_hours = models.FloatField(default=0)
     overtime_hours = models.FloatField(default=0)
     overtime_approved = models.BooleanField(default=False)
 
@@ -55,6 +34,18 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.date} ({self.status})"
+    
+    def save(self, *args, **kwargs):
+        # Calculate lateness_hours before saving
+        if self.check_in_time and hasattr(self.user, 'employee'):
+            expected_time = self.user.employee.expected_attend_time
+            if expected_time:
+                check_in_dt = datetime.datetime.combine(self.date, self.check_in_time)
+                expected_dt = datetime.datetime.combine(self.date, expected_time)
+                lateness = (check_in_dt - expected_dt).total_seconds() / 3600
+                self.lateness_hours = max(round(lateness, 2), 0.0)
+        
+        super().save(*args, **kwargs)
 
 
 class OvertimeRequest(models.Model):
@@ -146,11 +137,132 @@ class BasicInfo(models.Model):
 
 
 class HR(models.Model):
+    rank = models.IntegerField(null=True, blank=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     accepted_employees_avg_task_rating = models.FloatField(null=True, blank=True)
     accepted_employees_avg_time_remaining = models.FloatField(null=True, blank=True)
     accepted_employees_avg_lateness_hrs = models.FloatField(null=True, blank=True)
     accepted_employees_avg_absence_days = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_salary = models.FloatField(null=True, blank=True)  
+    accepted_employees_avg_overtime = models.FloatField(null=True, blank=True)
+    accepted_employees_avg_interviewer_rating = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_task_rating_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_time_remaining_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_lateness_hrs_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_absence_days_correlation = models.FloatField(null=True, blank=True)
+    interviewer_rating_to_avg_overtime_correlation = models.FloatField(null=True, blank=True)
+    last_stats_calculation_time = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def accepted_employees(self):
+        """Returns queryset of employees this HR has accepted"""
+        return Employee.objects.filter(interviewer=self, interview_state='accepted')
+
+    @property
+    def accepted_employees_count(self):
+        return self.accepted_employees.count()
+
+    def calculate_accepted_employees_stats(self):
+        """Updates all average and correlation fields"""
+
+        accepted = self.accepted_employees
+        count = accepted.count()
+
+        if count == 0:
+            print('\n Found No Employees')
+
+            # Reset all fields
+            self.accepted_employees_avg_task_rating = None
+            self.accepted_employees_avg_time_remaining = None
+            self.accepted_employees_avg_lateness_hrs = None
+            self.accepted_employees_avg_absence_days = None
+            self.accepted_employees_avg_salary = None
+            self.accepted_employees_avg_overtime = None
+            self.accepted_employees_avg_interviewer_rating = None
+            
+            # Reset correlation fields
+            self.interviewer_rating_to_task_rating_correlation = None
+            self.interviewer_rating_to_time_remaining_correlation = None
+            self.interviewer_rating_to_lateness_hrs_correlation = None
+            self.interviewer_rating_to_absence_days_correlation = None
+            self.interviewer_rating_to_avg_overtime_correlation = None
+        else:
+            print('\n Found Employees')
+            # Get all aggregates
+            aggregates = accepted.aggregate(
+                total_ratings=Sum('total_task_ratings'),
+                total_tasks=Sum('number_of_accepted_tasks'),
+                total_time=Sum('total_time_remaining_before_deadline'),
+                total_lateness=Sum('total_lateness_hours'),
+                total_absence=Sum('total_absent_days'),
+                avg_salary=Avg('basic_salary'),
+                total_overtime=Sum('total_overtime_hours'),
+                total_days=Sum('number_of_non_holiday_days_since_join'),
+                avg_interviewer_rating=Avg('interviewer_rating')
+            )
+
+            # Calculate averages
+            total_tasks = aggregates.get('total_tasks') or 0
+            total_days = aggregates.get('total_days') or 0
+
+            self.accepted_employees_avg_task_rating = round(aggregates['total_ratings'] / total_tasks, 2) if total_tasks > 0 else None
+            self.accepted_employees_avg_time_remaining = round(aggregates['total_time'] / total_tasks, 2) if total_tasks > 0 else None
+            self.accepted_employees_avg_lateness_hrs = round(aggregates['total_lateness'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_absence_days = round(aggregates['total_absence'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_salary = round(aggregates.get('avg_salary'), 2) if aggregates.get('avg_salary') is not None else None
+            self.accepted_employees_avg_overtime = round(aggregates['total_overtime'] / total_days, 2) if total_days > 0 else None
+            self.accepted_employees_avg_interviewer_rating = round(aggregates.get('avg_interviewer_rating'), 2) if aggregates.get('avg_interviewer_rating') is not None else None
+
+            # Task-based correlations (require tasks > 0)
+            task_based_qs = accepted.filter(
+                interviewer_rating__isnull=False,
+                number_of_accepted_tasks__gt=0,
+            )
+            print(f"→ Found Task-based eligible employees: {task_based_qs.count()}")
+
+            task_df = pd.DataFrame(list(task_based_qs.annotate(
+                task_rating=Cast('total_task_ratings', FloatField()) / Cast('number_of_accepted_tasks', FloatField()),
+                time_remaining=Cast('total_time_remaining_before_deadline', FloatField()) / Cast('number_of_accepted_tasks', FloatField())
+            ).values('interviewer_rating', 'task_rating', 'time_remaining')))
+
+            self.interviewer_rating_to_task_rating_correlation = (
+                round(task_df['interviewer_rating'].corr(task_df['task_rating']), 4)
+                if len(task_df) >= 2 else None
+            )
+            self.interviewer_rating_to_time_remaining_correlation = (
+                round(task_df['interviewer_rating'].corr(task_df['time_remaining']), 4)
+                if len(task_df) >= 2 else None
+            )
+
+            # Day-based correlations (require non-holiday days > 0)
+            day_based_qs = accepted.filter(
+                interviewer_rating__isnull=False,
+                number_of_non_holiday_days_since_join__gt=0,
+            )
+            print(f"→ Found Day-based eligible employees: {day_based_qs.count()}")
+
+
+            day_df = pd.DataFrame(list(day_based_qs.annotate(
+                lateness=Cast('total_lateness_hours', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField()),
+                absence=Cast('total_absent_days', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField()),
+                overtime=Cast('total_overtime_hours', FloatField()) / Cast('number_of_non_holiday_days_since_join', FloatField())
+            ).values('interviewer_rating', 'lateness', 'absence', 'overtime')))
+
+            self.interviewer_rating_to_lateness_hrs_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['lateness']), 4)
+                if len(day_df) >= 2 else None
+            )
+            self.interviewer_rating_to_absence_days_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['absence']), 4)
+                if len(day_df) >= 2 else None
+            )
+            self.interviewer_rating_to_avg_overtime_correlation = (
+                round(day_df['interviewer_rating'].corr(day_df['overtime']), 4)
+                if len(day_df) >= 2 else None
+            )
+
+        self.last_stats_calculation_time = timezone.now()
+        self.save()
 
 
 class Position(models.Model):
@@ -219,13 +331,6 @@ class Employee(models.Model):
     percentage_of_matching_skills = models.FloatField(null=True, blank=True)
     has_position_related_high_education = models.BooleanField(null=True, blank=True)
 
-    predicted_avg_task_rating = models.FloatField(null=True, blank=True)
-    predicted_avg_time_remaining_before_deadline = models.FloatField(
-        null=True, blank=True
-    )
-    predicted_avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
-    predicted_avg_absence_days = models.FloatField(null=True, blank=True)
-
     interview_datetime = models.DateTimeField(null=True, blank=True)
     interview_state = models.CharField(max_length=50, default="pending")
     interviewer = models.ForeignKey(HR, on_delete=models.SET_NULL, null=True)
@@ -235,24 +340,67 @@ class Employee(models.Model):
     interviewer_rating = models.FloatField(null=True, blank=True)
     interview_questions_avg_grade = models.FloatField(null=True, blank=True)
     join_date = models.DateField(null=True, blank=True)
+
     basic_salary = models.FloatField(null=True, blank=True)
     overtime_hour_salary = models.FloatField(null=True, blank=True)
     shorttime_hour_penalty = models.FloatField(null=True, blank=True)
     absence_penalty = models.FloatField(null=True, blank=True)
+
     expected_attend_time = models.TimeField(null=True, blank=True)
     expected_leave_time = models.TimeField(null=True, blank=True)
-    overtime_hours = models.FloatField(default=0)
-    lateness_hours = models.FloatField(default=0)
-    short_time_hours = models.FloatField(default=0)
-    number_of_absent_days = models.IntegerField(default=0)
-    last_attend_date = models.DateField(null=True, blank=True)
-    last_leave_date = models.DateField(null=True, blank=True)
-    avg_task_rating = models.FloatField(null=True, blank=True)
-    avg_time_remaining_before_deadline = models.FloatField(null=True, blank=True)
-    avg_attendance_lateness_hrs = models.FloatField(null=True, blank=True)
-    avg_absence_days = models.FloatField(null=True, blank=True)
-    skills = models.ManyToManyField(Skill, blank=True)
 
+    total_overtime_hours = models.FloatField(default=0) #summed to at approval (some other place in the code)
+    total_lateness_hours = models.FloatField(default=0) #summed to at check-in (some other place in the code)
+    total_absent_days = models.IntegerField(default=0) #summed to when found absent (some other place in the code)
+    total_task_ratings = models.FloatField(default=0) #summed to at accept (some other place in the code)
+    total_time_remaining_before_deadline = models.FloatField(default=0)  #summed to at task accept (some other place in the code)
+
+    number_of_non_holiday_days_since_join = models.IntegerField(default=0) #summed to at marking absence .. if yesterday is about any case other than holiday, increment this (some other place in the code)
+    number_of_accepted_tasks = models.IntegerField(default=0) #summed to at task accept .. (some other place in the code)
+    rank = models.IntegerField(null=True, blank=True)
+
+    @property
+    def avg_task_ratings(self):
+        if self.number_of_accepted_tasks == 0:
+            return None
+        return round(self.total_task_ratings / self.number_of_accepted_tasks, 2)
+
+    @property
+    def avg_time_remaining_before_deadline(self):
+        if self.number_of_accepted_tasks == 0:
+            return None
+        return round(self.total_time_remaining_before_deadline / self.number_of_accepted_tasks, 2)
+
+    @property
+    def avg_overtime_hours(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_overtime_hours / self.number_of_non_holiday_days_since_join, 2)
+
+    @property
+    def avg_lateness_hours(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_lateness_hours / self.number_of_non_holiday_days_since_join, 2)
+
+    @property
+    def avg_absent_days(self):
+        if self.number_of_non_holiday_days_since_join == 0:
+            return None
+        return round(self.total_absent_days / self.number_of_non_holiday_days_since_join, 2)
+
+
+    skills = models.ManyToManyField(Skill, blank=True)
+    
+    predicted_avg_task_rating = models.FloatField(null=True, blank=True)
+    predicted_avg_time_remaining_before_deadline = models.FloatField(
+        null=True, blank=True
+    )
+    predicted_avg_lateness_hours = models.FloatField(null=True, blank=True)
+    predicted_avg_absent_days = models.FloatField(null=True, blank=True)
+    predicted_avg_overtime_hours = models.FloatField(null=True, blank=True)
+    predicted_basic_salary = models.FloatField(null=True, blank=True)
+    last_prediction_date = models.DateTimeField(null=True, blank=True)
 
 class InterviewQuestion(models.Model):
     text = models.TextField()
@@ -286,34 +434,6 @@ class File(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
 
 
-class Report(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    basic_salary = models.FloatField()
-    overtime_hour_salary = models.FloatField()
-    shorttime_hour_penalty = models.FloatField()
-    absence_penalty = models.FloatField()
-    expected_attend_time = models.TimeField()
-    expected_leave_time = models.TimeField()
-    overtime_hours = models.FloatField()
-    short_time_hours = models.FloatField()
-    number_of_absent_days = models.IntegerField()
-    total_overtime_penalty = models.FloatField()
-    total_shortness_penalty = models.FloatField()
-    total_absence_penalty = models.FloatField()
-    total = models.FloatField()
-    month = models.CharField(max_length=20)
-
-
-class HoliOrOnlineDayYearday(models.Model):
-    month = models.IntegerField()
-    day = models.IntegerField()
-    employees = models.ManyToManyField(Employee)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["month", "day"], name="unique_month_day")
-        ]
-
 
 WEEKDAYS = [
     ("Monday", "Monday"),
@@ -325,7 +445,68 @@ WEEKDAYS = [
     ("Sunday", "Sunday"),
 ]
 
+class HolidayYearday(models.Model):
+    month = models.IntegerField()
+    day = models.IntegerField()
+    employees = models.ManyToManyField(Employee)
 
-class HoliOrOnlineDayWeekday(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["month", "day"], name="unique_holiday_month_day")
+        ]
+        verbose_name = "Yearly Holiday"
+        verbose_name_plural = "Yearly Holidays"
+
+class HolidayWeekday(models.Model):
     weekday = models.CharField(max_length=10, choices=WEEKDAYS, unique=True)
     employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        verbose_name = "Weekly Holiday"
+        verbose_name_plural = "Weekly Holidays"
+
+class OnlineDayYearday(models.Model):
+    month = models.IntegerField()
+    day = models.IntegerField()
+    employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["month", "day"], name="unique_online_month_day")
+        ]
+        verbose_name = "Yearly Online Day"
+        verbose_name_plural = "Yearly Online Days"
+
+class OnlineDayWeekday(models.Model):
+    weekday = models.CharField(max_length=10, choices=WEEKDAYS, unique=True)
+    employees = models.ManyToManyField(Employee)
+
+    class Meta:
+        verbose_name = "Weekly Online Day"
+        verbose_name_plural = "Weekly Online Days"
+
+
+class CompanyStatistics(models.Model):
+    generated_at = models.DateTimeField(auto_now_add=True)
+    snapshot_date = models.DateField(auto_now_add=True)
+    
+    # Overall company stats
+    total_employees = models.IntegerField()
+    total_hrs = models.IntegerField()
+    
+    # Position-specific stats (stored as JSON)
+    position_stats = models.JSONField(default=dict)
+    
+    # Monthly salary totals (stored as JSON)
+    monthly_salary_totals = models.JSONField(default=list)
+    
+    # Overall averages
+    overall_avg_task_rating = models.FloatField(null=True)
+    overall_avg_time_remaining = models.FloatField(null=True)
+    overall_avg_overtime = models.FloatField(null=True)
+    overall_avg_lateness = models.FloatField(null=True)
+    overall_avg_absent_days = models.FloatField(null=True)
+    overall_avg_salary = models.FloatField(null=True)
+
+    def __str__(self):
+        return f"Company Stats - {self.snapshot_date}"

@@ -1,0 +1,51 @@
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.filters select {
+  border: 0.5px solid darkgray;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  outline: none;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-controls .is-coordinator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+.clear-btn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ccc;
+  background-color: #f3f3f3;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.clear-btn:hover {
+  background-color: #e2e2e2;
+}
