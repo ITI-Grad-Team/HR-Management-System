@@ -98,10 +98,6 @@ class InterviewQuestionSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     basicinfo = BasicInfoSerializer(read_only=True, source="user.basicinfo")
-    interview_questions = InterviewQuestionSerializer(
-        source="interviewquestion_set", many=True, read_only=True
-    )
-
     # Display names instead of IDs for related fields
     position = serializers.StringRelatedField()
     region = serializers.StringRelatedField()
