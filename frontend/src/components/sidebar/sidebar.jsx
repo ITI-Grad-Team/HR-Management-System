@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Nav } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -12,84 +12,58 @@ import {
   FaQuestionCircle,
   FaSignOutAlt,
   FaUserTie,
+  FaAngleLeft,
+  FaAngleRight
 } from "react-icons/fa";
 import "./sidebar.css";
 import { useAuth } from "../../context/AuthContext";
 
+
 export default function Sidebar() {
   const { pathname } = useLocation();
   const { role, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false); // mini sidebar
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${collapsed ? "collapsed" : "open"}`}>
+      <button className="sidebar-toggle" onClick={() => setCollapsed(!collapsed)}>
+        {collapsed ? <FaAngleRight /> : <FaAngleLeft />}
+      </button>
+
       <h6>MAIN MENU</h6>
 
       {role === "admin" && (
         <>
           <Nav className="flex-column">
-            <Nav.Link
-              as={Link}
-              to="/dashboard/home"
-              className={pathname === "/dashboard/home" ? "active" : ""}
-            >
-              <FaHome /> Dashboard
+            <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
+              <FaHome /> <span>Dashboard</span>
             </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/employees"
-              className={pathname === "/dashboard/employees" ? "active" : ""}
-            >
-              <FaUserFriends /> Employee Directory
+            <Nav.Link as={Link} to="/dashboard/employees" className={pathname === "/dashboard/employees" ? "active" : ""}>
+              <FaUserFriends /> <span>Employee Directory</span>
             </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/attendance"
-              className={pathname === "/dashboard/attendance" ? "active" : ""}
-            >
-              <FaCalendarCheck /> Attendance & Leave
+            <Nav.Link as={Link} to="/dashboard/attendance" className={pathname === "/dashboard/attendance" ? "active" : ""}>
+              <FaCalendarCheck /> <span>Attendance & Leave</span>
             </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/recruitment"
-              className={pathname === "/dashboard/recruitment" ? "active" : ""}
-            >
-              <FaSuitcase /> Recruitment
+            <Nav.Link as={Link} to="/dashboard/recruitment" className={pathname === "/dashboard/recruitment" ? "active" : ""}>
+              <FaSuitcase /> <span>Recruitment</span>
             </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/payroll"
-              className={pathname === "/dashboard/payroll" ? "active" : ""}
-            >
-              <FaMoneyBillWave /> Payroll
+            <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
+              <FaMoneyBillWave /> <span>Payroll</span>
             </Nav.Link>
-
-            <Nav.Link
-              as={Link}
-              to="/dashboard/applications"
-              className={pathname === "/dashboard/applications" ? "active" : ""}
-            >
-              <FaUserTie /> Applications
+            <Nav.Link as={Link} to="/dashboard/applications" className={pathname === "/dashboard/applications" ? "active" : ""}>
+              <FaUserTie /> <span>Applications</span>
             </Nav.Link>
           </Nav>
 
           <div className="spacer" />
 
           <h6>OTHER</h6>
-
           <Nav className="flex-column">
-            <Nav.Link
-              as={Link}
-              to="/dashboard/settings"
-              className={pathname === "/dashboard/settings" ? "active" : ""}
-            >
-              <FaCog /> Settings
+            <Nav.Link as={Link} to="/dashboard/settings" className={pathname === "/dashboard/settings" ? "active" : ""}>
+              <FaCog /> <span>Settings</span>
             </Nav.Link>
             <Nav.Link onClick={logout} className="text-danger mt-auto">
-              <FaSignOutAlt /> Logout
+              <FaSignOutAlt /> <span>Logout</span>
             </Nav.Link>
           </Nav>
         </>
@@ -98,57 +72,32 @@ export default function Sidebar() {
       {role === "hr" && (
         <>
           <Nav className="flex-column">
-            <Nav.Link
-              as={Link}
-              to="/dashboard/home"
-              className={pathname === "/dashboard/home" ? "active" : ""}
-            >
-              <FaHome /> Dashboard
+            <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
+              <FaHome /> <span>Dashboard</span>
             </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/dashboard/employees"
-              className={pathname === "/dashboard/employees" ? "active" : ""}
-            >
-              <FaUserFriends /> Employee Directory
+            <Nav.Link as={Link} to="/dashboard/employees" className={pathname === "/dashboard/employees" ? "active" : ""}>
+              <FaUserFriends /> <span>Employee Directory</span>
             </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/dashboard/attendance"
-              className={pathname === "/dashboard/attendance" ? "active" : ""}
-            >
-              <FaCalendarCheck /> Attendance & Leave
+            <Nav.Link as={Link} to="/dashboard/attendance" className={pathname === "/dashboard/attendance" ? "active" : ""}>
+              <FaCalendarCheck /> <span>Attendance & Leave</span>
             </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/dashboard/payroll"
-              className={pathname === "/dashboard/payroll" ? "active" : ""}
-            >
-              <FaMoneyBillWave /> Payroll
+            <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
+              <FaMoneyBillWave /> <span>Payroll</span>
             </Nav.Link>
-            <Nav.Link
-              as={Link}
-              to="/dashboard/applications"
-              className={pathname === "/dashboard/applications" ? "active" : ""}
-            >
-              <FaUserTie /> Applications
+            <Nav.Link as={Link} to="/dashboard/applications" className={pathname === "/dashboard/applications" ? "active" : ""}>
+              <FaUserTie /> <span>Applications</span>
             </Nav.Link>
           </Nav>
 
           <div className="spacer" />
 
           <h6>OTHER</h6>
-
           <Nav className="flex-column">
-            <Nav.Link
-              as={Link}
-              to="/dashboard/settings"
-              className={pathname === "/dashboard/settings" ? "active" : ""}
-            >
-              <FaCog /> Settings
+            <Nav.Link as={Link} to="/dashboard/settings" className={pathname === "/dashboard/settings" ? "active" : ""}>
+              <FaCog /> <span>Settings</span>
             </Nav.Link>
             <Nav.Link onClick={logout} className="text-danger mt-auto">
-              <FaSignOutAlt /> Logout
+              <FaSignOutAlt /> <span>Logout</span>
             </Nav.Link>
           </Nav>
         </>
@@ -156,3 +105,4 @@ export default function Sidebar() {
     </div>
   );
 }
+
