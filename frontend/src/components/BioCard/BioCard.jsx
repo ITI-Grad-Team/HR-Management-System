@@ -25,12 +25,20 @@ export default function BioCard({
     <div className="bio-card">
       <div className="bio-card-header">
         <div className="bio-card-avatar">
-          <img src={avatar || "/default-avatar.png"} alt="avatar" />
+         <img 
+            src={avatar || "/default-avatar.png"} 
+            alt="avatar"
+            onError={(e) => {
+              e.target.src = "/default-avatar.png";
+              e.target.alt = "Default Avatar";
+            }}
+          />
         </div>
         <div className="bio-card-name-section">
-          <h2 className="bio-card-name">{name}</h2>
-          <p className="bio-card-role">{department}</p>
-          
+          <h2 className="bio-card-name" title={name}>
+            {name || "No Name Provided"}
+          </h2>
+          <p className="bio-card-role">{department || "Position Not Specified"}</p>
         </div>
         
       </div>

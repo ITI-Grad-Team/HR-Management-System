@@ -75,27 +75,21 @@
 .slick-slide > div {
   display: flex;
   justify-content: center;
-  /*align-items: stretch;*/
+  align-items: stretch;
   padding: 1rem;
   height: 100%;
   box-sizing: border-box;
 }
 .slider-wrapper,
 .profile-container {
-  padding: 2rem 1rem;
+  padding: 10px 40px;
   display: flex;
-  justify-content: center;
+  justify-content: left;
   flex-wrap: wrap;
   gap: 2rem;
 }
-.slider-wrapper-centered {
-  display: flex;
-  justify-content: center;
-  padding: 2rem 0;
-}
 
-.slider-inner {
-  max-width: 1200px;
-  width: 100%;
-  padding: 0 1rem;
+
+.slick-list {
+  margin: 0 10px; 
 }
