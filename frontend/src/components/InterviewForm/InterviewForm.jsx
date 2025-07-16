@@ -196,9 +196,7 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
 
                 <div className="d-flex align-items-center gap-2">
                   {/* Grade Badge with Star Icon */}
-
-                    {question.grade || 0}/100
-
+                  {question.grade || 0}/100
                   {/* Grade Update Input Group */}
                   <InputGroup style={{ width: "160px" }}>
                     <Form.Control
@@ -223,7 +221,6 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
                       <FaPlus size={14} />
                     </Button>
                   </InputGroup>
-
                   {/* Delete Button */}
                   <Button
                     variant="outline-danger"
