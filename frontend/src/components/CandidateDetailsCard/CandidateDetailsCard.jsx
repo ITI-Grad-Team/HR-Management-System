@@ -22,6 +22,9 @@ import {
   FaCalendarAlt,
   FaCheck,
   FaTimes,
+  FaEnvelope,
+  FaQuestionCircle,
+  FaRobot,
 } from "react-icons/fa";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
@@ -50,6 +53,7 @@ export default function CandidateDetailsCard({
     skills,
     interview_state,
     interviewer,
+    user,
     id: candidateId,
   } = candidate;
 
@@ -57,6 +61,7 @@ export default function CandidateDetailsCard({
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -348,7 +353,15 @@ export default function CandidateDetailsCard({
                     </div>
                   </div>
                 </Col>
-                <Col sm={6} className="mb-2"></Col>
+                <Col sm={6} className="mb-2">
+                <div className="d-flex align-items-center">
+                    <FaEnvelope className="me-2 text-muted" />
+                    <div>
+                      <small className="text-muted d-block">Email</small>
+                      <span className="fw-semibold">{user.username || "N/A"}</span>
+                    </div>
+                  </div>
+                </Col>
               </Row>
             </div>
 
@@ -428,7 +441,9 @@ export default function CandidateDetailsCard({
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
                 <FaFileAlt className="me-2" /> Resume
               </h6>
-              <a
+              <Row className="g-4">
+                <Col md={6}>
+                  <a
                 href={cv}
                 className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
                 target="_blank"
@@ -437,6 +452,20 @@ export default function CandidateDetailsCard({
               >
                 <FaDownload /> Download CV
               </a>
+                </Col>
+                <Col md={6} className="d-flex justify-content-end">
+                <div className="d-flex gap-3">
+                <button 
+                className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                onClick={() => setShowPredictionModal(true)}
+                >
+                <FaRobot /> View AI Predictions
+                </button>
+                </div>
+                </Col>
+              </Row>
+              
+              
             </div>
 
             {/* Interview Actions */}
@@ -733,6 +762,68 @@ export default function CandidateDetailsCard({
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Prediction Modal */}
+      
+      <Modal
+  show={showPredictionModal}
+  onHide={() => setShowPredictionModal(false)}
+  centered
+>
+  <Modal.Header closeButton className="border-0 pb-0">
+    <Modal.Title className="fw-semibold d-flex align-items-center">
+      <FaQuestionCircle className="me-2 text-primary" /> Predictions
+    </Modal.Title>
+  </Modal.Header>
+
+  <Modal.Body className="pt-4">
+    <Row className="g-4 text-center">
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Avg Task Rating</h6>
+          <p className="text-muted m-0">{candidate.predicted_avg_task_rating || "N/A"}</p>
+        </div>
+      </Col>
+
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Avg Time Before Deadline</h6>
+          <p className="text-muted m-0">{candidate.predicted_avg_time_remaining_before_deadline || "N/A"}</p>
+        </div>
+      </Col>
+
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Avg Lateness Hrs</h6>
+          <p className="text-muted m-0">{candidate.predicted_avg_lateness_hours || "N/A"}</p>
+        </div>
+      </Col>
+
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Avg Absence Days</h6>
+          <p className="text-muted m-0">{candidate.predicted_avg_absent_days || "N/A"}</p>
+        </div>
+      </Col>
+
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Avg Overtime Hrs</h6>
+          <p className="text-muted m-0">{candidate.predicted_avg_overtime_hours || "N/A"}</p>
+        </div>
+      </Col>
+
+      <Col md={6}>
+        <div className="border rounded p-3 shadow-sm h-100">
+          <h6 className="mb-2">Predicted Salary</h6>
+          <p className="text-muted m-0">{candidate.predicted_basic_salary || "N/A"}</p>
+        </div>
+      </Col>
+    </Row>
+  </Modal.Body>
+
+</Modal>
+
     </>
   );
 }
