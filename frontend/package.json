@@ -22,8 +22,10 @@
     "react-loading-skeleton": "^3.5.0",
     "react-router-dom": "^7.6.3",
     "react-select": "^5.10.2",
+    "react-slick": "^0.30.3",
     "react-toastify": "^11.0.5",
     "recharts": "^3.1.0",
+    "slick-carousel": "^1.8.1",
     "zod": "^4.0.5"
   },
   "devDependencies": {
