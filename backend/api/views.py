@@ -730,6 +730,58 @@ class HRViewEmployeesViewSet(ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    @action(detail=True, methods=["post"], url_path="delete-question")
+    def delete_interview_question(self, request, pk=None):
+        """
+        Deletes an interview question by ID.
+        Only the HR assigned as the interviewer can perform this.
+        """
+        employee = self.get_object()
+
+        if employee.interview_state == "done" or employee.interview_state == "accepted":
+            return Response(
+                {"detail": "Interview is already completed. You cannot modify it."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response(
+                {"detail": "Only HRs can delete interview questions."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if employee.interviewer != hr:
+            return Response(
+                {"detail": "You are not the interviewer assigned to this employee."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        question_id = request.data.get("question_id")
+        if not question_id:
+            return Response(
+                {"detail": "Missing question_id"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            question = InterviewQuestion.objects.get(id=question_id, employee=employee)
+        except InterviewQuestion.DoesNotExist:
+            return Response(
+                {"detail": "Interview question not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        question.delete()
+
+        recalculate_interview_avg_grade(employee)
+
+        return Response(
+            {"detail": "Interview question deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
     @action(detail=True, methods=["patch"], url_path="update-question-grade")
     def update_question_grade(self, request, pk=None):
         """

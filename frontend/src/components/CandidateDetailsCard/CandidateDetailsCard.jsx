@@ -26,7 +26,7 @@ import {
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-
+import { FaClipboardCheck, FaCheckDouble } from "react-icons/fa";
 export default function CandidateDetailsCard({
   candidate,
   loggedInHrId,
@@ -42,7 +42,8 @@ export default function CandidateDetailsCard({
     highest_education_degree,
     highest_education_field,
     phone,
-    cv,had_leadership_role,
+    cv,
+    had_leadership_role,
     has_position_related_high_education,
     years_of_experience,
     percentage_of_matching_skills,
@@ -169,14 +170,51 @@ export default function CandidateDetailsCard({
   const renderInterviewActions = () => {
     if (localState === "done" && interviewer === loggedInHrId) {
       return (
-        <>
-          <Button variant="success" onClick={() => setShowAcceptModal(true)}>
-            <FaCheck className="me-1" /> Accept
-          </Button>
-          <Button variant="danger" onClick={() => setShowRejectModal(true)}>
-            <FaTimes className="me-1" /> Reject
-          </Button>
-        </>
+        <div className="d-flex align-items-center gap-3">
+          {/* Interview Rating Card */}
+          <div className="bg-light p-3 rounded d-flex align-items-center gap-2">
+            <div className="bg-info bg-opacity-10 p-2 rounded">
+              <FaCheckDouble className="text-info" />
+            </div>
+            <div>
+              <small className="text-muted d-block">Your Grade</small>
+              <strong className="fs-5">
+                {candidate.interviewer_rating || "N/A"}/100
+              </strong>
+            </div>
+          </div>
+
+          {/* Questions Average Grade Card */}
+          <div className="bg-light p-3 rounded d-flex align-items-center gap-2">
+            <div className="bg-info bg-opacity-10 p-2 rounded">
+              <FaClipboardCheck className="text-info" />
+            </div>
+            <div>
+              <small className="text-muted d-block">Questions Avg Grade</small>
+              <strong className="fs-5">
+                {candidate.interview_questions_avg_grade || "N/A"}/100
+              </strong>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="d-flex gap-2">
+            <Button
+              variant="success"
+              onClick={() => setShowAcceptModal(true)}
+              className="d-flex align-items-center gap-1"
+            >
+              <FaCheck /> Accept
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => setShowRejectModal(true)}
+              className="d-flex align-items-center gap-1"
+            >
+              <FaTimes /> Reject
+            </Button>
+          </div>
+        </div>
       );
     }
 
