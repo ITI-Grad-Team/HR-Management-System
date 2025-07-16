@@ -1,6 +1,8 @@
 import React from "react";
 import { Suspense } from "react";
 import "./App.css";
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 import { lazy } from "react";
 import ProfileContainer from "./components/BioCard/ProfileContainer";
 import { Route, Router, Routes, Navigate } from "react-router-dom";

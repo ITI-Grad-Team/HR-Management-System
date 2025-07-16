@@ -1,12 +1,12 @@
 import "./employees.css";
 import { useEffect, useState } from "react";
-import { positions } from "../../lib/Positions.js";
-import { regions } from "../../lib/Regions.js";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
-
-const Directories = () => {
+import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
+import Filters from "../../components/Filters/Filters.jsx";
+import Slider from "react-slick";
+const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [positionSelect, setPositionSelect] = useState("");
   const [regionSelect, setRegionSelect] = useState("");
@@ -18,8 +18,7 @@ const Directories = () => {
       .get("/admin/employees/?interview_state=accepted")
       .then((res) => setEmployees(res.data.results))
       .catch((err) => console.error(err));
-    console.log(employees);
-  }, [employees]);
+  }, []);
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesPosition = positionSelect
@@ -34,7 +33,27 @@ const Directories = () => {
 
     return matchesPosition && matchesRegion && matchesCoordinator;
   });
-
+  const sliderSettings = {
+  dots: true,
+  infinite: false,
+  speed: 500,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  responsive: [
+    {
+      breakpoint: 1024,
+      settings: {
+        slidesToShow: 2,
+      }
+    },
+    {
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 1,
+      }
+    }
+  ]
+};
   return (
     <div className="directories d-flex">
       <div
@@ -43,83 +62,73 @@ const Directories = () => {
       >
         {/* HR Section */}
         {role === "admin" && (
-          <div className="section">
-            <div className="section-heading">
-              <h2>HRs</h2>
-            </div>
-            <div className="card-grid">
-              {/* HR cards go here */}
-              <div className="card-placeholder">HR Card</div>
-              <div className="card-placeholder">HR Card</div>
-            </div>
-          </div>
+          <SectionBlock title="HRs">
+            <div className="card-placeholder">HR Card</div>
+            <div className="card-placeholder">HR Card</div>
+          </SectionBlock>
         )}
 
         {/* Employees Section */}
-        <div className="section">
-          <div className="section-heading filters">
-            <h2>Employees</h2>
+   <SectionBlock
+  title="Employees"
+  extraHeader={
+    <Filters
+      positionSelect={positionSelect}
+      regionSelect={regionSelect}
+      isCoordinatorValue={isCoordinatorValue}
+      onPositionChange={(e) => setPositionSelect(e.target.value)}
+      onRegionChange={(e) => setRegionSelect(e.target.value)}
+      onCoordinatorToggle={() => setIsCoordinatorValue(!isCoordinatorValue)}
+      onClear={() => {
+        setPositionSelect("");
+        setRegionSelect("");
+        setIsCoordinatorValue(false);
+      }}
+    />
+  }
+>
+  
+  {filteredEmployees.length > 0 ? (
+    <div className="slider-wrapper">
+      <div className="slider-container">
 
-            <div className="filter-controls">
-              <span>Filters : </span>
-
-              <div className="position-select">
-                <select onChange={(e) => setPositionSelect(e.target.value)}>
-                  <option value="">Position</option>
-                  {positions.map((position) => (
-                    <option key={position.id} value={position.name}>
-                      {position.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="region-select">
-                <select onChange={(e) => setRegionSelect(e.target.value)}>
-                  <option value="">Region</option>
-                  {regions.map((region) => (
-                    <option key={region.id} value={region.name}>
-                      {region.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="is-coordinator">
-                <label htmlFor="">Is Coordinator</label>
-                <input
-                  type="checkbox"
-                  checked={isCoordinatorValue}
-                  onChange={() => setIsCoordinatorValue(!isCoordinatorValue)}
-                />
-              </div>
-            </div>
+      <Slider {...sliderSettings}>
+        {filteredEmployees.map((employee) => (
+          <div key={employee.id}>
+            <BioCard
+              name={employee.basic_info.username}
+              role={employee.basic_info.role}
+              email={employee.basic_info.email}
+              phone={employee.basic_info.phone}
+              avatar={employee.basic_info.profile_image || ""}
+              department={employee.department}
+              location={employee.region}
+              bio={employee.bio}
+              status={employee.status}
+            />
           </div>
+        ))}
+      </Slider>
+      </div>
+    </div>
+  ) : (
+    <div className="text-center text-muted mt-4">
+      No employees found matching your filters.
+    </div>
+  )}
+</SectionBlock>
 
-          <div className="card-grid">
-            {/* Employee cards go here */}
-            <div className="card-placeholder">Employee Card</div>
+      </div>
+    </div>
+  );
+};
 
-            {filteredEmployees.map((employee) => (
-              <div key={employee.id}>
-                <BioCard
-                  name={employee.basic_info.username}
-                  role={employee.basic_info.role}
-                  email={employee.basic_info.email}
-                  phone={employee.basic_info.phone}
-                  avatar={employee.basic_info.profile_image || ""}
-                  department={employee.department}
-                  location={employee.region}
-                  bio={employee.bio}
-                  status={employee.status}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+export default Employees;
 
-        {/* Candidates Section */}
-        {/* <div className="section">
+/* 
+
+/*   {/* Candidates Section *//*}*/
+      /*  {/* <div className="section">
           <div className="section-heading">
             <h2>Candidates</h2>
           </div>
@@ -127,10 +136,4 @@ const Directories = () => {
             <div className="card-placeholder">Candidate Card</div>
             <div className="card-placeholder">Candidate Card</div>
           </div>
-        </div> */}
-      </div>
-    </div>
-  );
-};
-
-export default Directories;
+        </div> *//*} */ 
