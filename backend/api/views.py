@@ -240,15 +240,32 @@ class AdminInviteHRViewSet(ModelViewSet):
 
 
 class AdminViewHRsViewSet(ModelViewSet):
-    queryset = HR.objects.all()
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [SearchFilter]
     search_fields = ["user__username", "user__email"]
 
+    def get_queryset(self):
+        queryset = HR.objects.select_related(
+            'user', 
+            'user__basicinfo'  
+        )
+        return queryset
+
     def get_serializer_class(self):
         if self.action == 'list':
-            return HRListSerializer  
+            return HRListSerializer
         return HRSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AdminViewUsersViewSet(ModelViewSet):
