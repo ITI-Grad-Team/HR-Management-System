@@ -406,13 +406,13 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "generated_at",
         ]
 
-
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.StringRelatedField()
     region = serializers.StringRelatedField()
     highest_education_degree = serializers.StringRelatedField()
     highest_education_field = serializers.StringRelatedField()
     skills = serializers.StringRelatedField(many=True)
+    user = UserSerializer(read_only=True)
     basic_info = BasicInfoSerializer(source='user.basicinfo')
 
     avg_task_ratings = serializers.SerializerMethodField()
@@ -436,9 +436,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "avg_attendance_lateness_hrs",
             "avg_absence_days",
             "interview_state",
-            "skills",
             "interview_datetime",
-            "basic_info",
+            "skills",
+            "user",         
+            "basic_info",  
         ]
 
     def get_avg_task_ratings(self, obj):
@@ -452,7 +453,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     def get_avg_absence_days(self, obj):
         return obj.avg_absent_days
-
 
 
 class RegionSerializer(serializers.ModelSerializer):

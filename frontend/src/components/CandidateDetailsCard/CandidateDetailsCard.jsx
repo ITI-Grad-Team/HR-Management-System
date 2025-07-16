@@ -26,7 +26,7 @@ import {
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-
+import { FaClipboardCheck, FaCheckDouble } from "react-icons/fa";
 export default function CandidateDetailsCard({
   candidate,
   loggedInHrId,
@@ -43,6 +43,8 @@ export default function CandidateDetailsCard({
     highest_education_field,
     phone,
     cv,
+    had_leadership_role,
+    has_position_related_high_education,
     years_of_experience,
     percentage_of_matching_skills,
     skills,
@@ -71,6 +73,7 @@ export default function CandidateDetailsCard({
   /* ---------------- Schedule ---------------- */
   const handleScheduleSubmit = async () => {
     try {
+      setLoading(true); // Add this line
       await axiosInstance.patch(
         `/hr/employees/${candidateId}/schedule-interview/`,
         {
@@ -80,10 +83,12 @@ export default function CandidateDetailsCard({
       setLocalState("scheduled");
       toast.success("Interview scheduled");
       setShowScheduleModal(false);
-      onSchedule?.();
+      onSchedule?.(); // Make sure this callback is properly passed from parent
     } catch (err) {
       toast.error("Failed to schedule interview");
       console.error(err);
+    } finally {
+      setLoading(false); // Add this line
     }
   };
 
@@ -165,14 +170,51 @@ export default function CandidateDetailsCard({
   const renderInterviewActions = () => {
     if (localState === "done" && interviewer === loggedInHrId) {
       return (
-        <>
-          <Button variant="success" onClick={() => setShowAcceptModal(true)}>
-            <FaCheck className="me-1" /> Accept
-          </Button>
-          <Button variant="danger" onClick={() => setShowRejectModal(true)}>
-            <FaTimes className="me-1" /> Reject
-          </Button>
-        </>
+        <div className="d-flex align-items-center gap-3">
+          {/* Interview Rating Card */}
+          <div className="bg-light p-3 rounded d-flex align-items-center gap-2">
+            <div className="bg-info bg-opacity-10 p-2 rounded">
+              <FaCheckDouble className="text-info" />
+            </div>
+            <div>
+              <small className="text-muted d-block">Your Grade</small>
+              <strong className="fs-5">
+                {candidate.interviewer_rating || "N/A"}/100
+              </strong>
+            </div>
+          </div>
+
+          {/* Questions Average Grade Card */}
+          <div className="bg-light p-3 rounded d-flex align-items-center gap-2">
+            <div className="bg-info bg-opacity-10 p-2 rounded">
+              <FaClipboardCheck className="text-info" />
+            </div>
+            <div>
+              <small className="text-muted d-block">Questions Avg Grade</small>
+              <strong className="fs-5">
+                {candidate.interview_questions_avg_grade || "N/A"}/100
+              </strong>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="d-flex gap-2">
+            <Button
+              variant="success"
+              onClick={() => setShowAcceptModal(true)}
+              className="d-flex align-items-center gap-1"
+            >
+              <FaCheck /> Accept
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => setShowRejectModal(true)}
+              className="d-flex align-items-center gap-1"
+            >
+              <FaTimes /> Reject
+            </Button>
+          </div>
+        </div>
       );
     }
 
@@ -306,17 +348,7 @@ export default function CandidateDetailsCard({
                     </div>
                   </div>
                 </Col>
-                <Col sm={6} className="mb-2">
-                  <div className="d-flex align-items-center">
-                    <FaLaptopCode className="me-2 text-muted" />
-                    <div>
-                      <small className="text-muted d-block">Match</small>
-                      <span className="fw-semibold">
-                        {Math.round(percentage_of_matching_skills)}%
-                      </span>
-                    </div>
-                  </div>
-                </Col>
+                <Col sm={6} className="mb-2"></Col>
               </Row>
             </div>
 
@@ -326,7 +358,12 @@ export default function CandidateDetailsCard({
               style={{ background: "rgba(248,249,250,0.8)" }}
             >
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                <FaUserGraduate className="me-2" /> Education
+                <FaUserGraduate className="me-2" />
+                <span>Education</span>
+                <span className="fw-semibold text-muted ms-auto">
+                  Position Match{" "}
+                  {has_position_related_high_education ? "✓" : "✗"}
+                </span>
               </h6>
               <div>
                 <small className="text-muted d-block">Highest Degree</small>
@@ -335,28 +372,48 @@ export default function CandidateDetailsCard({
                 </span>
               </div>
             </div>
-
             {/* Skills */}
             <div
               className="mb-4 p-3 rounded-3"
               style={{ background: "rgba(248,249,250,0.8)" }}
             >
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                <FaCode className="me-2" /> Skills
+                <FaCode className="me-2" />
+                <span>Skills</span>
+                <span className="fw-semibold text-muted ms-auto">
+                  Required Match {Math.round(percentage_of_matching_skills)}%
+                </span>
               </h6>
+
               <div className="d-flex flex-wrap gap-2">
                 {skills?.length > 0 ? (
-                  skills.map((skill, index) => (
-                    <Badge
-                      key={index}
-                      pill
-                      bg="primary"
-                      className="px-3 py-2"
-                      style={{ opacity: 0.9 }}
-                    >
-                      {skill}
-                    </Badge>
-                  ))
+                  <>
+                    {/* Leadership badge - shown first if had_leadership_role is true */}
+                    {had_leadership_role && (
+                      <Badge
+                        pill
+                        bg="warning"
+                        text="dark"
+                        className="px-3 py-2"
+                        style={{ opacity: 0.9 }}
+                      >
+                        Leadership Experience
+                      </Badge>
+                    )}
+
+                    {/* Regular skills */}
+                    {skills.map((skill, index) => (
+                      <Badge
+                        key={index}
+                        pill
+                        bg="primary"
+                        className="px-3 py-2"
+                        style={{ opacity: 0.9 }}
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </>
                 ) : (
                   <span className="text-muted">No skills listed</span>
                 )}
@@ -388,7 +445,21 @@ export default function CandidateDetailsCard({
               style={{ background: "rgba(248,249,250,0.8)" }}
             >
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                <FaCalendarAlt className="me-2" /> Interview
+                <FaCalendarAlt className="me-2" />
+                <span>Interview</span>
+                {candidate.interview_datetime && (
+                  <span className="fw-semibold text-muted ms-auto">
+                    {new Date(candidate.interview_datetime).toLocaleString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
+                  </span>
+                )}
               </h6>
               <div className="d-flex gap-3 flex-wrap mb-3">
                 {renderInterviewActions()}
@@ -431,6 +502,7 @@ export default function CandidateDetailsCard({
               variant="primary"
               onClick={handleScheduleSubmit}
               className="rounded-pill px-4"
+              disabled={loading}
             >
               Confirm
             </Button>
