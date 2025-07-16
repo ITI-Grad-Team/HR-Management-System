@@ -157,16 +157,33 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     search_fields = ["user__username", "phone"]
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
-            'user', 
-            'position', 
-            'region',
-            'user__basicinfo' 
-        )
+        base_queryset = super().get_queryset()
+        
+        # Optimize differently for list vs detail views
+        if self.action == 'list':
+            queryset = base_queryset.select_related(
+                'user', 
+                'position', 
+                'region',
+                'user__basicinfo'
+            )
+        else:
+            # Detail view needs more prefetches
+            queryset = base_queryset.select_related(
+                'user',
+                'position',
+                'region',
+                'user__basicinfo',
+                'highest_education_degree',  # New
+                'highest_education_field'    # New
+            ).prefetch_related(
+                'skills'                    # New
+            )
         
         interview_state_not = self.request.query_params.get('interview_state_not')
         if interview_state_not:
             queryset = queryset.exclude(interview_state=interview_state_not)
+        
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
@@ -495,9 +512,8 @@ class HRViewEmployeesViewSet(ModelViewSet):
     Displays employee records (hides other HRs)
     - Only accessible by HR role
     - Includes filters and search functionality
+    - Optimized with prefetch_related and select_related to prevent N+1 queries
     """
-
-    queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -511,13 +527,28 @@ class HRViewEmployeesViewSet(ModelViewSet):
     search_fields = ["user__username", "phone"]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Employee.objects.select_related(
+            'user',
+            'user__basicinfo',
+            'region',
+            'position',
+            'highest_education_degree',  # Added for detail view
+            'highest_education_field'   # Added for detail view
+        ).prefetch_related(
+            'interviewquestion_set',    # For interview_questions
+            'skills'                   # For skills ManyToMany
+        )
+        
         interview_state_not = self.request.query_params.get('interview_state_not')
-
         if interview_state_not:
             queryset = queryset.exclude(interview_state=interview_state_not)
 
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmployeeListSerializer  # Use a lighter serializer for lists
+        return EmployeeSerializer
 
 
 
