@@ -110,17 +110,17 @@ const Directories = () => {
 
             {filteredEmployees.map((employee) => (
               <div key={employee.id}>
-                <Link to={`/dashboard/employeeDetails/${employee.id}`}>
+                <Link to={`/dashboard/employeeDetails/${employee.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                   <BioCard
                     name={employee.basic_info.username}
-                    role={employee.basic_info.role}
-                    email={employee.basic_info.email}
+                    email={employee.user?.username}
                     phone={employee.basic_info.phone}
                     avatar={employee.basic_info.profile_image || ""}
-                    department={employee.department}
+                    department={employee.position}
                     location={employee.region}
-                    bio={employee.bio}
-                    status={employee.status}
+                    education={employee.highest_education_field}
+                    {...employee.basic_info.role === "employee" && { experience: employee.years_of_experience }}
+                    {...employee.basic_info.role === "employee" && employee.interview_state !== "accepted" && { status: employee.interview_state }}
                   />
                 </Link>
               </div>
