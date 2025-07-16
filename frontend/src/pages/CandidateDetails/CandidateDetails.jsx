@@ -19,32 +19,34 @@ export default function CandidateDetails() {
 
 
   /* ---------- fetch candidate ---------- */
-  const fetchCandidate = () =>
-    axiosInstance.get(`/hr/employees/${id}/`).then((res) => setCandidate(res.data));
 
-  useEffect(() => {
+
   const fetchCandidate = async () => {
     const res = await axiosInstance.get(`/hr/employees/${id}/`);
     setCandidate(res.data);
 
     if (
       res.data.interviewer === user.hr?.id &&
-      (res.data.interview_state == "scheduled" || res.data.interview_state == "pending")
+      (res.data.interview_state == "scheduled" ||
+        res.data.interview_state == "pending")
     ) {
       setShowForm(true);
     }
   };
 
-  fetchCandidate().catch(console.error).finally(() => setLoading(false));
-}, [id, user.hr?.id]);
+  useEffect(() => {
+    fetchCandidate()
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id, user.hr?.id]);
 
-useEffect(() => {
-  if (showForm) {
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 300);
-  }
-}, [showForm]);
+  useEffect(() => {
+    if (showForm) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [showForm]);
 
 
 
@@ -58,7 +60,7 @@ useEffect(() => {
       setTimeout(() => {
   formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 }, 300);
-      toast.success("Interview started");
+      toast.success("Interview Responsibility Taken");
     } catch (err) {
       toast.error("Failed to take interview");
     } finally {
@@ -83,29 +85,33 @@ useEffect(() => {
           <CandidateDetailsCard
             candidate={candidate}
             loggedInHrId={user.hr?.id}
+            onSchedule={fetchCandidate}
             onTake={handleTake}
             loadingProp={loadingForm}
           />
         </Col>
 
         {showForm && isCurrentInterviewer && (
-  <Col md={12} ref={formRef}>
-    <Card className="p-4 shadow-sm mt-4 border border-primary-subtle" style={{
-      backgroundColor: "#fefefe",
-      animation: "fadeInUp 0.5s ease-in-out"
-    }}>
-      <h5 className="mb-4 fw-bold text-primary">Interview Form</h5>
-      <InterviewForm
-        candidateId={candidate.id}
-        onSubmitted={() => {
-          setShowForm(false);
-          fetchCandidate();
-        }}
-      />
-    </Card>
-  </Col>
-)}
-
+          <Col md={12} ref={formRef}>
+            <Card
+              className="p-4 shadow-sm mt-4 border border-primary-subtle"
+              style={{
+                backgroundColor: "#fefefe",
+                animation: "fadeInUp 0.5s ease-in-out",
+              }}
+            >
+              <h5 className="mb-4 fw-bold text-primary">Interview Form</h5>
+              <InterviewForm
+                candidateId={candidate.id}
+                onSubmitted={(updatedCandidate) => {
+                  setShowForm(false);
+                  setCandidate(updatedCandidate); 
+                  window.location.reload();
+                }}
+              />
+            </Card>
+          </Col>
+        )}
       </Row>
     </Container>
   );

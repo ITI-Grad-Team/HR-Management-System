@@ -79,7 +79,10 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
     const errors = [];
     questions.forEach((q, i) => {
       if (!q.text.trim()) errors.push(`Question ${i + 1} is empty`);
-      if (q.grade !== null && (isNaN(q.grade) || q.grade < 0 || q.grade > 100)) {
+      if (
+        q.grade !== null &&
+        (isNaN(q.grade) || q.grade < 0 || q.grade > 100)
+      ) {
         errors.push(`Question ${i + 1} has invalid grade`);
       }
     });
@@ -152,10 +155,15 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
 
     setLoading(true);
     try {
-      await axiosInstance.patch(`/hr/employees/${candidateId}/rate-interviewee/`, {
-        rating: n,
-      });
-      await axiosInstance.patch(`/hr/employees/${candidateId}/submit-interview/`);
+      await axiosInstance.patch(
+        `/hr/employees/${candidateId}/rate-interviewee/`,
+        {
+          rating: n,
+        }
+      );
+      await axiosInstance.patch(
+        `/hr/employees/${candidateId}/submit-interview/`
+      );
 
       toast.success("Interview submitted successfully");
       setShowRatingModal(false);
@@ -172,7 +180,10 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
   return (
     <div
       className="mt-4 p-4 rounded-3"
-      style={{ backgroundColor: "#f8f9fa", border: "1px solid rgba(0,0,0,0.05)" }}
+      style={{
+        backgroundColor: "#f8f9fa",
+        border: "1px solid rgba(0,0,0,0.05)",
+      }}
     >
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -195,7 +206,10 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
           <div
             key={idx}
             className="d-flex align-items-center gap-3 mb-3 p-3 rounded-3"
-            style={{ backgroundColor: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
+            style={{
+              backgroundColor: "#fff",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}
           >
             <div className="flex-grow-1">
               <Form.Control
@@ -218,7 +232,10 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
                   className="border-2"
                   style={{ width: "100px", borderRadius: "8px" }}
                   onBlur={(e) => {
-                    const val = e.target.value === "" ? null : clamp(Number(e.target.value));
+                    const val =
+                      e.target.value === ""
+                        ? null
+                        : clamp(Number(e.target.value));
                     updateField(idx, "grade", val);
                   }}
                 />
@@ -262,7 +279,11 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
       </div>
 
       {/* RATING MODAL (no avg grade) */}
-      <Modal show={showRatingModal} onHide={() => setShowRatingModal(false)} centered>
+      <Modal
+        show={showRatingModal}
+        onHide={() => setShowRatingModal(false)}
+        centered
+      >
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">
             <FaStar className="me-2 text-warning" /> Rate Interview
@@ -270,7 +291,9 @@ export default function InterviewForm({ candidateId, onSubmitted }) {
         </Modal.Header>
         <Modal.Body className="pt-0">
           <Form.Group className="mb-4">
-            <Form.Label className="fw-semibold text-muted">Final Interview Rating (0‑100)</Form.Label>
+            <Form.Label className="fw-semibold text-muted">
+              Final Interview Rating (0‑100)
+            </Form.Label>
             <Form.Control
               type="number"
               min={0}
