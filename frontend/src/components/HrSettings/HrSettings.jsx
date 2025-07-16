@@ -12,6 +12,7 @@ import {
   Toast,
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
+import SettingsFallback from "../DashboardFallBack/SettingsFallback";
 
 export default function HrSettings() {
   /* ----------------------------- STATE -------------------------------- */
@@ -123,11 +124,7 @@ export default function HrSettings() {
   /* --------------------------- RENDER --------------------------------- */
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </div>
+      <SettingsFallback />
     );
   }
 
