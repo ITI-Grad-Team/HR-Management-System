@@ -7,7 +7,7 @@ import {
   FaGraduationCap,
   FaBriefcase,
   FaUserTie,
-  FaUsers, // Added team icon
+  FaUsers,
 } from "react-icons/fa";
 
 export default function BioCard({
@@ -20,11 +20,15 @@ export default function BioCard({
   education,
   experience,
   isCoordinator,
+  role,
+  status, // Added status in case you want to show candidate status
 }) {
+  const isEmployee = role === "employee";
+
   return (
     <div className="bio-card">
-      {/* Coordinator badge - positioned absolutely */}
-      {isCoordinator && (
+      {/* Only show coordinator badge for employees */}
+      {isEmployee && isCoordinator && (
         <div className="coordinator-floating-badge">
           <span>Coordinator</span> <FaUsers className="coordinator-icon" />
         </div>
@@ -45,9 +49,16 @@ export default function BioCard({
           <h2 className="bio-card-name" title={name}>
             {name || "No Name Provided"}
           </h2>
-          <p className="bio-card-role">
-            {department || "Position Not Specified"}
-          </p>
+          {/* Show department/position only for employees */}
+          {isEmployee && (
+            <p className="bio-card-role">
+              {department || "Position Not Specified"}
+            </p>
+          )}
+          {/* Optionally show status for candidates */}
+          {!isEmployee && status && (
+            <p className="bio-card-status">Status: {status}</p>
+          )}
         </div>
       </div>
 
@@ -61,24 +72,32 @@ export default function BioCard({
           <FaPhone className="bio-card-info-icon" />
           <span className="bio-card-info-text">{phone || "N/A"}</span>
         </div>
-        <div className="bio-card-info-item">
-          <FaMapMarkerAlt className="bio-card-info-icon" />
-          <span className="bio-card-info-text">{location || "N/A"}</span>
-        </div>
-        <div className="bio-card-info-item">
-          <FaGraduationCap className="bio-card-info-icon" />
-          <span className="bio-card-info-text">{education || "N/A"}</span>
-        </div>
-        {experience !== undefined && (
+
+        {/* Show location only for employees */}
+        {isEmployee && (
           <div className="bio-card-info-item">
-            <div className="bio-card-info-item">
-              <FaBriefcase className="bio-card-info-icon" />
-              <span className="bio-card-info-text">
-                {experience
-                  ? `${experience} ${experience === 1 ? "year" : "years"} exp.`
-                  : "N/A"}
-              </span>
-            </div>
+            <FaMapMarkerAlt className="bio-card-info-icon" />
+            <span className="bio-card-info-text">{location || "N/A"}</span>
+          </div>
+        )}
+
+        {/* Show education only for employees */}
+        {isEmployee && (
+          <div className="bio-card-info-item">
+            <FaGraduationCap className="bio-card-info-icon" />
+            <span className="bio-card-info-text">{education || "N/A"}</span>
+          </div>
+        )}
+
+        {/* Show experience only for employees */}
+        {isEmployee && experience !== undefined && (
+          <div className="bio-card-info-item">
+            <FaBriefcase className="bio-card-info-icon" />
+            <span className="bio-card-info-text">
+              {experience
+                ? `${experience} ${experience === 1 ? "year" : "years"} exp.`
+                : "N/A"}
+            </span>
           </div>
         )}
       </div>

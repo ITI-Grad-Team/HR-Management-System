@@ -472,6 +472,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
     highest_education_field = serializers.CharField(source='highest_education_field.name', read_only=True)
+    application_link = serializers.CharField(source="application_link.distinction_name", read_only=True)
+
     class Meta:
         model = Employee
         fields = [
@@ -480,7 +482,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "region",
             "is_coordinator",
             "user",         
-            "basic_info","highest_education_field","years_of_experience"
+            "basic_info","highest_education_field","years_of_experience","application_link"
         ]
 
 
@@ -511,9 +513,9 @@ class CompanyStatisticsSerializer(serializers.ModelSerializer):
 
 class HRListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    basicinfo = BasicInfoSerializer(source='user.basicinfo', read_only=True)
+    basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
 
     class Meta:
         model = HR
-        fields = ['id', 'user', 'basicinfo']
+        fields = ['id', 'user', 'basic_info']
 
