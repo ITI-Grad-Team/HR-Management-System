@@ -99,6 +99,29 @@ export default function Sidebar() {
           </Nav>
         </>
       )}
+
+      {role === "employee" && (
+        <>
+          <Nav className="flex-column">
+            <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
+              <FaHome /> <span>Dashboard</span>
+            </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/attendance" className={pathname.startsWith("/dashboard/attendance") ? "active" : ""}>
+                <FaCalendarCheck /> <span>Attendance</span>
+            </Nav.Link>
+          </Nav>
+          <div className="spacer" />
+          <h6>OTHER</h6>
+          <Nav className="flex-column">
+            <Nav.Link as={Link} to="/dashboard/settings" className={pathname === "/dashboard/settings" ? "active" : ""}>
+              <FaCog /> <span>Settings</span>
+            </Nav.Link>
+            <Nav.Link onClick={logout} className="text-danger mt-auto">
+              <FaSignOutAlt /> <span>Logout</span>
+            </Nav.Link>
+          </Nav>
+        </>
+      )}
     </div>
   );
 }
