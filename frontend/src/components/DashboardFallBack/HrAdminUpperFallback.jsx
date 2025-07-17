@@ -1,24 +1,29 @@
-import React, { Suspense } from "react";
+import React from "react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
 const HrAdminUpperFallback = () => (
   <div className="p-4">
-
-
-    {/* Cards Row */}
-    <div className="d-flex gap-4 mb-4 flex-wrap">
+    {/* Cards */}
+    <div
+      className="mb-4"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: "1rem",
+      }}
+    >
       {[...Array(8)].map((_, i) => (
-        <div key={i} style={{ flex: "1 1 200px" }}>
-          <Skeleton height={100} width={250} />
+        <div key={i}>
+          <Skeleton height={100} width="100%" />
         </div>
       ))}
     </div>
 
+    {/* Chart */}
     <div className="mb-5 mt-3">
-        <Skeleton height={300} width={"100%"} />
-      </div>
-
+      <Skeleton height={300} width="100%" />
+    </div>
   </div>
 );
 
