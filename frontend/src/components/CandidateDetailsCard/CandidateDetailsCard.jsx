@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Button,
@@ -15,7 +15,7 @@ import {
   FaBriefcase,
   FaMapMarkerAlt,
   FaUserGraduate,
-  FaLaptopCode,
+  FaEdit,
   FaUser,
   FaCode,
   FaFileAlt,
@@ -28,6 +28,7 @@ import {
   FaRegChartBar,
   FaRobot,
 } from "react-icons/fa";
+import Select from "react-select";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -80,6 +81,53 @@ export default function CandidateDetailsCard({
   });
   const [predictLoading, setPredictLoading] = useState(false);
   const [predictError, setPredictError] = useState(null);
+  const [showCvEditModal, setShowCvEditModal] = useState(false);
+  const [cvFormData, setCvFormData] = useState({
+    years_of_experience: candidate.years_of_experience || "",
+    had_leadership_role: candidate.had_leadership_role || false,
+    percentage_of_matching_skills:
+      candidate.percentage_of_matching_skills || "",
+    has_position_related_high_education:
+      candidate.has_position_related_high_education || false,
+  });
+  const [allSkills, setAllSkills] = useState([]);
+  const [allRegions, setAllRegions] = useState([]);
+  const [allDegrees, setAllDegrees] = useState([]);
+  const [allEducationFields, setAllEducationFields] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const [skillsRes, regionsRes, degreesRes, fieldsRes] =
+          await Promise.all([
+            axiosInstance.get("hr/skills/"),
+            axiosInstance.get("hr/regions/"),
+            axiosInstance.get("hr/degrees/"),
+            axiosInstance.get("hr/fields/"),
+          ]);
+
+        setAllSkills(
+          skillsRes.data.results.map((s) => ({ value: s.id, label: s.name }))
+        );
+        setAllRegions(
+          regionsRes.data.results.map((r) => ({ value: r.id, label: r.name }))
+        );
+        setAllDegrees(
+          degreesRes.data.results.map((d) => ({ value: d.id, label: d.name }))
+        );
+        setAllEducationFields(
+          fieldsRes.data.results.map((f) => ({ value: f.id, label: f.name }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch dropdown data:", error);
+        toast.error("Failed to load dropdown options");
+      }
+    };
+
+    if (showCvEditModal) {
+      fetchDropdownData();
+    }
+  }, [showCvEditModal]);
 
   /* ---------------- Schedule ---------------- */
   const handleScheduleSubmit = async () => {
@@ -312,7 +360,7 @@ export default function CandidateDetailsCard({
       }
       toast.error("Failed to update predictions");
     } finally {
-      setPredictLoading(false);
+      setTimeout(() => setPredictLoading(false), 1500);
     }
   };
 
@@ -331,6 +379,29 @@ export default function CandidateDetailsCard({
     return Object.values(requiredFields).some((value) => value === null);
   };
 
+  // cv data edit handler
+
+  const handleCvDataUpdate = async () => {
+    try {
+      const updateData = {
+        ...cvFormData,
+        skills: selectedSkills.map((skill) => skill.value),
+      };
+
+      console.log(updateData.skills);
+
+      const response = await axiosInstance.patch(
+        `/hr/employees/${candidateId}/update-cv-data/`,
+        updateData
+      );
+      toast.success("CV data updated successfully");
+      setShowCvEditModal(false);
+      onPredictUpdate?.(); // Refresh the parent data
+    } catch (err) {
+      toast.error("Failed to update CV data");
+      console.error(err);
+    }
+  };
   return (
     <>
       <Card
@@ -464,21 +535,19 @@ export default function CandidateDetailsCard({
               </h6>
 
               <div className="d-flex flex-wrap gap-2">
+                {had_leadership_role && (
+                  <Badge
+                    pill
+                    bg="warning"
+                    text="dark"
+                    className="px-3 py-2"
+                    style={{ opacity: 0.9 }}
+                  >
+                    Leadership Experience
+                  </Badge>
+                )}
                 {skills?.length > 0 ? (
                   <>
-                    {/* Leadership badge - shown first if had_leadership_role is true */}
-                    {had_leadership_role && (
-                      <Badge
-                        pill
-                        bg="warning"
-                        text="dark"
-                        className="px-3 py-2"
-                        style={{ opacity: 0.9 }}
-                      >
-                        Leadership Experience
-                      </Badge>
-                    )}
-
                     {/* Regular skills */}
                     {skills.map((skill, index) => (
                       <Badge
@@ -493,7 +562,9 @@ export default function CandidateDetailsCard({
                     ))}
                   </>
                 ) : (
-                  <span className="text-muted">No skills listed</span>
+                  <span className="text-muted">
+                    {!had_leadership_role && "No skills listed"}
+                  </span>
                 )}
               </div>
             </div>
@@ -518,13 +589,20 @@ export default function CandidateDetailsCard({
                     <FaDownload /> Download CV
                   </a>
                 </Col>
+
                 <Col md={6} className="d-flex justify-content-end">
                   <div className="d-flex gap-3">
+                    <button
+                      className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                      onClick={() => setShowCvEditModal(true)}
+                    >
+                      <FaEdit /> Edit CV info.
+                    </button>
                     <button
                       className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowPredictionModal(true)}
                     >
-                      <FaRobot /> View AI Predictions
+                      <FaRobot /> View Predictions
                     </button>
                   </div>
                 </Col>
@@ -966,6 +1044,190 @@ export default function CandidateDetailsCard({
                 <FaRobot /> Run Predictions
               </>
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* cv edit modal */}
+      <Modal
+        show={showCvEditModal}
+        onHide={() => setShowCvEditModal(false)}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">
+            <FaEdit className="me-2" /> Edit CV Data
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Region</Form.Label>
+                  <Select
+                    options={allRegions}
+                    value={allRegions.find(
+                      (r) => r.value === cvFormData.region
+                    )}
+                    onChange={(selected) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        region: selected?.value || null,
+                      })
+                    }
+                    isClearable
+                    placeholder="Select region"
+                    className="basic-single"
+                    classNamePrefix="select"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Highest Education Degree</Form.Label>
+                  <Select
+                    options={allDegrees}
+                    value={allDegrees.find(
+                      (d) => d.value === cvFormData.highest_education_degree
+                    )}
+                    onChange={(selected) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        highest_education_degree: selected?.value || null,
+                      })
+                    }
+                    isClearable
+                    placeholder="Select degree"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Education Field</Form.Label>
+                  <Select
+                    options={allEducationFields}
+                    value={allEducationFields.find(
+                      (f) => f.value === cvFormData.highest_education_field
+                    )}
+                    onChange={(selected) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        highest_education_field: selected?.value || null,
+                      })
+                    }
+                    isClearable
+                    placeholder="Select field"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Years of Experience</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={cvFormData.years_of_experience}
+                    onChange={(e) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        years_of_experience: e.target.value || null,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Skills</Form.Label>
+              <Select
+                options={allSkills}
+                value={selectedSkills}
+                onChange={(selected) => setSelectedSkills(selected || [])}
+                isMulti
+                placeholder="Select skills"
+                closeMenuOnSelect={false}
+              />
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Percentage of Matching Skills</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={cvFormData.percentage_of_matching_skills}
+                    onChange={(e) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        percentage_of_matching_skills: e.target.value || null,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Had Leadership Role"
+                    checked={cvFormData.had_leadership_role || false}
+                    onChange={(e) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        had_leadership_role: e.target.checked,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    label="Has Position-Related High Education"
+                    checked={
+                      cvFormData.has_position_related_high_education || false
+                    }
+                    onChange={(e) =>
+                      setCvFormData({
+                        ...cvFormData,
+                        has_position_related_high_education: e.target.checked,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="secondary" onClick={() => setShowCvEditModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCvDataUpdate}
+            disabled={
+              !cvFormData.region ||
+              !cvFormData.highest_education_degree ||
+              !cvFormData.highest_education_field ||
+              cvFormData.years_of_experience === null ||
+              cvFormData.percentage_of_matching_skills === null
+            }
+          >
+            Update CV Data
           </Button>
         </Modal.Footer>
       </Modal>

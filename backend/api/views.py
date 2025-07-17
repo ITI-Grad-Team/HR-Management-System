@@ -49,7 +49,7 @@ from .serializers import (
     SkillSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
-    HRListSerializer,
+    HRListSerializer,EmployeeCVUpdateSerializer,
     PositionSerializer,
     EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
@@ -529,12 +529,14 @@ class HRViewEmployeesViewSet(ModelViewSet):
             'user__basicinfo',
             'region',
             'position',
-            'highest_education_field' , 'application_link'
+            'highest_education_field', 
+            'application_link'
         ).prefetch_related(
-            'skills'                    ,    'holidayyearday_set',
-    'holidayweekday_set',
-    'onlinedayyearday_set',
-    'onlinedayweekday_set'
+            'skills',
+            'holidayyearday_set',
+            'holidayweekday_set',
+            'onlinedayyearday_set',
+            'onlinedayweekday_set'
         )
         
         interview_state_not = self.request.query_params.get('interview_state_not')
@@ -545,8 +547,29 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'list':
-            return EmployeeListSerializer  # Use a lighter serializer for lists
+            return EmployeeListSerializer
+        elif self.action == 'update_cv_data':
+            return EmployeeCVUpdateSerializer
         return EmployeeSerializer
+
+    @action(detail=True, methods=['patch'], url_path='update-cv-data')
+    def update_cv_data(self, request, pk=None):
+        """
+        Special endpoint for HR to update employee CV-related data
+        PATCH /hr/employees/<pk>/update-cv-data/
+        """
+        employee = self.get_object()
+        serializer = self.get_serializer(employee, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        # Handle skills separately
+        skills = request.data.get('skills')
+        if skills is not None:
+            employee.skills.set(skills)
+        
+        serializer.save()
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["patch"], url_path="update-profile-fields")
     def update_profile_fields(self, request, pk=None):
@@ -1866,3 +1889,40 @@ class HRViewTopInterviewedEmployeesViewSet(ModelViewSet):
             })
 
         return Response(result)
+    
+class HRUpdateEmployeeCVDateViewSet(ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer  # Your existing serializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['update_cv_data']:
+            return [IsAuthenticated, IsHR]
+        return super().get_permissions()
+
+    @action(detail=True, methods=['patch'], url_path='update-cv-data')
+    def update_cv_data(self, request, pk=None):
+        employee = self.get_object()
+        serializer = EmployeeCVUpdateSerializer(
+            instance=employee,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+            # Handle skills separately
+            skills = request.data.get('skills', None)
+            
+            # Save all fields except skills
+            employee = serializer.save()
+            
+            # Update skills if provided
+            if skills is not None:
+                employee.skills.set(skills)
+            
+            return Response(
+                {"message": "CV data updated successfully"},
+                status=status.HTTP_200_OK
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

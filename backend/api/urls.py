@@ -21,7 +21,7 @@ from .views import (
     AdminViewApplicationLinksViewSet,
     AdminManageRegionsViewSet,
     AdminManageEducationDegreesViewSet,
-    AdminManageEducationFieldsViewSet,
+    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,AdminViewTopViewSet,
     HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet,AdminRankViewSet
