@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   Card,
   Button,
@@ -27,6 +28,15 @@ import {
   FaExclamationTriangle,
   FaRegChartBar,
   FaRobot,
+  FaInfo,
+  FaMoneyBill,
+  FaCalendar,
+  FaCalendarPlus,
+  FaTimesCircle,
+  FaLaptopHouse,
+  FaStar,
+  FaClock,
+  FaCalendarMinus,
 } from "react-icons/fa";
 import Select from "react-select";
 import axiosInstance from "../../api/config";
@@ -95,15 +105,32 @@ export default function CandidateDetailsCard({
   const [allDegrees, setAllDegrees] = useState([]);
   const [allEducationFields, setAllEducationFields] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
+
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
-            axiosInstance.get("hr/skills/"),
-            axiosInstance.get("hr/regions/"),
-            axiosInstance.get("hr/degrees/"),
-            axiosInstance.get("hr/fields/"),
+            axiosInstance.get(
+              `${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              }/skills/`
+            ),
+            axiosInstance.get(
+              `${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              }/regions/`
+            ),
+            axiosInstance.get(
+              `${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              }/degrees/`
+            ),
+            axiosInstance.get(
+              `${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              }/fields/`
+            ),
           ]);
 
         setAllSkills(
@@ -150,7 +177,6 @@ export default function CandidateDetailsCard({
       setLoading(false); // Add this line
     }
   };
-
   /* ---------------- Accept Employee ---------------- */
   const handleAcceptSubmit = async () => {
     try {
@@ -286,7 +312,6 @@ export default function CandidateDetailsCard({
         </div>
       );
     }
-
     return (
       <div className="d-flex gap-2">
         {(!candidate.scheduling_interviewer ||
@@ -380,6 +405,7 @@ export default function CandidateDetailsCard({
   };
 
   // cv data edit handler
+  const { role } = useAuth();
 
   const handleCvDataUpdate = async () => {
     try {
@@ -388,10 +414,10 @@ export default function CandidateDetailsCard({
         skills: selectedSkills.map((skill) => skill.value),
       };
 
-      console.log(updateData.skills);
-
       const response = await axiosInstance.patch(
-        `/hr/employees/${candidateId}/update-cv-data/`,
+        `/${
+          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
       toast.success("CV data updated successfully");
@@ -610,31 +636,202 @@ export default function CandidateDetailsCard({
             </div>
 
             {/* Interview Actions */}
-            <div
-              className="p-3 rounded-3"
-              style={{ background: "rgba(248,249,250,0.8)" }}
-            >
-              <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                <FaCalendarAlt className="me-2" />
-                <span>Interview</span>
-                {candidate.interview_datetime && (
-                  <span className="fw-semibold text-muted ms-auto">
-                    {new Date(candidate.interview_datetime).toLocaleString(
-                      "en-US",
-                      {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )}
-                  </span>
-                )}
-              </h6>
-              <div className="d-flex gap-3 flex-wrap mb-3">
-                {renderInterviewActions()}
+            {candidate.interview_state !== "accepted" && role === "hr" && (
+              <div
+                className="p-3 rounded-3"
+                style={{ background: "rgba(248,249,250,0.8)" }}
+              >
+                <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
+                  <FaCalendarAlt className="me-2" />
+                  <span>Interview</span>
+                  {candidate.interview_datetime && (
+                    <span className="fw-semibold text-muted ms-auto">
+                      {new Date(candidate.interview_datetime).toLocaleString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </span>
+                  )}
+                </h6>
+                <div className="d-flex gap-3 flex-wrap mb-3">
+                  {renderInterviewActions()}
+                </div>
               </div>
-            </div>
+            )}
+
+            {candidate.interview_state === "accepted" && (
+              <div
+                className="mb-4 p-3 rounded-3"
+                style={{ background: "rgba(248,249,250,0.8)" }}
+              >
+                <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
+                  <FaInfo className="me-2" /> Employee Info.
+                </h6>
+                <Row className="g-4">
+                  <Col md={4}>
+                    <div className="d-flex align-items-center">
+                      <FaMoneyBill className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">Salary</small>
+                        <span className="fw-semibold">
+                          $ {candidate?.basic_salary || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaCalendar className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Date Joined
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.join_date || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaCalendarPlus className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">Over Time</small>
+                        <span className="fw-semibold">
+                          $ {candidate?.overtime_hour_salary || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaTimesCircle className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Short Time Penalty
+                        </small>
+                        <span className="fw-semibold">
+                          $ {candidate?.shorttime_hour_penalty || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaTimesCircle className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Absence Penalty
+                        </small>
+                        <span className="fw-semibold">
+                          $ {candidate?.absence_penalty || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col md={4}>
+                    <div className="d-flex align-items-center">
+                      <FaCalendar className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Attendance Time
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.expected_attend_time || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaCalendar className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">Leave Time</small>
+                        <span className="fw-semibold">
+                          {candidate?.expected_leave_time || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaLaptopHouse className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Online days
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.number_of_non_holiday_days_since_join ||
+                            0}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaCheck className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Accepted Tasks
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.number_of_accepted_tasks || 0}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaStar className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Total Task rating
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.total_task_ratings || 0} hrs
+                        </span>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col md={4}>
+                    <div className="d-flex align-items-center">
+                      <FaClock className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Total Lateness Hrs
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.total_lateness_hours || 0} hrs
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaClock className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Total Time To DeadLine
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.total_time_remaining_before_deadline || 0}{" "}
+                          hrs
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaClock className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Total Over Time Hrs
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.total_overtime_hours || 0} hrs
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center mt-2">
+                      <FaCalendarMinus className="me-2 text-muted" />
+                      <div>
+                        <small className="text-muted d-block">
+                          Total Absence Days
+                        </small>
+                        <span className="fw-semibold">
+                          {candidate?.total_absent_days || 0} hrs
+                        </span>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            )}
           </Col>
         </Row>
       </Card>

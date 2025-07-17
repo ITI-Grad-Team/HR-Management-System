@@ -196,6 +196,30 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         self.serializer_class = EmployeeSerializer
         return super().retrieve(request, *args, **kwargs)
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmployeeListSerializer
+        elif self.action == 'update_cv_data':
+            return EmployeeCVUpdateSerializer
+        return EmployeeSerializer
+    
+
+    @action(detail=True, methods=['patch'], url_path='update-cv-data')
+    def update_cv_data(self, request, pk=None):
+
+        employee = self.get_object()
+        serializer = self.get_serializer(employee, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        # Handle skills separately
+        skills = request.data.get('skills')
+        if skills is not None:
+            employee.skills.set(skills)
+        
+        serializer.save()
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminManageSkillsViewSet(ModelViewSet):
