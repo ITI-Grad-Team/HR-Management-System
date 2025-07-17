@@ -13,10 +13,7 @@ const PayrollStats = ({ records }) => {
   const highestSalary = Math.max(...records.map((r) => r.final_salary));
   const avgSalary = totalSalary / records.length;
   const totalDeductions = records.reduce(
-    (sum, r) =>
-      sum +
-      (r.details.total_absence_penalty || 0) +
-      (r.details.total_late_penalty || 0),
+    (sum, r) => sum + (r.details.total_deductions || 0),
     0
   );
   const totalBonus = records.reduce(

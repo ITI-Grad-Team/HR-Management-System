@@ -16,8 +16,18 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaTrashAlt, FaPen, FaFilter, FaUndo } from "react-icons/fa";
+import {
+  FaEye,
+  FaTrashAlt,
+  FaPen,
+  FaFilter,
+  FaUndo,
+  FaPlus,
+} from "react-icons/fa";
 import PayrollStats from "../../components/payroll/PayrollStats";
+import PayrollCharts from "../../components/payroll/PayrollCharts";
+import GenerateSalaryRecord from "../../components/payroll/GenerateSalaryRecord";
+import { fetchAllPages } from "../../api/pagination";
 
 const Payroll = () => {
   const [records, setRecords] = useState([]);
@@ -27,11 +37,13 @@ const Payroll = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
+  const [recordToEdit, setRecordToEdit] = useState(null);
   const [userFilter, setUserFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [statsMonthFilter, setStatsMonthFilter] = useState("");
   const [statsYearFilter, setStatsYearFilter] = useState("");
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const navigate = useNavigate();
   const recordsPerPage = 10;
   const currentYear = new Date().getFullYear();
@@ -43,10 +55,8 @@ const Payroll = () => {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/salary/calculate/");
-      setRecords(
-        Array.isArray(response.data.results) ? response.data.results : []
-      );
+      const allRecords = await fetchAllPages("/salary/calculate/");
+      setRecords(allRecords);
       setError(null);
     } catch (err) {
       setError("Failed to fetch payroll records.");
@@ -54,6 +64,16 @@ const Payroll = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (record) => {
+    setRecordToEdit(record);
+    setShowGenerateModal(true);
+  };
+
+  const handleModalClose = () => {
+    setRecordToEdit(null);
+    setShowGenerateModal(false);
   };
 
   const handleDelete = async () => {
@@ -121,7 +141,19 @@ const Payroll = () => {
 
   return (
     <Container fluid className="py-4">
-      <h1 className="h3 mb-4">Payroll Dashboard</h1>
+      <Row className="align-items-center mb-4">
+        <Col>
+          <h1 className="h3 mb-0">Payroll Dashboard</h1>
+        </Col>
+        <Col xs="auto">
+          <Button
+            variant="primary"
+            onClick={() => setShowGenerateModal(true)}
+          >
+            <FaPlus className="me-2" /> Generate Record
+          </Button>
+        </Col>
+      </Row>
 
       <Card className="shadow-sm mb-4">
         <Card.Body>
@@ -186,6 +218,12 @@ const Payroll = () => {
           </Row>
           <hr />
           <PayrollStats records={statsFilteredRecords} />
+        </Card.Body>
+      </Card>
+
+      <Card className="shadow-sm mb-4">
+        <Card.Body>
+          <PayrollCharts records={records} selectedUser={userFilter} />
         </Card.Body>
       </Card>
 
@@ -332,6 +370,7 @@ const Payroll = () => {
                         <Button
                           variant="link"
                           className="p-1 me-2 text-warning"
+                          onClick={() => handleEdit(record)}
                         >
                           <FaPen />
                         </Button>
@@ -382,6 +421,13 @@ const Payroll = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <GenerateSalaryRecord
+        show={showGenerateModal}
+        onHide={handleModalClose}
+        onRecordGenerated={fetchRecords}
+        recordToEdit={recordToEdit}
+      />
     </Container>
   );
 };
