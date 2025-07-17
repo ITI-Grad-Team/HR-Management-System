@@ -204,7 +204,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
             return EmployeeCVUpdateSerializer
         return EmployeeSerializer
     
-
+    
     @action(detail=True, methods=['patch'], url_path='update-cv-data')
     def update_cv_data(self, request, pk=None):
 
@@ -216,6 +216,17 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
         skills = request.data.get('skills')
         if skills is not None:
             employee.skills.set(skills)
+           # Get skill IDs from employee and application link
+            employee_skill_ids = set(employee.skills.values_list('id', flat=True))
+            application_skill_ids = set(employee.application_link.skills.values_list('id', flat=True))
+            matching_skills = employee_skill_ids.intersection(application_skill_ids)
+            
+            if application_skill_ids:  # Prevent division by zero
+                percentage_match = (len(matching_skills) / len(application_skill_ids)) * 100
+            else:
+                percentage_match = 0
+
+            employee.percentage_of_matching_skills = percentage_match
         
         serializer.save()
         
@@ -591,6 +602,17 @@ class HRViewEmployeesViewSet(ModelViewSet):
         if skills is not None:
             employee.skills.set(skills)
         
+           # Get skill IDs from employee and application link
+            employee_skill_ids = set(employee.skills.values_list('id', flat=True))
+            application_skill_ids = set(employee.application_link.skills.values_list('id', flat=True))
+            matching_skills = employee_skill_ids.intersection(application_skill_ids)
+            
+            if application_skill_ids:  # Prevent division by zero
+                percentage_match = (len(matching_skills) / len(application_skill_ids)) * 100
+            else:
+                percentage_match = 0
+
+            employee.percentage_of_matching_skills = percentage_match
         serializer.save()
         
         return Response(serializer.data, status=status.HTTP_200_OK)

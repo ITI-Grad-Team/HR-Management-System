@@ -544,13 +544,8 @@ class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
             'highest_education_degree': {'required': True},
             'highest_education_field': {'required': True},
             'years_of_experience': {'required': True},
-            'percentage_of_matching_skills': {'required': True},
         }
 
-    def validate_percentage_of_matching_skills(self, value):
-        if value is not None and (value < 0 or value > 100):
-            raise serializers.ValidationError("Percentage must be between 0 and 100")
-        return value
 
     def validate_years_of_experience(self, value):
         if value is not None and value < 0:
