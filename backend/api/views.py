@@ -176,7 +176,10 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
                 'user__basicinfo',
                 'highest_education_degree',  # New
             ).prefetch_related(
-                'skills'                    # New
+                'skills'                  ,    'holidayyearday_set',
+    'holidayweekday_set',
+    'onlinedayyearday_set',
+    'onlinedayweekday_set'
             )
         
         interview_state_not = self.request.query_params.get('interview_state_not')
@@ -533,7 +536,10 @@ class HRViewEmployeesViewSet(ModelViewSet):
             'position',
             'highest_education_field' 
         ).prefetch_related(
-            'skills'                   # For skills ManyToMany
+            'skills'                    ,    'holidayyearday_set',
+    'holidayweekday_set',
+    'onlinedayyearday_set',
+    'onlinedayweekday_set'
         )
         
         interview_state_not = self.request.query_params.get('interview_state_not')

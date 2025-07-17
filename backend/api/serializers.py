@@ -111,6 +111,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
         slug_field='name'
     )
 
+    # Holiday and Online day fields
+    yearly_holidays = serializers.SerializerMethodField()
+    weekly_holidays = serializers.SerializerMethodField()
+    yearly_online_days = serializers.SerializerMethodField()
+    weekly_online_days = serializers.SerializerMethodField()
+
     # Computed fields
     avg_task_ratings = serializers.FloatField(read_only=True)
     avg_time_remaining_before_deadline = serializers.FloatField(read_only=True)
@@ -121,6 +127,18 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = "__all__"
+
+    def get_yearly_holidays(self, obj):
+        return [{'month': h.month, 'day': h.day} for h in obj.holidayyearday_set.all()]
+
+    def get_weekly_holidays(self, obj):
+        return [h.weekday for h in obj.holidayweekday_set.all()]
+
+    def get_yearly_online_days(self, obj):
+        return [{'month': o.month, 'day': o.day} for o in obj.onlinedayyearday_set.all()]
+
+    def get_weekly_online_days(self, obj):
+        return [o.weekday for o in obj.onlinedayweekday_set.all()]
 
 class HRSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
