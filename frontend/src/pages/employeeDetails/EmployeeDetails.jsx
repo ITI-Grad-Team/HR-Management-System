@@ -1,107 +1,121 @@
-import { useEffect, useState } from "react";
-import "./EmployeeDetails.css";
+import React, { useEffect, useState, useRef } from "react";
+import { Container, Row, Col, Card, Spinner } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/config";
-import { Card, Col, Row } from "react-bootstrap";
+import EmployeeDetailsCard from "../../components/EmployeeDetailsCard/EmployeeDetailsCard";
+import InterviewForm from "../../components/InterviewForm/InterviewForm";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import CandidatesFallBack from "../../components/DashboardFallBack/CandidatesFallback";
 
-const EmployeeDetails = () => {
-  const { role } = useAuth();
+export default function CandidateDetails() {
   const { id } = useParams();
-  const [employee, setEmployee] = useState(null);
+  const { user } = useAuth();
+
+  const [candidate, setCandidate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
+  const formRef = useRef(null);
+
+  /* ---------- fetch candidate ---------- */
+  const { role } = useAuth();
+  const endpoint =
+    role === "admin" ? `/admin/employees/${id}/` : `/hr/employees/${id}/`;
+  const fetchCandidate = async () => {
+    const res = await axiosInstance.get(endpoint);
+    setCandidate(res.data);
+
+    if (
+      res.data.interviewer === user.hr?.id &&
+      (res.data.interview_state == "scheduled" ||
+        res.data.interview_state == "pending")
+    ) {
+      setShowForm(true);
+    }
+  };
+  const handlePredictUpdate = async () => {
+    try {
+      await fetchCandidate();
+    } catch (err) {
+      console.error("Failed to refresh predictions:", err);
+    }
+  };
 
   useEffect(() => {
-    role === "admin"
-      ? axiosInstance.get(`/admin/employees/${id}/`).then((response) => {
-          setEmployee(response.data);
-          console.log(employee);
-        })
-      : role === "hr"
-      ? axiosInstance.get(`/hr/employees/${id}/`).then((response) => {
-          setEmployee(response.data);
-          console.log(employee);
-        })
-      : "";
-  });
+    fetchCandidate()
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id, user.hr?.id]);
+
+  useEffect(() => {
+    if (showForm) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [showForm]);
+
+  /* ---------- Take interview ---------- */
+  const handleTake = async () => {
+    try {
+      setLoadingForm(true);
+      await axiosInstance.patch(`/hr/employees/${id}/take-interviewee/`);
+      await fetchCandidate();
+      setShowForm(true);
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+      toast.success("Interview Responsibility Taken");
+    } catch (err) {
+      toast.error("Failed to take interview");
+    } finally {
+      setLoadingForm(false);
+    }
+  };
+
+  if (loading || !candidate) {
+    return <CandidatesFallBack />;
+  }
+
+  const isCurrentInterviewer = candidate.interviewer === user.hr?.id;
 
   return (
-    <section>
-      <div>
-        {employee ? (
-          <div className="employee-details">
-            <div className="column-1">
-              <img src={employee.basicinfo.profile_image} alt="" />
+    <Container className="py-4">
+      <Row className="g-4">
+        <Col md={12}>
+          <EmployeeDetailsCard
+            candidate={candidate}
+            loggedInHrId={user.hr?.id}
+            onSchedule={fetchCandidate}
+            onTake={handleTake}
+            onPredictUpdate={handlePredictUpdate}
+            loadingProp={loadingForm}
+          />
+        </Col>
 
-              <h2>{employee.basicinfo.username}</h2>
-              <p>{employee.position}</p>
-              <p>{employee.region}</p>
-              <p>{employee.user.username}</p>
-              <p>{employee.phone || "No Phone Recorded"}</p>
-              <p>{employee.isCoordinator ? "Coordinator" : ""}</p>
-            </div>
-
-            <div className="column-2">
-              <div className="grid g-3 mb-4">
-                {[
-                  {
-                    label: "Salary",
-                    value: employee.basic_salary,
-                    unit: "EGP / month",
-                  },
-                  {
-                    label: "Years of Experience",
-                    value: employee.years_of_experience,
-                    unit: "Years",
-                  },
-                  {
-                    label: "Total Task Rating",
-                    value: employee.total_task_ratings || 0,
-                    unit: "% / task",
-                  },
-                  {
-                    label: "Total Overtime Hours",
-                    value: employee.total_overtime_hours || 0,
-                    unit: "hours / work day",
-                  },
-                  {
-                    label: "Total Lateness Hours",
-                    value: employee.total_lateness_hours || 0,
-                    unit: "hours / work day",
-                  },
-                  {
-                    label: "Total Absence Days",
-                    value: employee.total_absent_days || 0,
-                    unit: "days / work day",
-                  },
-                ].map((item, idx) => (
-                  <div key={idx} className="" md={4} lg={2}>
-                    <Card className="h-100 text-center shadow-sm">
-                      <Card.Body className="p-2">
-                        <small className="text-muted d-block mb-1">
-                          {item.label}
-                        </small>
-                        <h5 className="mb-1" style={{ color: "#3B82F6" }}>
-                          {item.value?.toFixed(0) ?? "-"}
-                          <small
-                            className="text-muted d-block"
-                            style={{ fontSize: "0.85rem" }}
-                          >
-                            {item.unit}
-                          </small>
-                        </h5>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="loading">Loading employee details...</p>
+        {showForm && isCurrentInterviewer && (
+          <Col md={12} ref={formRef}>
+            <Card
+              className="p-4 shadow-sm mt-4 border border-primary-subtle"
+              style={{
+                backgroundColor: "#fefefe",
+                animation: "fadeInUp 0.5s ease-in-out",
+              }}
+            >
+              <h5 className="mb-4 fw-bold text-primary">Interview Form</h5>
+              <InterviewForm
+                candidateId={candidate.id}
+                onSubmitted={(updatedCandidate) => {
+                  setShowForm(false);
+                  setCandidate(updatedCandidate);
+                  window.location.reload();
+                }}
+              />
+            </Card>
+          </Col>
         )}
-      </div>
-    </section>
+      </Row>
+    </Container>
   );
-};
-
-export default EmployeeDetails;
+}

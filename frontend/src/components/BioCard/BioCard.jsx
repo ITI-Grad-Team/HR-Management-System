@@ -6,7 +6,6 @@ import {
   FaMapMarkerAlt,
   FaGraduationCap,
   FaBriefcase,
-  FaUserTie,
   FaUsers,
 } from "react-icons/fa";
 

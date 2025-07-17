@@ -1,4 +1,3 @@
-// src/components/ApplicationLinkBox/ViewAllApplicationLinks.jsx
 import { useEffect, useState, useMemo } from "react";
 import {
   Table,
@@ -15,6 +14,7 @@ import Select from "react-select";
 import axiosInstance from "../../api/config";
 import "./ViewAllApplicationLinks.css";
 import { useAuth } from "../../context/AuthContext";
+import ApplicationsReportFallback from "../DashboardFallBack/ApplicationsReportFallback";
 
 const PAGE_SIZE = 10;
 
@@ -127,6 +127,10 @@ const ViewAllApplicationLinks = () => {
       />
     </Pagination>
   );
+
+  if (loading) {
+    return <ApplicationsReportFallback />
+  }
 
   /* ─────────────── UI ─────────────── */
   return (

@@ -526,3 +526,40 @@ class HRListSerializer(serializers.ModelSerializer):
         model = HR
         fields = ['id', 'user', 'basic_info']
 
+
+class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
+    skills = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Skill.objects.all(),
+        required=False
+    )
+
+    class Meta:
+        model = Employee
+        fields = [
+            'region',
+            'highest_education_degree',
+            'highest_education_field',
+            'years_of_experience',
+            'had_leadership_role',
+            'percentage_of_matching_skills',
+            'has_position_related_high_education',
+            'skills'
+        ]
+        extra_kwargs = {
+            'region': {'required': True},
+            'highest_education_degree': {'required': True},
+            'highest_education_field': {'required': True},
+            'years_of_experience': {'required': True},
+            'percentage_of_matching_skills': {'required': True},
+        }
+
+    def validate_percentage_of_matching_skills(self, value):
+        if value is not None and (value < 0 or value > 100):
+            raise serializers.ValidationError("Percentage must be between 0 and 100")
+        return value
+
+    def validate_years_of_experience(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Years of experience cannot be negative")
+        return value

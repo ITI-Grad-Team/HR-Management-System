@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import "./App.css";
-import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { lazy } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
@@ -16,15 +16,12 @@ const Settings = lazy(() => import("./pages/settings/settings"));
 const RoleBasedDashboard = lazy(() =>
   import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
 );
-const CandidateDetails = lazy(() =>
-  import("./pages/CandidateDetails/CandidateDetails")
+const EmployeeDetails = lazy(() =>
+  import("./pages/EmployeeDetails/EmployeeDetails")
 );
 
 const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
-const EmployeeDetails = lazy(() =>
-  import("./pages/employeeDetails/EmployeeDetails")
-);
 const Payroll = lazy(() => import("./pages/payroll/Payroll"));
 
 function App() {
@@ -41,9 +38,8 @@ function App() {
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
             <Route path="payroll" element={<Payroll />} />
-            <Route path="employeeDetails/:id" element={<EmployeeDetails />} />
+            <Route path="EmployeeDetails/:id" element={<EmployeeDetails />} />
           </Route>
-          <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />

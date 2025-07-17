@@ -241,7 +241,10 @@ const Employees = () => {
           "Candidates"
         )}
         {filteredCandidates.length > 0 ? (
-          renderGrid(filteredCandidates, (cand) => `/candidates/${cand.id}`)
+          renderGrid(
+            filteredCandidates,
+            (cand) => `/dashboard/employeeDetails/${cand.id}`
+          )
         ) : (
           <div className="no-data">No candidates match the filters</div>
         )}

@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import axiosInstance from "../../api/config";
+import HrAdminUpperFallback from "../DashboardFallBack/HrAdminUpperFallback";
 const pieColors = [
   "rgb(13, 202, 240)", // Cyan
   "#A855F7", // Violet (purple-500)
@@ -58,9 +59,7 @@ export default function AdminStats() {
 
   if (loading || !snapshot)
     return (
-      <div className="text-center justify-content-center align-items-center">
-        <Spinner animation="border" />
-      </div>
+      <HrAdminUpperFallback />
     );
 
   const positionStats = snapshot.position_stats || {};
