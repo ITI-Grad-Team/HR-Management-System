@@ -19,6 +19,10 @@ const PayrollStats = ({ records }) => {
       (r.details.total_late_penalty || 0),
     0
   );
+  const totalBonus = records.reduce(
+    (sum, r) => sum + (r.details.total_overtime_salary || 0),
+    0
+  );
 
   const positionData = records.reduce((acc, record) => {
     const pos = record.employee_position || "N/A";
@@ -36,6 +40,7 @@ const PayrollStats = ({ records }) => {
     { title: "Highest Salary", value: `$${highestSalary.toFixed(2)}` },
     { title: "Average Salary", value: `$${avgSalary.toFixed(2)}` },
     { title: "Total Deductions", value: `$${totalDeductions.toFixed(2)}` },
+    { title: "Total Bonus", value: `$${totalBonus.toFixed(2)}` },
   ];
 
   return (

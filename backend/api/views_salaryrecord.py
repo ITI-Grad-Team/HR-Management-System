@@ -109,11 +109,11 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         absent_penalty_total = absent_days * absence_penalty
         late_penalty_total = lateness_hours * shorttime_hour_penalty
         overtime_bonus_total = overtime_hours * overtime_hour_salary
+        # if you ever want to add short time, put it in dedcutions (short_time_penalty_total)
+        total_deductions = absent_penalty_total + late_penalty_total
         final_salary = round(
             base_salary
-            - absent_penalty_total
-            - late_penalty_total
-            # - short_time_penalty_total
+            - total_deductions
             + overtime_bonus_total,
             2,
         )
@@ -130,6 +130,7 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             "total_late_penalty": round(late_penalty_total, 2),
             # "short_time_hours": short_time_hours,
             # "short_time_penalty": short_time_penalty_total,
+            "total_deductions": round(total_deductions, 2),
             "total_overtime_salary": round(overtime_bonus_total, 2),
         }
 

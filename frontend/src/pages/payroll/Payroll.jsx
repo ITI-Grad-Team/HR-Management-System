@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Row,
@@ -16,7 +16,7 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaTrashAlt, FaPen } from "react-icons/fa";
+import { FaEye, FaTrashAlt, FaPen, FaFilter, FaUndo } from "react-icons/fa";
 import PayrollStats from "../../components/payroll/PayrollStats";
 
 const Payroll = () => {
@@ -27,8 +27,11 @@ const Payroll = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
-  const [filterMonth, setFilterMonth] = useState("");
-  const [filterYear, setFilterYear] = useState("");
+  const [userFilter, setUserFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
+  const [statsMonthFilter, setStatsMonthFilter] = useState("");
+  const [statsYearFilter, setStatsYearFilter] = useState("");
   const navigate = useNavigate();
   const recordsPerPage = 10;
   const currentYear = new Date().getFullYear();
@@ -70,8 +73,8 @@ const Payroll = () => {
     setShowDeleteModal(true);
   };
 
-  const filteredRecords = records
-    .filter((record) => {
+  const tableFilteredRecords = useMemo(() => {
+    return records.filter((record) => {
       const searchTermMatch =
         record.user.username
           .toLowerCase()
@@ -79,47 +82,64 @@ const Payroll = () => {
         record.employee_position
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
-      const monthMatch = filterMonth ? record.month == filterMonth : true;
-      const yearMatch = filterYear ? record.year == filterYear : true;
-      return searchTermMatch && monthMatch && yearMatch;
+      const userMatch = userFilter ? record.user.username === userFilter : true;
+      const monthMatch = monthFilter ? record.month == monthFilter : true;
+      const yearMatch = yearFilter ? record.year == yearFilter : true;
+      return searchTermMatch && userMatch && monthMatch && yearMatch;
     });
+  }, [records, searchTerm, userFilter, monthFilter, yearFilter]);
+
+  const statsFilteredRecords = useMemo(() => {
+    return records.filter((record) => {
+      const monthMatch = statsMonthFilter
+        ? record.month == statsMonthFilter
+        : true;
+      const yearMatch = statsYearFilter ? record.year == statsYearFilter : true;
+      return monthMatch && yearMatch;
+    });
+  }, [records, statsMonthFilter, statsYearFilter]);
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredRecords.slice(
+  const currentRecords = tableFilteredRecords.slice(
     indexOfFirstRecord,
     indexOfLastRecord
   );
-  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+  const totalPages = Math.ceil(tableFilteredRecords.length / recordsPerPage);
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const resetTableFilters = () => {
+    setSearchTerm("");
+    setUserFilter("");
+    setMonthFilter("");
+    setYearFilter("");
+  };
+
+  const resetStatsFilters = () => {
+    setStatsMonthFilter("");
+    setStatsYearFilter("");
+  };
 
   return (
     <Container fluid className="py-4">
-      <Row className="mb-4 align-items-center">
-        <Col>
-          <h1 className="h3 mb-0">Payroll Management</h1>
-        </Col>
-      </Row>
+      <h1 className="h3 mb-4">Payroll Dashboard</h1>
 
-      <PayrollStats records={records} />
-
-      <Card className="shadow-sm mt-4">
+      <Card className="shadow-sm mb-4">
         <Card.Body>
-          <Row className="mb-3">
-            <Col md={4}>
-              <InputGroup>
-                <FormControl
-                  placeholder="Search by employee or position..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </InputGroup>
+          <Row className="align-items-center">
+            <Col md={3}>
+              <h5>Company-Wide Stats</h5>
             </Col>
-            <Col md={2}>
-              <Dropdown onSelect={(e) => setFilterMonth(e)}>
-                <Dropdown.Toggle variant="outline-secondary" id="dropdown-month">
-                  {filterMonth ? `Month: ${filterMonth}` : "Filter by Month"}
+            <Col md={3}>
+              <Dropdown onSelect={(e) => setStatsMonthFilter(e)}>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  id="dropdown-month-stats"
+                  className="w-100"
+                >
+                  <FaFilter className="me-2" />
+                  {statsMonthFilter
+                    ? `Month: ${statsMonthFilter}`
+                    : "Filter by Month"}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   {[...Array(12).keys()].map((i) => (
@@ -127,26 +147,127 @@ const Payroll = () => {
                       {i + 1}
                     </Dropdown.Item>
                   ))}
-                  <Dropdown.Divider />
-                  <Dropdown.Item eventKey="">All Months</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+            <Col md={3}>
+              <Dropdown onSelect={(e) => setStatsYearFilter(e)}>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  id="dropdown-year-stats"
+                  className="w-100"
+                >
+                  <FaFilter className="me-2" />
+                  {statsYearFilter
+                    ? `Year: ${statsYearFilter}`
+                    : "Filter by Year"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {[...Array(10).keys()].map((i) => (
+                    <Dropdown.Item
+                      key={currentYear - i}
+                      eventKey={currentYear - i}
+                    >
+                      {currentYear - i}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+            <Col md={3}>
+              <Button
+                variant="outline-secondary"
+                onClick={resetStatsFilters}
+                className="w-100"
+              >
+                <FaUndo className="me-2" /> Reset Stats Filters
+              </Button>
+            </Col>
+          </Row>
+          <hr />
+          <PayrollStats records={statsFilteredRecords} />
+        </Card.Body>
+      </Card>
+
+      <Card className="shadow-sm">
+        <Card.Body>
+          <Row className="mb-3">
+            <Col md={3}>
+              <InputGroup>
+                <FormControl
+                  placeholder="Search by employee..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+            </Col>
+            <Col md={2}>
+              <Dropdown onSelect={(e) => setUserFilter(e)}>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  id="dropdown-user"
+                  className="w-100"
+                >
+                  {userFilter || "Filter by User"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {[...new Set(records.map((r) => r.user.username))].map(
+                    (name) => (
+                      <Dropdown.Item key={name} eventKey={name}>
+                        {name}
+                      </Dropdown.Item>
+                    )
+                  )}
                 </Dropdown.Menu>
               </Dropdown>
             </Col>
             <Col md={2}>
-              <Dropdown onSelect={(e) => setFilterYear(e)}>
-                <Dropdown.Toggle variant="outline-secondary" id="dropdown-year">
-                  {filterYear ? `Year: ${filterYear}` : "Filter by Year"}
+              <Dropdown onSelect={(e) => setMonthFilter(e)}>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  id="dropdown-primary"
+                  className="w-100"
+                >
+                  {monthFilter ? `Month: ${monthFilter}` : "Month"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {[...Array(12).keys()].map((i) => (
+                    <Dropdown.Item key={i + 1} eventKey={i + 1}>
+                      {i + 1}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+            <Col md={2}>
+              <Dropdown onSelect={(e) => setYearFilter(e)}>
+                <Dropdown.Toggle
+                  variant="outline-primary"
+                  id="dropdown-year"
+                  className="w-100"
+                >
+                  {yearFilter ? `Year: ${yearFilter}` : "Year"}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   {[...Array(10).keys()].map((i) => (
-                    <Dropdown.Item key={currentYear  - i} eventKey={currentYear  - i}>
-                      {currentYear  - i}
+                    <Dropdown.Item
+                      key={currentYear - i}
+                      eventKey={currentYear - i}
+                    >
+                      {currentYear - i}
                     </Dropdown.Item>
                   ))}
-                  <Dropdown.Divider />
-                  <Dropdown.Item eventKey="">All Years</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
+            </Col>
+            <Col md={3}>
+              <Button
+                variant="outline-secondary"
+                onClick={resetTableFilters}
+                className="w-100"
+              >
+                <FaUndo className="me-2" /> Reset Table Filters
+              </Button>
             </Col>
           </Row>
 
@@ -158,74 +279,72 @@ const Payroll = () => {
             <Alert variant="danger">{error}</Alert>
           ) : (
             <>
-              <Table hover responsive className="table-nowrap">
+              <Table hover responsive className="table-nowrap align-middle">
                 <thead className="table-light">
                   <tr>
                     <th>Employee</th>
                     <th>Position</th>
                     <th>Period</th>
-                    <th>Base Salary</th>
-                    <th>Bonus</th>
-                    <th>Deductions</th>
-                    <th>Net Salary</th>
+                    <th className="text-end">Base Salary</th>
+                    <th className="text-end">Bonus</th>
+                    <th className="text-end">Deductions</th>
+                    <th className="text-end">Net Salary</th>
                     <th className="text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentRecords.length > 0 ? (
-                    currentRecords.map((record) => (
-                      <tr key={record.id}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <div>
-                              <div className="fw-bold">{record.user.username}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{record.employee_position}</td>
-                        <td>{`${record.month}/${record.year}`}</td>
-                        <td>${record.base_salary.toFixed(2)}</td>
-                        <td className="text-success">
-                          + ${(record.details.total_overtime_salary || 0).toFixed(2)}
-                        </td>
-                        <td className="text-danger">
-                          - $
-                          {(
-                            (record.details.total_absence_penalty || 0) +
-                            (record.details.total_late_penalty || 0)
-                          ).toFixed(2)}
-                        </td>
-                        <td className="fw-bold">${record.final_salary.toFixed(2)}</td>
-                        <td className="text-end">
-                          <Button
-                            variant="link"
-                            className="p-1 me-2"
-                            onClick={() =>
-                              navigate(`/dashboard/employeeDetails/${record.employee_id}`)
-                            }
-                          >
-                            <FaEye />
-                          </Button>
-                          <Button variant="link" className="p-1 me-2 text-warning">
-                            <FaPen />
-                          </Button>
-                          <Button
-                            variant="link"
-                            className="p-1 text-danger"
-                            onClick={() => openDeleteModal(record.id)}
-                          >
-                            <FaTrashAlt />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="8" className="text-center">
-                        No records found.
+                  {currentRecords.map((record) => (
+                    <tr key={record.id}>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <div className="fw-bold">{record.user.username}</div>
+                        </div>
+                      </td>
+                      <td>{record.employee_position}</td>
+                      <td>{`${record.month}/${record.year}`}</td>
+                      <td className="text-end">
+                        ${record.base_salary.toFixed(2)}
+                      </td>
+                      <td className="text-end text-success">
+                        + $
+                        {(record.details.total_overtime_salary || 0).toFixed(
+                          2
+                        )}
+                      </td>
+                      <td className="text-end text-danger">
+                        - ${(record.details.total_deductions || 0).toFixed(2)}
+                      </td>
+                      <td className="text-end fw-bold">
+                        ${record.final_salary.toFixed(2)}
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          variant="link"
+                          className="p-1 me-2"
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/employeeDetails/${record.employee_id}`
+                            )
+                          }
+                        >
+                          <FaEye />
+                        </Button>
+                        <Button
+                          variant="link"
+                          className="p-1 me-2 text-warning"
+                        >
+                          <FaPen />
+                        </Button>
+                        <Button
+                          variant="link"
+                          className="p-1 text-danger"
+                          onClick={() => openDeleteModal(record.id)}
+                        >
+                          <FaTrashAlt />
+                        </Button>
                       </td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </Table>
               {totalPages > 1 && (
@@ -234,7 +353,7 @@ const Payroll = () => {
                     <Pagination.Item
                       key={number + 1}
                       active={number + 1 === currentPage}
-                      onClick={() => handlePageChange(number + 1)}
+                      onClick={() => setCurrentPage(number + 1)}
                     >
                       {number + 1}
                     </Pagination.Item>
