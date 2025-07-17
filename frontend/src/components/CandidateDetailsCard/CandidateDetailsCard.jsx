@@ -24,7 +24,8 @@ import {
   FaTimes,
   FaUsers,
   FaEnvelope,
-  FaQuestionCircle,
+  FaChartArea,
+  FaRegChartBar,
   FaRobot,
 } from "react-icons/fa";
 import axiosInstance from "../../api/config";
@@ -326,13 +327,17 @@ export default function CandidateDetailsCard({
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
             <p className="text-muted mb-2">{position}</p>
             <div className="d-flex gap-2">
-              <Badge pill bg="light" text="dark" className="border">
-                <FaMapMarkerAlt className="text-primary" /> {region}
-              </Badge>
-              <Badge pill bg="light" text="dark" className="border">
-                <FaBriefcase className="text-primary" /> {years_of_experience}{" "}
-                yrs
-              </Badge>
+              {region && (
+                <Badge pill bg="light" text="dark" className="border">
+                  <FaMapMarkerAlt className="text-primary" /> {region}
+                </Badge>
+              )}
+              {years_of_experience !== null && (
+                <Badge pill bg="light" text="dark" className="border">
+                  <FaBriefcase className="text-primary" /> {years_of_experience}{" "}
+                  yrs
+                </Badge>
+              )}
               {is_coordinator && (
                 <Badge pill bg="light" text="dark" className="border">
                   <FaUsers className="text-primary" /> coordinator
@@ -384,13 +389,20 @@ export default function CandidateDetailsCard({
                 <span>Education</span>
                 <span className="fw-semibold text-muted ms-auto">
                   Position Match{" "}
-                  {has_position_related_high_education ? "✓" : "✗"}
+                  {has_position_related_high_education
+                    ? "✓"
+                    : has_position_related_high_education === false
+                    ? "✗"
+                    : "❔"}
                 </span>
               </h6>
               <div>
                 <small className="text-muted d-block">Highest Degree</small>
                 <span className="fw-semibold">
-                  {highest_education_degree} in {highest_education_field}
+                  {highest_education_degree}{" "}
+                  {highest_education_field
+                    ? `in ${highest_education_field}`
+                    : ""}
                 </span>
               </div>
             </div>
@@ -403,7 +415,10 @@ export default function CandidateDetailsCard({
                 <FaCode className="me-2" />
                 <span>Skills</span>
                 <span className="fw-semibold text-muted ms-auto">
-                  Required Match {Math.round(percentage_of_matching_skills)}%
+                  Required Match{" "}
+                  {percentage_of_matching_skills !== null
+                    ? ` ${Math.round(percentage_of_matching_skills)}%`
+                    : "❔"}
                 </span>
               </h6>
 
@@ -779,7 +794,7 @@ export default function CandidateDetailsCard({
       >
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-semibold d-flex align-items-center">
-            <FaQuestionCircle className="me-2 text-primary" /> Predictions
+            <FaRegChartBar className="me-2 text-primary" /> Predictions
           </Modal.Title>
         </Modal.Header>
 
