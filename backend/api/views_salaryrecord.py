@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord
+from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord, Employee
 from api.serializers import SalaryRecordSerializer
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,7 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    queryset = SalaryRecord.objects.all()
+    queryset = SalaryRecord.objects.select_related('user__employee__position').all()
     serializer_class = SalaryRecordSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["user", "year", "month"]
