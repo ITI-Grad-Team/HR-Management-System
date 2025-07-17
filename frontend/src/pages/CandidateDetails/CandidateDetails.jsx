@@ -6,6 +6,7 @@ import CandidateDetailsCard from "../../components/CandidateDetailsCard/Candidat
 import InterviewForm from "../../components/InterviewForm/InterviewForm";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import CandidatesFallBack from "../../components/DashboardFallBack/CandidatesFallback";
 
 export default function CandidateDetails() {
   const { id } = useParams();
@@ -70,9 +71,7 @@ export default function CandidateDetails() {
 
   if (loading || !candidate) {
     return (
-      <div className="vh-100 d-flex justify-content-center align-items-center">
-        <Spinner animation="border" />
-      </div>
+      <CandidatesFallBack />
     );
   }
 
