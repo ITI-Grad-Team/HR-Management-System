@@ -8,12 +8,20 @@ const EmployeesFallBack = () => (
      <div className="mb-4">
        <Skeleton height={80} width="100%" borderRadius={"15px"} />
      </div>
+
+     <div className="d-flex gap-2 mb-4 flex-wrap">
+       {[...Array(4)].map((_, i) => (
+         <div key={i} style={{ flex: "1 1 200px" }}>
+           <Skeleton height={30} width={230} borderRadius={"15px"}/>
+         </div>
+       ))}
+     </div>
  
 
-     <div className="d-flex gap-4 mb-5 flex-wrap">
-       {[...Array(3)].map((_, i) => (
+     <div className="d-flex gap-2 mb-5 flex-wrap">
+       {[...Array(8)].map((_, i) => (
          <div key={i} style={{ flex: "1 1 200px"}}>
-           <Skeleton height={250} width={300} borderRadius={"15px"}/>
+           <Skeleton height={190} width={260} borderRadius={"15px"}/>
          </div>
        ))}
      </div>
@@ -29,12 +37,20 @@ const EmployeesFallBack = () => (
     <div className="mb-4 mt-5">
        <Skeleton height={80} width="100%" borderRadius={"15px"}/>
      </div>
+
+     <div className="d-flex gap-2 mb-4 flex-wrap">
+       {[...Array(4)].map((_, i) => (
+         <div key={i} style={{ flex: "1 1 200px" }}>
+           <Skeleton height={30} width={230} borderRadius={"15px"}/>
+         </div>
+       ))}
+     </div>
  
 
-     <div className="d-flex gap-4 mb-4 flex-wrap">
-       {[...Array(3)].map((_, i) => (
+     <div className="d-flex gap-2 mb-4 flex-wrap">
+       {[...Array(8)].map((_, i) => (
          <div key={i} style={{ flex: "1 1 200px" }}>
-           <Skeleton height={250} width={300} borderRadius={"15px"}/>
+           <Skeleton height={190} width={260} borderRadius={"15px"}/>
          </div>
        ))}
      </div>
