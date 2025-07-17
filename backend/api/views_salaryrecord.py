@@ -7,10 +7,11 @@ from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord, Employee
 from api.serializers import SalaryRecordSerializer
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
+from .permissions import IsHRorAdmin
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsHRorAdmin]
     queryset = SalaryRecord.objects.select_related('user__employee__position').all()
     serializer_class = SalaryRecordSerializer
     filter_backends = [DjangoFilterBackend]

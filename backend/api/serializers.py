@@ -453,7 +453,10 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
 
 class SalaryRecordSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    employee_position = serializers.CharField(source='user.employee.position.name', read_only=True)
+    employee_position = serializers.CharField(
+        source="user.employee.position.name", read_only=True
+    )
+    employee_id = serializers.IntegerField(source="user.employee.id", read_only=True)
 
     class Meta:
         model = SalaryRecord
@@ -461,6 +464,7 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "employee_position",
+            "employee_id",
             "month",
             "year",
             "base_salary",
