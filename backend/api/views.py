@@ -293,18 +293,6 @@ class AdminViewHRsViewSet(ModelViewSet):
         return Response(serializer.data)
 
 
-class AdminViewUsersViewSet(ModelViewSet):
-    """
-    Displays all users (employees + HRs) in card format
-    - Provides summary info and statistics visualization
-    - Only accessible by admin role
-    - Includes filters for different statistics (e.g., avg lateness)
-    """
-
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
 
 class AdminPromoteEmployeeViewSet(ModelViewSet):
     """
