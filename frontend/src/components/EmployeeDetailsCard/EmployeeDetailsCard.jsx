@@ -604,7 +604,7 @@ export default function CandidateDetailsCard({
                 <FaFileAlt className="me-2" /> Resume
               </h6>
               <Row className="g-4">
-                <Col md={6}>
+                <Col md={4}>
                   <a
                     href={cv}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
@@ -616,21 +616,21 @@ export default function CandidateDetailsCard({
                   </a>
                 </Col>
 
-                <Col md={6} className="d-flex justify-content-end">
-                  <div className="d-flex gap-3">
+                <Col md={4}>
                     <button
                       className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowCvEditModal(true)}
                     >
                       <FaEdit /> Edit CV info.
                     </button>
-                    <button
+                </Col>
+                <Col md={4}>
+                 <button
                       className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowPredictionModal(true)}
                     >
                       <FaRobot /> View Predictions
                     </button>
-                  </div>
                 </Col>
               </Row>
             </div>

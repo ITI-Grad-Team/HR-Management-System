@@ -44,9 +44,6 @@ export default function Sidebar() {
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname === "/dashboard/attendance" ? "active" : ""}>
               <FaCalendarCheck /> <span>Attendance & Leave</span>
             </Nav.Link>
-            <Nav.Link as={Link} to="/dashboard/recruitment" className={pathname === "/dashboard/recruitment" ? "active" : ""}>
-              <FaSuitcase /> <span>Recruitment</span>
-            </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
               <FaMoneyBillWave /> <span>Payroll</span>
             </Nav.Link>

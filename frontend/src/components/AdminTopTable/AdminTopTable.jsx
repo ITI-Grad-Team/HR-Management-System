@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
+import HrAdminLowerFallBack from "../DashboardFallBack/HrAdminLowerFallback"
 
 const getCorrelationColor = (value) => {
   if (value > 0.5) return "#10B981"; // Strong positive (green)
@@ -172,6 +173,10 @@ export default function AdminTopTable() {
       "interviewer_rating_to_avg_overtime_correlation",
     ],
   };
+
+  if (loading) {
+    return <HrAdminLowerFallBack />;
+  }
 
   return (
     <>

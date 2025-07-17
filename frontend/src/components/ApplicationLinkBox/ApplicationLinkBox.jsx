@@ -13,6 +13,7 @@ import {
 import { FaCopy, FaLink } from "react-icons/fa";
 import Select from "react-select";
 import axiosInstance from "../../api/config";
+import ApplicationBoxFallback from "../DashboardFallBack/ApplicationBoxFallback";
 
 export default function ApplicationLinkBox() {
   const [form, setForm] = useState({
@@ -128,6 +129,12 @@ export default function ApplicationLinkBox() {
     setToast({ show: true, message, variant });
     setTimeout(() => setToast({ show: false, message: "", variant }), 2500);
   };
+
+  if (loadingOptions) {
+    return (
+      <ApplicationBoxFallback />
+    );
+  }
 
   /* ────────────────────────────────────────────────────────────────────────── */
   /* Component                                                                 */
