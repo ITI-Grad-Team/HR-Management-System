@@ -18,8 +18,8 @@ from rest_framework import status
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+from rest_framework.pagination import PageNumberPagination
+
 User = get_user_model()
 
 from .models import (
@@ -141,11 +141,16 @@ def calculate_statistics():
         'monthly_salary_totals': monthly_salary_data,
         **overall_stats
     }
+class EightPerPagePagination(PageNumberPagination):
+    page_size = 8
+    max_page_size = 100
+
 
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+    pagination_class = EightPerPagePagination 
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -174,7 +179,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
                 'position',
                 'region',
                 'user__basicinfo',
-                'highest_education_degree',  # New
+                'highest_education_degree',  'application_link'
             ).prefetch_related(
                 'skills'                  ,    'holidayyearday_set',
     'holidayweekday_set',
@@ -260,6 +265,7 @@ class AdminInviteHRViewSet(ModelViewSet):
 
 class AdminViewHRsViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdmin]
+    pagination_class = EightPerPagePagination 
     filter_backends = [SearchFilter]
     search_fields = ["user__username", "user__email"]
 
@@ -518,6 +524,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
     """
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
+    pagination_class = EightPerPagePagination 
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -534,7 +541,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
             'user__basicinfo',
             'region',
             'position',
-            'highest_education_field' 
+            'highest_education_field' , 'application_link'
         ).prefetch_related(
             'skills'                    ,    'holidayyearday_set',
     'holidayweekday_set',
