@@ -33,7 +33,15 @@ export default function CandidateDetails() {
     ) {
       setShowForm(true);
     }
+
   };
+    const handlePredictUpdate = async () => {
+      try {
+        await fetchCandidate(); 
+      } catch (err) {
+        console.error("Failed to refresh predictions:", err);
+      }
+    };
 
   useEffect(() => {
     fetchCandidate()
@@ -86,6 +94,7 @@ export default function CandidateDetails() {
             loggedInHrId={user.hr?.id}
             onSchedule={fetchCandidate}
             onTake={handleTake}
+            onPredictUpdate={handlePredictUpdate}
             loadingProp={loadingForm}
           />
         </Col>
@@ -104,7 +113,7 @@ export default function CandidateDetails() {
                 candidateId={candidate.id}
                 onSubmitted={(updatedCandidate) => {
                   setShowForm(false);
-                  setCandidate(updatedCandidate); 
+                  setCandidate(updatedCandidate);
                   window.location.reload();
                 }}
               />

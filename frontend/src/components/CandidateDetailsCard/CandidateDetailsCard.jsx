@@ -24,7 +24,7 @@ import {
   FaTimes,
   FaUsers,
   FaEnvelope,
-  FaChartArea,
+  FaExclamationTriangle,
   FaRegChartBar,
   FaRobot,
 } from "react-icons/fa";
@@ -38,6 +38,7 @@ export default function CandidateDetailsCard({
   onTake,
   onSchedule,
   loadingProp,
+  onPredictUpdate,
 }) {
   const navigate = useNavigate();
   const {
@@ -77,6 +78,8 @@ export default function CandidateDetailsCard({
     weekdays: [],
     yeardays: [{ month: "", day: "" }],
   });
+  const [predictLoading, setPredictLoading] = useState(false);
+  const [predictError, setPredictError] = useState(null);
 
   /* ---------------- Schedule ---------------- */
   const handleScheduleSubmit = async () => {
@@ -174,6 +177,16 @@ export default function CandidateDetailsCard({
     }));
   };
 
+  const weekdays = [
+    { label: "Sunday", value: "Sunday" },
+    { label: "Monday", value: "Monday" },
+    { label: "Tuesday", value: "Tuesday" },
+    { label: "Wednesday", value: "Wednesday" },
+    { label: "Thursday", value: "Thursday" },
+    { label: "Friday", value: "Friday" },
+    { label: "Saturday", value: "Saturday" },
+  ];
+
   /* ---------------- Render Buttons ---------------- */
   const renderInterviewActions = () => {
     if (localState === "done" && interviewer === loggedInHrId) {
@@ -269,26 +282,54 @@ export default function CandidateDetailsCard({
       </div>
     );
   };
+  /* ---------------- Prediction ---------------- */
+  const handlePredictAndUpdate = async () => {
+    try {
+      setPredictLoading(true);
+      setPredictError(null);
 
-  const badgeVariant =
-    {
-      pending: "warning",
-      scheduled: "primary",
-      taken: "info",
-      done: "secondary",
-      accepted: "success",
-      rejected: "danger",
-    }[localState] || "secondary";
+      const response = await axiosInstance.post(
+        `/employees/${candidateId}/predict-and-update/`
+      );
 
-  const weekdays = [
-    { label: "Sunday", value: "Sunday" },
-    { label: "Monday", value: "Monday" },
-    { label: "Tuesday", value: "Tuesday" },
-    { label: "Wednesday", value: "Wednesday" },
-    { label: "Thursday", value: "Thursday" },
-    { label: "Friday", value: "Friday" },
-    { label: "Saturday", value: "Saturday" },
-  ];
+      toast.success("Predictions updated successfully");
+      onPredictUpdate?.();
+      // Refresh the candidate data or close/reopen modal to see updates
+      setShowPredictionModal(false);
+      setShowPredictionModal(true); // This is a quick way to refresh, but you might want a better solution
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setPredictError(err.response.data.error);
+        if (err.response.data.missing_fields) {
+          setPredictError(
+            `${
+              err.response.data.error
+            }: ${err.response.data.missing_fields.join(", ")}`
+          );
+        }
+      } else {
+        setPredictError("Prediction failed. Please try again.");
+      }
+      toast.error("Failed to update predictions");
+    } finally {
+      setPredictLoading(false);
+    }
+  };
+
+  const hasNullFields = () => {
+    const requiredFields = {
+      region: candidate.region,
+      highest_education_degree: candidate.highest_education_degree,
+      highest_education_field: candidate.highest_education_field,
+      years_of_experience: candidate.years_of_experience,
+      had_leadership_role: candidate.had_leadership_role,
+      percentage_of_matching_skills: candidate.percentage_of_matching_skills,
+      has_position_related_high_education:
+        candidate.has_position_related_high_education,
+    };
+
+    return Object.values(requiredFields).some((value) => value === null);
+  };
 
   return (
     <>
@@ -789,7 +830,10 @@ export default function CandidateDetailsCard({
 
       <Modal
         show={showPredictionModal}
-        onHide={() => setShowPredictionModal(false)}
+        onHide={() => {
+          setShowPredictionModal(false);
+          setPredictError(null);
+        }}
         centered
       >
         <Modal.Header closeButton className="border-0 pb-0">
@@ -799,64 +843,131 @@ export default function CandidateDetailsCard({
         </Modal.Header>
 
         <Modal.Body className="pt-4">
+          {predictError && (
+            <div className="alert alert-danger mb-4">{predictError}</div>
+          )}
+
           <Row className="g-4 text-center">
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Task Rating</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_avg_task_rating || "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_avg_task_rating != null ? (
+                    candidate.predicted_avg_task_rating
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
-
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Time Before Deadline</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_avg_time_remaining_before_deadline ||
-                    "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_avg_time_remaining_before_deadline !=
+                    null ? (
+                    candidate.predicted_avg_time_remaining_before_deadline
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
-
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Lateness Hrs</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_avg_lateness_hours || "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_avg_lateness_hours != null ? (
+                    candidate.predicted_avg_lateness_hours
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
-
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Absence Days</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_avg_absent_days || "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_avg_absent_days != null ? (
+                    candidate.predicted_avg_absent_days
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
-
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Overtime Hrs</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_avg_overtime_hours || "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_avg_overtime_hours != null ? (
+                    candidate.predicted_avg_overtime_hours
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
-
             <Col md={6}>
               <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Predicted Salary</h6>
                 <p className="text-muted m-0">
-                  {candidate.predicted_basic_salary || "N/A"}
+                  {predictLoading ? (
+                    <Spinner as="span" size="sm" animation="border" />
+                  ) : candidate.predicted_basic_salary != null ? (
+                    candidate.predicted_basic_salary
+                  ) : (
+                    "N/A"
+                  )}
                 </p>
               </div>
             </Col>
           </Row>
-          {last_prediction_date ? last_prediction_date : "Never predicted"}
+
+          <div className="mt-4 text-muted small">
+            Last predicted:{" "}
+            {last_prediction_date
+              ? new Date(last_prediction_date).toLocaleString()
+              : "Never predicted"}
+          </div>
         </Modal.Body>
+
+        <Modal.Footer className="border-0 d-flex flex-column">
+          {hasNullFields() && (
+            <div className="text-warning mb-2 text-center w-100">
+              <FaExclamationTriangle className="me-2" />
+              Please complete all CV data fields to enable predictions
+            </div>
+          )}
+          <Button
+            variant="primary"
+            onClick={handlePredictAndUpdate}
+            disabled={predictLoading || hasNullFields()}
+            className="d-flex align-items-center gap-2"
+          >
+            {predictLoading ? (
+              <>
+                <Spinner as="span" size="sm" animation="border" />
+                Predicting...
+              </>
+            ) : (
+              <>
+                <FaRobot /> Run Predictions
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </>
   );
