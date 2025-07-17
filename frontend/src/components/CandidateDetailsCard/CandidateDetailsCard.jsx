@@ -786,7 +786,7 @@ export default function CandidateDetailsCard({
         <Modal.Body className="pt-4">
           <Row className="g-4 text-center">
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Task Rating</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_avg_task_rating || "N/A"}
@@ -795,7 +795,7 @@ export default function CandidateDetailsCard({
             </Col>
 
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Time Before Deadline</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_avg_time_remaining_before_deadline ||
@@ -805,7 +805,7 @@ export default function CandidateDetailsCard({
             </Col>
 
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Lateness Hrs</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_avg_lateness_hours || "N/A"}
@@ -814,7 +814,7 @@ export default function CandidateDetailsCard({
             </Col>
 
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Absence Days</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_avg_absent_days || "N/A"}
@@ -823,7 +823,7 @@ export default function CandidateDetailsCard({
             </Col>
 
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Avg Overtime Hrs</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_avg_overtime_hours || "N/A"}
@@ -832,7 +832,7 @@ export default function CandidateDetailsCard({
             </Col>
 
             <Col md={6}>
-              <div className="border rounded p-3 shadow-sm h-100">
+              <div className="border rounded p-2 shadow-sm h-100">
                 <h6 className="mb-2">Predicted Salary</h6>
                 <p className="text-muted m-0">
                   {candidate.predicted_basic_salary || "N/A"}
@@ -840,6 +840,7 @@ export default function CandidateDetailsCard({
               </div>
             </Col>
           </Row>
+          {last_prediction_date ? last_prediction_date : "Never predicted"}
         </Modal.Body>
       </Modal>
     </>
