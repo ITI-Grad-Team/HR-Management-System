@@ -13,6 +13,7 @@ const pageTitles = {
   "/dashboard/payroll": "Payroll",
   "/dashboard/applications": "Applications",
   "/dashboard/settings": "Settings",
+  "/dashboard/candidates/:id": "Candidate Details",
 };
 
 export default function HeaderBar() {
@@ -20,7 +21,7 @@ export default function HeaderBar() {
   console.log("Context user:", user);
 
   const location = useLocation();
-  const title = pageTitles[location.pathname] || "Dashboard";
+  const title = pageTitles[location.pathname] || "";
   return (
     <div className="d-flex align-items-center justify-content-between mb-4">
       

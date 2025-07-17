@@ -15,7 +15,6 @@ import {
   FaBriefcase,
   FaMapMarkerAlt,
   FaUserGraduate,
-  FaLaptopCode,
   FaUser,
   FaCode,
   FaFileAlt,

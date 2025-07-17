@@ -40,8 +40,8 @@ function App() {
             <Route path="employees" element={<Employees />} />
             <Route path="applications" element={<Applications />} />
             <Route path="employeeDetails/:id" element={<EmployeeDetails />} />
+            <Route path="candidates/:id" element={<CandidateDetails />} />
           </Route>
-          <Route path="/candidates/:id" element={<CandidateDetails />} />
         </Route>
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
