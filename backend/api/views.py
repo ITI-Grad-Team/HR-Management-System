@@ -175,7 +175,6 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
                 'region',
                 'user__basicinfo',
                 'highest_education_degree',  # New
-                'highest_education_field'    # New
             ).prefetch_related(
                 'skills'                    # New
             )
@@ -532,10 +531,8 @@ class HRViewEmployeesViewSet(ModelViewSet):
             'user__basicinfo',
             'region',
             'position',
-            'highest_education_degree',  # Added for detail view
-            'highest_education_field'   # Added for detail view
+            'highest_education_field' 
         ).prefetch_related(
-            'interviewquestion_set',    # For interview_questions
             'skills'                   # For skills ManyToMany
         )
         
@@ -548,13 +545,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return EmployeeListSerializer  # Use a lighter serializer for lists
-        return EmployeeSerializer
-
-
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return EmployeeListSerializer
         return EmployeeSerializer
 
     @action(detail=True, methods=["patch"], url_path="update-profile-fields")

@@ -453,7 +453,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     region = serializers.CharField(source='region.name', read_only=True)
     user = UserSerializer(read_only=True)
     basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
-
+    highest_education_field = serializers.CharField(source='highest_education_field.name', read_only=True)
     class Meta:
         model = Employee
         fields = [
@@ -461,9 +461,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "position",
             "region",
             "is_coordinator",
-            "interview_datetime",
             "user",         
-            "basic_info",  
+            "basic_info","highest_education_field","years_of_experience"
         ]
 
 

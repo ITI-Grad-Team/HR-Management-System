@@ -82,7 +82,7 @@
   max-width: 160px;
 }
 
-.bio-card-email-text{
+.bio-card-email-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -111,4 +111,29 @@
 .bio-card a:active {
   text-decoration: none !important;
   color: inherit !important;
+}
+/* Coordinator floating badge */
+.coordinator-floating-badge {
+  position: absolute;
+  left: 78px;
+  top: 60px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4.4px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: 400;
+  z-index: 1;
+}
+
+.coordinator-icon {
+  font-size: 0.9rem;
+}
+
+/* Make sure card has relative positioning */
+.bio-card {
+  position: relative;
 }
