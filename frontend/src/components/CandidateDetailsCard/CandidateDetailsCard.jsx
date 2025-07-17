@@ -22,6 +22,7 @@ import {
   FaCalendarAlt,
   FaCheck,
   FaTimes,
+  FaUsers
 } from "react-icons/fa";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
@@ -50,9 +51,10 @@ export default function CandidateDetailsCard({
     skills,
     interview_state,
     interviewer,
+    is_coordinator,
+    last_prediction_date,
     id: candidateId,
   } = candidate;
-
   const [localState, setLocalState] = useState(interview_state);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -326,6 +328,11 @@ export default function CandidateDetailsCard({
                 <FaBriefcase className="text-primary" /> {years_of_experience}{" "}
                 yrs
               </Badge>
+              {is_coordinator && (
+                <Badge pill bg="light" text="dark" className="border">
+                  <FaUsers className="text-primary" /> coordinator
+                </Badge>
+              )}
             </div>
           </Col>
 
