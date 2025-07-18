@@ -1,9 +1,9 @@
-import React from 'react';
+import React from "react";
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch, FaRegBell } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from '../../context/AuthContext';
-import { useSearch } from '../../context/SearchContext'; // ✅ import
+import { useAuth } from "../../context/AuthContext";
+import { useSearch } from "../../context/SearchContext"; // ✅ import
 
 const pageTitles = {
   "/dashboard/home": "Dashboard",
@@ -26,11 +26,12 @@ export default function HeaderBar() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault(); // Prevent default form submission behavior
-    if (searchQuery.trim()) { // Use searchQuery here
+    if (searchQuery.trim()) {
+      // Use searchQuery here
       navigate(`/dashboard/employees?search=${searchQuery.trim()}`);
     } else {
       // If search bar is cleared, navigate to employees page without search param
-      navigate('/dashboard/employees');
+      navigate("/dashboard/employees");
     }
   };
 
@@ -60,7 +61,9 @@ export default function HeaderBar() {
         <img
           src={
             user?.basicinfo?.profile_image
-              ? `${import.meta.env.VITE_IMAGES_BASE_URL}${user.basicinfo.profile_image}`
+              ? `${import.meta.env.VITE_IMAGES_BASE_URL}${
+                  user.basicinfo.profile_image
+                }`
               : "https://i.pravatar.cc/36"
           }
           alt="avatar"

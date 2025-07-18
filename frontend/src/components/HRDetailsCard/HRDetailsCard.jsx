@@ -49,7 +49,9 @@ export default function HRDetailsCard({ candidate, loadingProp }) {
                     <FaPhone className="me-2 text-muted" />
                     <div>
                       <small className="text-muted d-block">Phone</small>
-                      <span className="fw-semibold">{phone || "N/A"}</span>
+                      <span className="fw-semibold">
+                        {basicinfo.phone || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </Col>
