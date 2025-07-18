@@ -39,6 +39,14 @@ export const getPendingOvertimeRequests = () => {
     return axiosInstance.get('/overtime-requests/pending/');
 };
 
+export const getRecentOvertimeRequests = () => {
+    return axiosInstance.get('/overtime-requests/recent/');
+};
+
+export const revertOvertimeRequest = (id) => {
+    return axiosInstance.patch(`/overtime-requests/${id}/revert_to_pending/`);
+};
+
 export const approveOvertimeRequest = (id, data) => {
     return axiosInstance.patch(`/overtime-requests/${id}/approve/`, data);
 };

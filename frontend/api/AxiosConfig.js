@@ -11,7 +11,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import axiosInstance from "../../axiosInstance";
+import axiosInstance from "../src/api/config";
 
 const pieColors = [
   "#3B82F6",

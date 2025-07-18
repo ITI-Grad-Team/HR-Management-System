@@ -45,6 +45,51 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(pending_requests, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get recent approved/rejected requests (HR/Admin only)"""
+        recent_requests = self.get_queryset().filter(
+            Q(status="approved") | Q(status="rejected"),
+            reviewed_at__gte=timezone.now() - timezone.timedelta(days=1)
+        ).order_by('-reviewed_at')
+        serializer = self.get_serializer(recent_requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["patch"])
+    def revert_to_pending(self, request, pk=None):
+        """Revert an approved/rejected request back to pending."""
+        overtime_request = self.get_object()
+
+        if overtime_request.status not in ["approved", "rejected"]:
+            return Response(
+                {"detail": "Only approved or rejected requests can be reverted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Store old state
+        was_approved = overtime_request.status == "approved"
+        
+        # Revert request
+        overtime_request.status = "pending"
+        overtime_request.reviewed_at = None
+        overtime_request.reviewed_by = None
+        overtime_request.hr_comment = ""
+        overtime_request.save()
+
+        # Revert attendance record if it was approved
+        if was_approved:
+            attendance_record = overtime_request.attendance_record
+            employee = attendance_record.user.employee
+
+            employee.total_overtime_hours -= attendance_record.overtime_hours
+            employee.save(update_fields=["total_overtime_hours"])
+
+            attendance_record.overtime_hours = 0
+            attendance_record.overtime_approved = False
+            attendance_record.save()
+
+        return Response({"detail": "Request reverted to pending."})
+
     @action(detail=True, methods=["patch"])
     def approve(self, request, pk=None):
         """Approve an overtime request (HR/Admin only)"""

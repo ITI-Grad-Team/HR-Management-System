@@ -8,6 +8,9 @@ from api.serializers import SalaryRecordSerializer
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsHRorAdmin
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
