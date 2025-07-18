@@ -10,6 +10,9 @@ import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack"
 import ApplicationPage from "./pages/public_application/ApplicationPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
 const Settings = lazy(() => import("./pages/settings/settings"));
