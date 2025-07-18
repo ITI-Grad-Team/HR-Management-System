@@ -110,7 +110,7 @@ class OvertimeRequestPermission(BasePermission):
             )
 
         # Approve/Reject/Pending: HR or Admin only
-        if view.action in ["approve", "reject", "pending"]:
+        if view.action in ["approve", "reject", "pending", "recent", "revert_to_pending"]:
             return role in ["hr", "admin"]
 
         # List/Retrieve: All authenticated users (filtered by queryset)

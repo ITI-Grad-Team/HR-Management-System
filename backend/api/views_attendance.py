@@ -10,11 +10,34 @@ from .serializers import AttendanceRecordSerializer
 from .utils.overtime_utils import can_request_overtime
 from .permissions import AttendancePermission
 from datetime import datetime, timedelta
+from .views import EightPerPagePagination
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class AttendanceRecordFilter(DjangoFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        user_query = request.query_params.get('user', None)
+        date_query = request.query_params.get('date', None)
+
+        if user_query:
+            if user_query.isdigit():
+                queryset = queryset.filter(user__id=user_query)
+            else:
+                queryset = queryset.filter(Q(user__username__icontains=user_query) | Q(user__email__icontains=user_query))
+        
+        if date_query:
+            queryset = queryset.filter(date=date_query)
+
+        return queryset
 
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = AttendanceRecord.objects.all()
     serializer_class = AttendanceRecordSerializer
     permission_classes = [IsAuthenticated, AttendancePermission]
+    pagination_class = EightPerPagePagination
+    filter_backends = [AttendanceRecordFilter]
 
     # Attendance timing constants
     WORK_START = time(9, 0)

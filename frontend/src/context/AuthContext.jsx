@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
 
 
-const login = ({ username, role, basicinfo }) => {
+  const login = ({ username, role, basicinfo }) => {
     setUser({ username, role, basicinfo });
   };
 

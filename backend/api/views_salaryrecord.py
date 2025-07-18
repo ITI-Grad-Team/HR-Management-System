@@ -3,15 +3,19 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord
+from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord, Employee
 from api.serializers import SalaryRecordSerializer
 from django.db import models
 from django_filters.rest_framework import DjangoFilterBackend
+from .permissions import IsHRorAdmin
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = SalaryRecord.objects.all()
+    permission_classes = [IsHRorAdmin]
+    queryset = SalaryRecord.objects.select_related('user__employee__position').all()
     serializer_class = SalaryRecordSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["user", "year", "month"]
@@ -108,11 +112,11 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         absent_penalty_total = absent_days * absence_penalty
         late_penalty_total = lateness_hours * shorttime_hour_penalty
         overtime_bonus_total = overtime_hours * overtime_hour_salary
+        # if you ever want to add short time, put it in dedcutions (short_time_penalty_total)
+        total_deductions = absent_penalty_total + late_penalty_total
         final_salary = round(
             base_salary
-            - absent_penalty_total
-            - late_penalty_total
-            # - short_time_penalty_total
+            - total_deductions
             + overtime_bonus_total,
             2,
         )
@@ -129,6 +133,7 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
             "total_late_penalty": round(late_penalty_total, 2),
             # "short_time_hours": short_time_hours,
             # "short_time_penalty": short_time_penalty_total,
+            "total_deductions": round(total_deductions, 2),
             "total_overtime_salary": round(overtime_bonus_total, 2),
         }
 

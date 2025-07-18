@@ -1,0 +1,12 @@
+.attendance-card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.attendance-card:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.table-responsive {
+    margin-top: 1rem;
+} 
