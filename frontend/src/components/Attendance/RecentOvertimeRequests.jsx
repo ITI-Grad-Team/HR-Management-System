@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Card, Table, Button, Spinner, Alert, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { getRecentOvertimeRequests, revertOvertimeRequest } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
-import { FaUndo } from 'react-icons/fa';
+import { FaUndo, FaInfoCircle } from 'react-icons/fa';
 
-const RecentOvertimeRequests = () => {
+const RecentOvertimeRequests = forwardRef((props, ref) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -14,13 +14,17 @@ const RecentOvertimeRequests = () => {
             setLoading(true);
             const res = await getRecentOvertimeRequests();
             setRequests(res.data);
-        } catch {
+        } catch (err) {
             setError('Failed to fetch recent requests.');
             toast.error('Failed to fetch recent requests.');
         } finally {
             setLoading(false);
         }
     }, []);
+
+    useImperativeHandle(ref, () => ({
+        fetchRecentRequests,
+    }));
 
     useEffect(() => {
         fetchRecentRequests();
@@ -31,7 +35,7 @@ const RecentOvertimeRequests = () => {
             await revertOvertimeRequest(id);
             toast.success('Request reverted to pending.');
             fetchRecentRequests();
-            // Note: We might need a way to trigger a refresh in the parent AdminAttendanceView
+            props.onRevert(); // Notify parent to refresh pending list
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Failed to revert request.');
         }
@@ -51,17 +55,17 @@ const RecentOvertimeRequests = () => {
     if (error) return <Alert variant="danger">{error}</Alert>;
 
     return (
-        <Card className="attendance-card h-100">
-            <Card.Header>
+        <Card className="attendance-card h-100 shadow-sm">
+            <Card.Header className="bg-light">
                 <h5 className="mb-0">Recent Overtime Decisions (24h)</h5>
             </Card.Header>
             <Card.Body>
-                <Table responsive hover>
+                <Table responsive hover striped>
                     <thead>
                         <tr>
                             <th>Employee</th>
                             <th>Status</th>
-                            <th>Reviewed</th>
+                            <th>Info</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -70,9 +74,21 @@ const RecentOvertimeRequests = () => {
                             <tr key={req.id}>
                                 <td>{req.user}</td>
                                 <td>{renderStatusBadge(req.status)}</td>
-                                <OverlayTrigger overlay={<Tooltip>By: {req.reviewed_by_username}<br/>At: {formatDateTime(req.reviewed_at)}<br/>Comment: {req.hr_comment || 'None'}</Tooltip>}>
-                                    <td>{formatDateTime(req.reviewed_at)}</td>
-                                </OverlayTrigger>
+                                <td>
+                                    <OverlayTrigger
+                                        placement="left"
+                                        overlay={
+                                            <Tooltip id={`tooltip-${req.id}`}>
+                                                Requested: {req.requested_hours} hrs on {formatDateTime(req.requested_at)}<br/>
+                                                Reviewed by: {req.reviewed_by_username || 'N/A'}<br/>
+                                                Reviewed at: {formatDateTime(req.reviewed_at)}<br/>
+                                                Comment: {req.hr_comment || 'None'}
+                                            </Tooltip>
+                                        }
+                                    >
+                                        <Button variant="link" className="p-0"><FaInfoCircle /></Button>
+                                    </OverlayTrigger>
+                                </td>
                                 <td>
                                     <OverlayTrigger overlay={<Tooltip>Revert to Pending</Tooltip>}>
                                         <Button variant="outline-warning" size="sm" onClick={() => handleRevert(req.id)}>
@@ -91,6 +107,6 @@ const RecentOvertimeRequests = () => {
             </Card.Body>
         </Card>
     );
-};
+});
 
 export default RecentOvertimeRequests; 

@@ -16,6 +16,7 @@ const AdminAttendanceView = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [filters, setFilters] = useState({ user: '', date: new Date().toISOString().split('T')[0] });
+    const [searchInput, setSearchInput] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
@@ -23,19 +24,23 @@ const AdminAttendanceView = () => {
     const [hrComment, setHrComment] = useState('');
     const recentRequestsRef = useRef();
 
-    const fetchData = useCallback(async (page = 1) => {
+    const fetchPendingRequests = useCallback(async () => {
+        try {
+            const res = await getPendingOvertimeRequests();
+            setOvertimeRequests(res.data);
+        } catch (err) {
+            toast.error("Failed to fetch pending requests.");
+        }
+    }, []);
+
+    const fetchData = useCallback(async (page = 1, currentFilters = filters) => {
         try {
             setLoading(true);
-            const params = { ...filters, page };
-            const [attRes, otRes] = await Promise.all([
+            const params = { ...currentFilters, page };
+            const [attRes] = await Promise.all([
                 getAllAttendance(params),
-                getPendingOvertimeRequests(),
             ]);
             setAttendance({ results: attRes.data.results, count: attRes.data.count });
-            setOvertimeRequests(otRes.data);
-            if (recentRequestsRef.current) {
-                recentRequestsRef.current.fetchRecentRequests();
-            }
         } catch (err) {
             setError('Failed to fetch data.');
             toast.error('Failed to fetch data.');
@@ -45,22 +50,29 @@ const AdminAttendanceView = () => {
     }, [filters]);
 
     useEffect(() => {
+        fetchPendingRequests();
         fetchData(currentPage);
-    }, [fetchData, currentPage]);
+    }, [fetchData, currentPage, fetchPendingRequests]);
 
     const handleFilterChange = (e) => {
-        setFilters({ ...filters, [e.target.name]: e.target.value });
+        setSearchInput(e.target.value);
+    };
+
+    const handleDateChange = (e) => {
+        setFilters({ ...filters, date: e.target.value });
     };
 
     const handleFilterSubmit = (e) => {
         e.preventDefault();
+        setFilters({ ...filters, user: searchInput });
         setCurrentPage(1);
-        fetchData(1);
+        fetchData(1, { ...filters, user: searchInput });
     };
 
     const handleResetFilters = () => {
         const resetFilters = { user: '', date: new Date().toISOString().split('T')[0] };
         setFilters(resetFilters);
+        setSearchInput('');
         setCurrentPage(1);
         fetchData(1, resetFilters);
     };
@@ -79,7 +91,8 @@ const AdminAttendanceView = () => {
             setShowApproveModal(false);
             setHrComment('');
             setSelectedRequest(null);
-            fetchData(currentPage);
+            fetchPendingRequests();
+            if (recentRequestsRef.current) recentRequestsRef.current.fetchRecentRequests();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Approval failed.');
         }
@@ -99,11 +112,16 @@ const AdminAttendanceView = () => {
             setShowRejectModal(false);
             setHrComment('');
             setSelectedRequest(null);
-            fetchData(currentPage);
+            fetchPendingRequests();
+            if (recentRequestsRef.current) recentRequestsRef.current.fetchRecentRequests();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Rejection failed.');
         }
     };
+
+    const handleRevert = () => {
+        fetchPendingRequests();
+    }
 
     const renderStatus = (status) => {
         const variants = {
@@ -116,15 +134,15 @@ const AdminAttendanceView = () => {
 
     const totalPages = Math.ceil(attendance.count / 8); 
 
-    if (loading) return <Spinner animation="border" />;
+    if (loading && !attendance.results.length) return <Spinner animation="border" />;
     if (error) return <Alert variant="danger">{error}</Alert>;
 
     return (
         <>
             <Row>
-                <Col lg={8}>
-                    <Card className="mb-4 attendance-card">
-                        <Card.Header><h5 className="mb-0">Pending Overtime Requests</h5></Card.Header>
+                <Col xl={7}>
+                    <Card className="mb-4 attendance-card shadow-sm">
+                        <Card.Header className="bg-light"><h5 className="mb-0">Pending Overtime Requests</h5></Card.Header>
                         <Card.Body>
                             <Table responsive striped bordered hover>
                                 <thead>
@@ -136,14 +154,16 @@ const AdminAttendanceView = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {overtimeRequests.length > 0 ? overtimeRequests.map(req => (
+                                    {loading && overtimeRequests.length === 0 ? (
+                                        <tr><td colSpan="4" className="text-center"><Spinner size="sm" /></td></tr>
+                                    ) : overtimeRequests.length > 0 ? overtimeRequests.map(req => (
                                         <tr key={req.id}>
                                             <td>{req.user}</td>
                                             <td>{req.date}</td>
                                             <td>{req.requested_hours}</td>
                                             <td>
-                                                <Button variant="success" size="sm" onClick={() => handleApprove(req)}>Approve</Button>
-                                                <Button variant="danger" size="sm" className="ms-2" onClick={() => handleReject(req)}>Reject</Button>
+                                                <Button variant="outline-success" size="sm" onClick={() => handleApprove(req)}>Approve</Button>
+                                                <Button variant="outline-danger" size="sm" className="ms-2" onClick={() => handleReject(req)}>Reject</Button>
                                             </td>
                                         </tr>
                                     )) : <tr><td colSpan="4" className="text-center">No pending requests.</td></tr>}
@@ -152,26 +172,26 @@ const AdminAttendanceView = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col lg={4}>
-                    <RecentOvertimeRequests ref={recentRequestsRef} />
+                <Col xl={5}>
+                    <RecentOvertimeRequests ref={recentRequestsRef} onRevert={handleRevert}/>
                 </Col>
             </Row>
 
 
-            <Card className="attendance-card">
-                <Card.Header><h5 className="mb-0">All Attendance Records</h5></Card.Header>
+            <Card className="attendance-card shadow-sm mt-4">
+                <Card.Header  className="bg-light"><h5 className="mb-0">All Attendance Records</h5></Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleFilterSubmit} className="mb-3">
-                        <Row>
-                            <Col md={4}>
-                                <Form.Control type="text" name="user" value={filters.user} onChange={handleFilterChange} placeholder="Employee ID or Email" />
+                        <Row className="g-2">
+                            <Col md={5}>
+                                <Form.Control type="text" name="user" value={searchInput} onChange={handleFilterChange} placeholder="Filter by Employee ID or Email" />
                             </Col>
-                            <Col md={4}>
-                                <Form.Control type="date" name="date" value={filters.date} onChange={handleFilterChange} />
+                            <Col md={5}>
+                                <Form.Control type="date" name="date" value={filters.date} onChange={handleDateChange} />
                             </Col>
-                            <Col md={4}>
-                                <Button type="submit">Filter</Button>
-                                <Button variant="secondary" className="ms-2" onClick={handleResetFilters}>Reset</Button>
+                            <Col md={2} className="d-flex">
+                                <Button type="submit" className="flex-grow-1">Filter</Button>
+                                <Button variant="secondary" className="ms-2 flex-grow-1" onClick={handleResetFilters}>Reset</Button>
                             </Col>
                         </Row>
                     </Form>
@@ -187,7 +207,9 @@ const AdminAttendanceView = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {attendance.results.map(rec => (
+                            {loading && attendance.results.length === 0 ? (
+                                <tr><td colSpan="6" className="text-center"><Spinner /></td></tr>
+                            ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
                                     <td>{rec.date}</td>
@@ -199,11 +221,13 @@ const AdminAttendanceView = () => {
                             ))}
                         </tbody>
                     </Table>
-                    <Pagination 
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
+                    <div className="d-flex justify-content-center">
+                        <Pagination 
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
                 </Card.Body>
             </Card>
             
