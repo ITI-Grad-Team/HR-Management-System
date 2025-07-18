@@ -12,18 +12,30 @@ import {
 } from "react-bootstrap";
 import {
   FaPhone,
+  FaStarHalfAlt,
   FaDownload,
+  FaChartLine,
   FaBriefcase,
+  FaLaptop,
   FaMapMarkerAlt,
+  FaUserTie,
   FaUserGraduate,
+  FaCalendarTimes,
   FaEdit,
+  FaMoneyBillWave,
   FaUser,
   FaCode,
   FaFileAlt,
+  FaCalendarDay,
   FaCalendarAlt,
+  FaUserClock,
   FaCheck,
   FaTimes,
+  FaBed,
+  FaUmbrellaBeach,
   FaUsers,
+  FaRunning,
+  FaBusinessTime,
   FaEnvelope,
   FaExclamationTriangle,
   FaRegChartBar,
@@ -723,162 +735,387 @@ export default function CandidateDetailsCard({
                 <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
                   <FaInfo className="me-2" /> Employee Info.
                 </h6>
+
+                {/* First Row - 2 columns */}
+                <Row className="g-4 mb-4">
+                  {/* Column 1 - Compensation */}
+                  <Col md={4}>
+                    <Card className="h-100 border-0 shadow-sm">
+                      <Card.Body>
+                        <h6 className="text-primary mb-3 d-flex align-items-center">
+                          <FaMoneyBill className="me-2" /> Compensation
+                        </h6>
+                        <div className="d-flex align-items-center mb-2">
+                          <FaMoneyBillWave className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">Basic Salary</small>
+                            <div className="fw-semibold">
+                              $
+                              {candidate?.basic_salary?.toLocaleString() ||
+                                "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center mb-2">
+                          <FaClock className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">Overtime Rate</small>
+                            <div className="fw-semibold">
+                              ${candidate?.overtime_hour_salary || "N/A"}/hr
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center mb-2">
+                          <FaExclamationTriangle className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">
+                              Short Time Penalty
+                            </small>
+                            <div className="fw-semibold">
+                              ${candidate?.shorttime_hour_penalty || "N/A"}/hr
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center">
+                          <FaCalendarTimes className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">
+                              Absence Penalty
+                            </small>
+                            <div className="fw-semibold">
+                              ${candidate?.absence_penalty || "N/A"}/day
+                            </div>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                  {/* Column 2 - Task Performance */}
+                  <Col md={4}>
+                    <Card className="h-100 border-0 shadow-sm">
+                      <Card.Body>
+                        <h6 className="text-primary mb-3 d-flex align-items-center">
+                          <FaChartLine className="me-2" /> Task Performance
+                        </h6>
+                        <div className="text-center mb-3 p-2 bg-light rounded">
+                          <FaClipboardCheck
+                            className="text-primary mb-1"
+                            size={24}
+                          />
+                          <div className="fw-bold fs-4">
+                            {candidate?.number_of_accepted_tasks || 0}
+                          </div>
+                          <small className="text-muted">
+                            Total Tasks Completed
+                          </small>
+                        </div>
+                        <div className="mb-3">
+                          <div className="d-flex align-items-center mb-2">
+                            <FaStar className="text-muted me-2" />
+                            <small className="text-muted">Task Ratings</small>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.avg_task_ratings?.toFixed(1) || 0}/5
+                              </div>
+                              <small className="text-muted small">
+                                Average
+                              </small>
+                            </div>
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.total_task_ratings?.toFixed(1) || 0}
+                              </div>
+                              <small className="text-muted small">Total</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="d-flex align-items-center mb-2">
+                            <FaClock className="text-muted me-2" />
+                            <small className="text-muted">
+                              Time Before Deadline
+                            </small>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.avg_time_remaining_before_deadline?.toFixed(
+                                  1
+                                ) || 0}
+                                h
+                              </div>
+                              <small className="text-muted small">
+                                Average
+                              </small>
+                            </div>
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.total_time_remaining_before_deadline?.toFixed(
+                                  1
+                                ) || 0}
+                                h
+                              </div>
+                              <small className="text-muted small">Total</small>
+                            </div>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={4}>
+                    <Card className="h-100 border-0 shadow-sm">
+                      <Card.Body>
+                        <h6 className="text-primary mb-3 d-flex align-items-center">
+                          <FaUserClock className="me-2" /> Attendance
+                        </h6>
+                        <div className="text-center mb-3 p-2 bg-light rounded">
+                          <FaCalendarDay
+                            className="text-primary mb-1"
+                            size={24}
+                          />
+                          <div className="fw-bold fs-4">
+                            {candidate?.number_of_non_holiday_days_since_join ||
+                              0}
+                          </div>
+                          <small className="text-muted">Working Days</small>
+                        </div>
+                        <div className="mb-3">
+                          <div className="d-flex align-items-center mb-2">
+                            <FaRunning className="text-muted me-2" />
+                            <small className="text-muted">Lateness</small>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.avg_lateness_hours?.toFixed(1) || 0}
+                                h
+                              </div>
+                              <small className="text-muted small">
+                                Average
+                              </small>
+                            </div>
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.total_lateness_hours?.toFixed(1) ||
+                                  0}
+                                h
+                              </div>
+                              <small className="text-muted small">Total</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mb-3">
+                          <div className="d-flex align-items-center mb-2">
+                            <FaBusinessTime className="text-muted me-2" />
+                            <small className="text-muted">Overtime</small>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.avg_overtime_hours?.toFixed(1) || 0}
+                                h
+                              </div>
+                              <small className="text-muted small">
+                                Average
+                              </small>
+                            </div>
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.total_overtime_hours?.toFixed(1) ||
+                                  0}
+                                h
+                              </div>
+                              <small className="text-muted small">Total</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="d-flex align-items-center mb-2">
+                            <FaBed className="text-secondary me-2" />
+                            <small className="text-muted">Absence</small>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.avg_absent_days?.toFixed(1) || 0}d
+                              </div>
+                              <small className="text-muted small">
+                                Average
+                              </small>
+                            </div>
+                            <div className="text-center flex-grow-1">
+                              <div className="fw-semibold">
+                                {candidate?.total_absent_days || 0}d
+                              </div>
+                              <small className="text-muted small">Total</small>
+                            </div>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+
                 <Row className="g-4">
-                  <Col md={4}>
-                    <div className="d-flex align-items-center">
-                      <FaMoneyBill className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">Salary</small>
-                        <span className="fw-semibold">
-                          $ {candidate?.basic_salary || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaCalendar className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Date Joined
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.join_date || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaCalendarPlus className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">Over Time</small>
-                        <span className="fw-semibold">
-                          $ {candidate?.overtime_hour_salary || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaTimesCircle className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Short Time Penalty
-                        </small>
-                        <span className="fw-semibold">
-                          $ {candidate?.shorttime_hour_penalty || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaTimesCircle className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Absence Penalty
-                        </small>
-                        <span className="fw-semibold">
-                          $ {candidate?.absence_penalty || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={4}>
-                    <div className="d-flex align-items-center">
-                      <FaCalendar className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Attendance Time
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.expected_attend_time || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaCalendar className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">Leave Time</small>
-                        <span className="fw-semibold">
-                          {candidate?.expected_leave_time || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaLaptopHouse className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Online days
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.number_of_non_holiday_days_since_join ||
-                            0}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaCheck className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Accepted Tasks
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.number_of_accepted_tasks || 0}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaStar className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Total Task rating
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.total_task_ratings || 0} hrs
-                        </span>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={4}>
-                    <div className="d-flex align-items-center">
-                      <FaClock className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Total Lateness Hrs
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.total_lateness_hours || 0} hrs
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaClock className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Total Time To DeadLine
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.total_time_remaining_before_deadline || 0}{" "}
-                          hrs
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaClock className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Total Over Time Hrs
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.total_overtime_hours || 0} hrs
-                        </span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center mt-2">
-                      <FaCalendarMinus className="me-2 text-muted" />
-                      <div>
-                        <small className="text-muted d-block">
-                          Total Absence Days
-                        </small>
-                        <span className="fw-semibold">
-                          {candidate?.total_absent_days || 0} hrs
-                        </span>
-                      </div>
-                    </div>
+                  <Col md={12}>
+                    <Card className="h-100 border-0 shadow-sm">
+                      <Card.Body>
+                        <h6 className="text-primary mb-3 d-flex align-items-center">
+                          <FaCalendarAlt className="me-2" /> Work Schedule &
+                          Holidays
+                        </h6>
+                        <div className="d-flex align-items-center mb-3">
+                          <FaClock className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">Work Hours</small>
+                            <div className="fw-semibold">
+                              {candidate?.expected_attend_time?.substring(
+                                0,
+                                5
+                              ) || "N/A"}{" "}
+                              -{" "}
+                              {candidate?.expected_leave_time?.substring(
+                                0,
+                                5
+                              ) || "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mb-4">
+                          <small className="text-muted d-block mb-2">
+                            Weekly Schedule
+                          </small>
+                          <div className="d-flex justify-content-between">
+                            {[
+                              "Sunday",
+                              "Monday",
+                              "Tuesday",
+                              "Wednesday",
+                              "Thursday",
+                              "Friday",
+                              "Saturday",
+                            ].map((day) => {
+                              const shortDay = day.substring(0, 3);
+                              const isOnline =
+                                candidate?.weekly_online_days?.includes(day);
+                              const isHoliday =
+                                candidate?.weekly_holidays?.includes(day);
+                              return (
+                                <div key={day} className="text-center">
+                                  <div
+                                    className={`rounded-circle p-2 ${
+                                      isHoliday
+                                        ? "bg-warning text-white"
+                                        : isOnline
+                                        ? "bg-info text-white"
+                                        : "bg-light"
+                                    }`}
+                                    style={{
+                                      width: "32px",
+                                      height: "32px",
+                                      lineHeight: "16px",
+                                    }}
+                                  >
+                                    {shortDay[0]}
+                                  </div>
+                                  <small className="d-block mt-1">
+                                    {shortDay}
+                                  </small>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="d-flex justify-content-center gap-3 mt-2">
+                            <div className="d-flex align-items-center">
+                              <div
+                                className="rounded-circle bg-warning me-1"
+                                style={{ width: "12px", height: "12px" }}
+                              ></div>
+                              <small>Holiday</small>
+                            </div>
+                            <div className="d-flex align-items-center">
+                              <div
+                                className="rounded-circle bg-info me-1"
+                                style={{ width: "12px", height: "12px" }}
+                              ></div>
+                              <small>Remote</small>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <small className="text-muted d-block mb-2">
+                            Yearly Special Days
+                          </small>
+                          <div className="row g-2">
+                            {candidate?.yearly_holidays?.length > 0 ? (
+                              candidate.yearly_holidays.map(
+                                (holiday, index) => (
+                                  <div key={index} className="col-2">
+                                    <div className="d-flex align-items-center p-2 bg-light rounded">
+                                      <FaUmbrellaBeach className="text-muted me-2" />
+                                      <div>
+                                        <div className="fw-semibold">
+                                          {new Date(
+                                            2000,
+                                            holiday.month - 1,
+                                            holiday.day
+                                          ).toLocaleString("default", {
+                                            month: "short",
+                                          })}{" "}
+                                          {holiday.day}
+                                        </div>
+                                        <small className="text-muted">
+                                          Holiday
+                                        </small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              )
+                            ) : (
+                              <div className="col-12">
+                                <div className="text-center p-2 text-muted small">
+                                  No yearly holidays
+                                </div>
+                              </div>
+                            )}
+                            {candidate?.yearly_online_days?.length > 0 ? (
+                              candidate.yearly_online_days.map((day, index) => (
+                                <div key={index} className="col-2">
+                                  <div className="d-flex align-items-center p-2 bg-light rounded">
+                                    <FaLaptop className="text-muted me-2" />
+                                    <div>
+                                      <div className="fw-semibold">
+                                        {new Date(
+                                          2000,
+                                          day.month - 1,
+                                          day.day
+                                        ).toLocaleString("default", {
+                                          month: "short",
+                                        })}{" "}
+                                        {day.day}
+                                      </div>
+                                      <small className="text-muted">
+                                        Remote
+                                      </small>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="col-12">
+                                <div className="text-center p-2 text-muted small">
+                                  No yearly online days
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
                   </Col>
                 </Row>
               </div>
