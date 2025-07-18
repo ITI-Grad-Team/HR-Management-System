@@ -11,21 +11,31 @@ import "./employees.css";
 
 const Employees = () => {
   const [hrs, setHrs] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [candidates, setCandidates] = useState([]);
+  const [employees, setEmployees] = useState([]); // Stores current page's employees
+  const [candidates, setCandidates] = useState([]); // Stores current page's candidates
+  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); // Stores all employees for filter options
+  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); // Stores all candidates for filter options
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
   const location = useLocation();
+  // searchParam is no longer used for filtering on this page, it's handled by SearchResultsPage
   const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
+
+  // Pagination states for HR Team
   const [currentHrPage, setCurrentHrPage] = useState(1);
-  const [hrsPerPage] = useState(4);
+  const [hrsPerPage] = useState(8); // Backend page size
+  const [totalHrCount, setTotalHrCount] = useState(0);
 
+  // Pagination states for Employees
   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const [employeesPerPage] = useState(4);
+  const [employeesPerPage] = useState(8); // Backend page size
+  const [totalEmployeeCount, setTotalEmployeeCount] = useState(0);
 
+  // Pagination states for Candidates
   const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
-  const [candidatesPerPage] = useState(4);
+  const [candidatesPerPage] = useState(8); // Backend page size
+  const [totalCandidateCount, setTotalCandidateCount] = useState(0);
 
   const [employeeFilters, setEmployeeFilters] = useState({
     region: "",
@@ -44,22 +54,48 @@ const Employees = () => {
       try {
         setLoading(true);
 
+        const paginationParams = (page, pageSize) => ({
+          page: page,
+          page_size: pageSize,
+        });
+
         if (role === "admin") {
-          const [hrsRes, employeesRes, candidatesRes] = await Promise.all([
-            axiosInstance.get("/admin/hrs/"),
-            axiosInstance.get("/admin/employees/?interview_state=accepted"),
-            axiosInstance.get("/admin/employees/?interview_state_not=accepted"),
+          const [hrsRes, employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
+            axiosInstance.get("/admin/hrs/", { params: paginationParams(currentHrPage, hrsPerPage) }),
+            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
+            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
+            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), // Fetch all accepted employees for filters
+            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }), // Fetch all non-accepted candidates for filters
           ]);
+
           setHrs(hrsRes.data.results);
+          setTotalHrCount(hrsRes.data.count);
+
           setEmployees(employeesRes.data.results);
+          setTotalEmployeeCount(employeesRes.data.count);
+
           setCandidates(candidatesRes.data.results);
+          setTotalCandidateCount(candidatesRes.data.count);
+
+          setAllEmployeesForFilters(allEmployeesRes.data.results);
+          setAllCandidatesForFilters(allCandidatesRes.data.results);
+
         } else if (role === "hr") {
-          const [employeesRes, candidatesRes] = await Promise.all([
-            axiosInstance.get("/hr/employees/?interview_state=accepted"),
-            axiosInstance.get("/hr/employees/?interview_state_not=accepted"),
+          const [employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
+            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
+            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
+            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }), // Fetch all accepted employees for filters
+            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), // Fetch all non-accepted candidates for filters
           ]);
+
           setEmployees(employeesRes.data.results);
+          setTotalEmployeeCount(employeesRes.data.count);
+
           setCandidates(candidatesRes.data.results);
+          setTotalCandidateCount(candidatesRes.data.count);
+
+          setAllEmployeesForFilters(allEmployeesRes.data.results);
+          setAllCandidatesForFilters(allCandidatesRes.data.results);
         }
       } catch (err) {
         toast.error("Failed to load data");
@@ -70,19 +106,16 @@ const Employees = () => {
     };
 
     fetchData();
-  }, [role]);
+  }, [role, currentHrPage, currentEmployeePage, currentCandidatePage]);
 
   const filterPeople = (people, filters = {}) => {
+    if (Object.keys(filters).length === 0) {
+      return people;
+    }
+
     return people.filter((person) => {
-      const name = person.basicinfo?.username?.toLowerCase() || person.basic_info?.username?.toLowerCase() || "";
       const position = person.position?.toLowerCase() || "";
       const region = person.region?.toLowerCase() || "";
-
-      const matchesSearch = name.includes(searchParam) || position.includes(searchParam) || region.includes(searchParam);
-
-      if (Object.keys(filters).length === 0) {
-        return matchesSearch;
-      }
 
       return (
         (filters.region === "" || region.includes(filters.region.toLowerCase())) &&
@@ -90,8 +123,7 @@ const Employees = () => {
         (filters.is_coordinator === undefined || filters.is_coordinator === "" ||
           String(person.is_coordinator) === filters.is_coordinator) &&
         (filters.application_link === "" ||
-          person.application_link === filters.application_link) &&
-        matchesSearch
+          person.application_link === filters.application_link)
       );
     });
   };
@@ -103,15 +135,28 @@ const Employees = () => {
     );
   };
 
-  const renderFilterControls = (filters, setFilters, people, title, showCoordinatorFilter = true) => {
-    const regions = getUniqueValues(people, "region");
-    const positions = getUniqueValues(people, "position");
-    const applicationLinks = getUniqueValues(people, "application_link");
+  const renderFilterControls = (filters, setFilters, peopleForOptions, title, showCoordinatorFilter = true) => {
+    const regions = getUniqueValues(peopleForOptions, "region");
+    const positions = getUniqueValues(peopleForOptions, "position");
+    const applicationLinks = getUniqueValues(peopleForOptions, "application_link");
+
+    // Check if any filter is active
+    const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
+
+    // Define the reset function specific to this filter set
+    const handleReset = () => {
+      setFilters({
+        region: "",
+        position: "",
+        is_coordinator: "",
+        application_link: "",
+      });
+    };
 
     return (
       <div className="filter-controls mb-4">
-        {/*<h5>{title} Filters</h5>*/}
-        <div className="row">
+        <h5>{title} Filters</h5>
+        <div className="row g-3 align-items-end"> {/* Use g-3 for smaller gutter, align-items-end for button alignment */}
           <div className="col-md-3">
             <label className="form-label">Region</label>
             <select
@@ -179,6 +224,14 @@ const Employees = () => {
               ))}
             </select>
           </div>
+          {/* Conditionally render the Clear Filters button */}
+          {isFilterActive && (
+            <div className="col-md-3"> {/* Use a column for consistent spacing */}
+              <button className="btn btn-outline-secondary w-100 mt-md-4" onClick={handleReset}>
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -215,24 +268,12 @@ const Employees = () => {
   );
 
   const filteredHrs = filterPeople(hrs);
-
   const filteredEmployees = filterPeople(employees, employeeFilters);
   const filteredCandidates = filterPeople(candidates, candidateFilters);
 
-  const indexOfLastHr = currentHrPage * hrsPerPage;
-  const indexOfFirstHr = indexOfLastHr - hrsPerPage;
-  const currentHrs = filteredHrs.slice(indexOfFirstHr, indexOfLastHr);
-  const totalHrPages = Math.ceil(filteredHrs.length / hrsPerPage);
-
-  const indexOfLastEmployee = currentEmployeePage * employeesPerPage;
-  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
-  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
-  const totalEmployeePages = Math.ceil(filteredEmployees.length / employeesPerPage);
-
-  const indexOfLastCandidate = currentCandidatePage * candidatesPerPage;
-  const indexOfFirstCandidate = indexOfLastCandidate - candidatesPerPage;
-  const currentCandidates = filteredCandidates.slice(indexOfFirstCandidate, indexOfLastCandidate);
-  const totalCandidatePages = Math.ceil(filteredCandidates.length / candidatesPerPage);
+  const totalHrPages = Math.ceil(totalHrCount / hrsPerPage);
+  const totalEmployeePages = Math.ceil(totalEmployeeCount / employeesPerPage);
+  const totalCandidatePages = Math.ceil(totalCandidateCount / candidatesPerPage);
 
   const handleHrPageChange = (pageNumber) => setCurrentHrPage(pageNumber);
   const handleEmployeePageChange = (pageNumber) => setCurrentEmployeePage(pageNumber);
@@ -245,7 +286,7 @@ const Employees = () => {
           {filteredHrs.length > 0 ? (
             <>
               {renderGrid(
-                currentHrs,
+                filteredHrs,
                 (hr) => `/dashboard/hrDetails/${hr.id}`
               )}
               <div className="d-flex justify-content-center mt-4">
@@ -257,7 +298,7 @@ const Employees = () => {
               </div>
             </>
           ) : (
-            <div className="no-data">No HR members match the search</div>
+            <div className="no-data">No HR members found</div>
           )}
         </SectionBlock>
       )}
@@ -266,14 +307,14 @@ const Employees = () => {
         {renderFilterControls(
           employeeFilters,
           setEmployeeFilters,
-          employees,
+          allEmployeesForFilters,
           "Employees",
           true
         )}
         {filteredEmployees.length > 0 ? (
           <>
             {renderGrid(
-              currentEmployees,
+              filteredEmployees,
               (emp) => `/dashboard/employeeDetails/${emp.id}`
             )}
             <div className="d-flex justify-content-center mt-4">
@@ -293,14 +334,14 @@ const Employees = () => {
         {renderFilterControls(
           candidateFilters,
           setCandidateFilters,
-          candidates,
+          allCandidatesForFilters, // Use allCandidatesForFilters for options
           "Candidates",
-          false
+          true // Changed to true to show Coordinator filter for candidates
         )}
         {filteredCandidates.length > 0 ? (
           <>
             {renderGrid(
-              currentCandidates,
+              filteredCandidates,
               (cand) => `/dashboard/employeeDetails/${cand.id}`
             )}
             <div className="d-flex justify-content-center mt-4">
