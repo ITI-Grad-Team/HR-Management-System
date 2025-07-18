@@ -21,12 +21,16 @@ export default function HeaderBar() {
   const navigate = useNavigate();
   const title = pageTitles[location.pathname] || "";
 
-  const { globalSearch, setGlobalSearch } = useSearch(); // ✅ get state from context
+  // Corrected: Destructure searchQuery and setSearchQuery to match SearchContext
+  const { searchQuery, setSearchQuery } = useSearch();
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (globalSearch.trim()) {
-      navigate(`/dashboard/employees?search=${globalSearch.trim()}`);
+    e.preventDefault(); // Prevent default form submission behavior
+    if (searchQuery.trim()) { // Use searchQuery here
+      navigate(`/dashboard/employees?search=${searchQuery.trim()}`);
+    } else {
+      // If search bar is cleared, navigate to employees page without search param
+      navigate('/dashboard/employees');
     }
   };
 
@@ -37,13 +41,14 @@ export default function HeaderBar() {
       <div className="d-flex align-items-center gap-3">
         <Form onSubmit={handleSearchSubmit}>
           <InputGroup size="sm" style={{ width: "260px" }}>
-            <InputGroup.Text>
+            {/* Make the search icon clickable */}
+            <Button variant="outline-secondary" onClick={handleSearchSubmit}>
               <FaSearch />
-            </InputGroup.Text>
+            </Button>
             <Form.Control
               placeholder="Search candidates, jobs…"
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
+              value={searchQuery} // Use searchQuery here
+              onChange={(e) => setSearchQuery(e.target.value)} // Use setSearchQuery here
             />
           </InputGroup>
         </Form>
