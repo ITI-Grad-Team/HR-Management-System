@@ -17,7 +17,7 @@ const RoleBasedDashboard = lazy(() =>
   import("./components/RoleBasedDashBoard/RoleBasedDashBoard")
 );
 const EmployeeDetails = lazy(() =>
-  import("./pages/EmployeeDetails/EmployeeDetails")
+  import("./pages/EmployeeDetailss/EmployeeDetails")
 );
 
 const Employees = lazy(() => import("./pages/employees/employees"));

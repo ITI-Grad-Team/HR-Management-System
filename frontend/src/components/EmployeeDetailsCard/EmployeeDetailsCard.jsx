@@ -93,10 +93,8 @@ export default function CandidateDetailsCard({
   const [predictError, setPredictError] = useState(null);
   const [showCvEditModal, setShowCvEditModal] = useState(false);
   const [cvFormData, setCvFormData] = useState({
-    years_of_experience: candidate.years_of_experience || "",
+    years_of_experience: candidate.years_of_experience,
     had_leadership_role: candidate.had_leadership_role || false,
-    percentage_of_matching_skills:
-      candidate.percentage_of_matching_skills || "",
     has_position_related_high_education:
       candidate.has_position_related_high_education || false,
   });
@@ -112,39 +110,92 @@ export default function CandidateDetailsCard({
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `${
+              `/${
                 role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `${
+              `/${
                 role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `${
+              `/${
                 role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `${
+              `/${
                 role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
 
-        setAllSkills(
-          skillsRes.data.results.map((s) => ({ value: s.id, label: s.name }))
-        );
-        setAllRegions(
-          regionsRes.data.results.map((r) => ({ value: r.id, label: r.name }))
-        );
-        setAllDegrees(
-          degreesRes.data.results.map((d) => ({ value: d.id, label: d.name }))
-        );
-        setAllEducationFields(
-          fieldsRes.data.results.map((f) => ({ value: f.id, label: f.name }))
-        );
+        const skillsOptions = skillsRes.data.results.map((s) => ({
+          value: s.id,
+          label: s.name,
+        }));
+        const regionsOptions = regionsRes.data.results.map((r) => ({
+          value: r.id,
+          label: r.name,
+        }));
+        const degreesOptions = degreesRes.data.results.map((d) => ({
+          value: d.id,
+          label: d.name,
+        }));
+        const fieldsOptions = fieldsRes.data.results.map((f) => ({
+          value: f.id,
+          label: f.name,
+        }));
+
+        setAllSkills(skillsOptions);
+        setAllRegions(regionsOptions);
+        setAllDegrees(degreesOptions);
+        setAllEducationFields(fieldsOptions);
+
+        // Set initial values for the form
+        if (candidate) {
+          // Set region
+          const selectedRegion = regionsOptions.find(
+            (r) => r.label === candidate.region
+          );
+          if (selectedRegion) {
+            setCvFormData((prev) => ({
+              ...prev,
+              region: selectedRegion.value,
+            }));
+          }
+
+          // Set degree
+          const selectedDegree = degreesOptions.find(
+            (d) => d.label === candidate.highest_education_degree
+          );
+          if (selectedDegree) {
+            setCvFormData((prev) => ({
+              ...prev,
+              highest_education_degree: selectedDegree.value,
+            }));
+          }
+
+          // Set field
+          const selectedField = fieldsOptions.find(
+            (f) => f.label === candidate.highest_education_field
+          );
+          if (selectedField) {
+            setCvFormData((prev) => ({
+              ...prev,
+              highest_education_field: selectedField.value,
+            }));
+          }
+
+          // Set skills
+          if (candidate.skills && candidate.skills.length > 0) {
+            const selectedSkills = skillsOptions.filter((s) =>
+              candidate.skills.includes(s.label)
+            );
+            setSelectedSkills(selectedSkills);
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch dropdown data:", error);
         toast.error("Failed to load dropdown options");
@@ -154,7 +205,7 @@ export default function CandidateDetailsCard({
     if (showCvEditModal) {
       fetchDropdownData();
     }
-  }, [showCvEditModal]);
+  }, [showCvEditModal, candidate]);
 
   /* ---------------- Schedule ---------------- */
   const handleScheduleSubmit = async () => {
@@ -617,20 +668,20 @@ export default function CandidateDetailsCard({
                 </Col>
 
                 <Col md={4}>
-                    <button
-                      className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
-                      onClick={() => setShowCvEditModal(true)}
-                    >
-                      <FaEdit /> Edit CV info.
-                    </button>
+                  <button
+                    className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                    onClick={() => setShowCvEditModal(true)}
+                  >
+                    <FaEdit /> Edit CV info.
+                  </button>
                 </Col>
                 <Col md={4}>
-                 <button
-                      className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
-                      onClick={() => setShowPredictionModal(true)}
-                    >
-                      <FaRobot /> View Predictions
-                    </button>
+                  <button
+                    className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                    onClick={() => setShowPredictionModal(true)}
+                  >
+                    <FaRobot /> View Predictions
+                  </button>
                 </Col>
               </Row>
             </div>
@@ -1352,26 +1403,6 @@ export default function CandidateDetailsCard({
                 closeMenuOnSelect={false}
               />
             </Form.Group>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Percentage of Matching Skills</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={cvFormData.percentage_of_matching_skills}
-                    onChange={(e) =>
-                      setCvFormData({
-                        ...cvFormData,
-                        percentage_of_matching_skills: e.target.value || null,
-                      })
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
 
             <Row>
               <Col md={6}>
