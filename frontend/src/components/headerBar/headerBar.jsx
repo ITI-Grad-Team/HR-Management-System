@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch, FaRegBell } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useSearch } from "../../context/SearchContext"; // ✅ import
+import { useAuth } from '../../context/AuthContext';
+import { useSearch } from '../../context/SearchContext';
 
 const pageTitles = {
   "/dashboard/home": "Dashboard",
@@ -21,17 +21,18 @@ export default function HeaderBar() {
   const navigate = useNavigate();
   const title = pageTitles[location.pathname] || "";
 
-  // Corrected: Destructure searchQuery and setSearchQuery to match SearchContext
   const { searchQuery, setSearchQuery } = useSearch();
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
+    // Log the searchQuery value right before navigation
+    console.log("HeaderBar: Submitting search query:", searchQuery);
+
     if (searchQuery.trim()) {
-      // Use searchQuery here
-      navigate(`/dashboard/employees?search=${searchQuery.trim()}`);
+      navigate(`/dashboard/search-results?query=${searchQuery.trim()}`);
     } else {
-      // If search bar is cleared, navigate to employees page without search param
-      navigate("/dashboard/employees");
+      // If search bar is cleared or empty, navigate back to the employees page
+      navigate('/dashboard/employees');
     }
   };
 
@@ -42,14 +43,13 @@ export default function HeaderBar() {
       <div className="d-flex align-items-center gap-3">
         <Form onSubmit={handleSearchSubmit}>
           <InputGroup size="sm" style={{ width: "260px" }}>
-            {/* Make the search icon clickable */}
             <Button variant="outline-secondary" onClick={handleSearchSubmit}>
               <FaSearch />
             </Button>
             <Form.Control
-              placeholder="Search candidates, jobs…"
-              value={searchQuery} // Use searchQuery here
-              onChange={(e) => setSearchQuery(e.target.value)} // Use setSearchQuery here
+              placeholder="Search candidates, emp…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </InputGroup>
         </Form>
@@ -61,9 +61,7 @@ export default function HeaderBar() {
         <img
           src={
             user?.basicinfo?.profile_image
-              ? `${import.meta.env.VITE_IMAGES_BASE_URL}${
-                  user.basicinfo.profile_image
-                }`
+              ? `${import.meta.env.VITE_IMAGES_BASE_URL}${user.basicinfo.profile_image}`
               : "https://i.pravatar.cc/36"
           }
           alt="avatar"
