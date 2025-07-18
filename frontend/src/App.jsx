@@ -27,7 +27,7 @@ const Employees = lazy(() => import("./pages/employees/employees"));
 const Applications = lazy(() => import("./pages/applications/Applications"));
 const Payroll = lazy(() => import("./pages/payroll/Payroll"));
 const Attendance = lazy(() => import("./pages/attendance/Attendance"));
-const HrDetails = lazy(() => import("./pages/HRDetails/"));
+const HrDetails = lazy(() => import("./pages/HrDetails/HrDetails"));
 
 function App() {
   return (
