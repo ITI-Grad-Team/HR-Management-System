@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
 import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
 import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
+import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
 
 const Employees = () => {
@@ -14,8 +15,18 @@ const Employees = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
+  const location = useLocation();
+  const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
-  // Filter states
+  const [currentHrPage, setCurrentHrPage] = useState(1);
+  const [hrsPerPage] = useState(4);
+
+  const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
+  const [employeesPerPage] = useState(4);
+
+  const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
+  const [candidatesPerPage] = useState(4);
+
   const [employeeFilters, setEmployeeFilters] = useState({
     region: "",
     position: "",
@@ -25,7 +36,6 @@ const Employees = () => {
   const [candidateFilters, setCandidateFilters] = useState({
     region: "",
     position: "",
-    is_coordinator: "",
     application_link: "",
   });
 
@@ -62,40 +72,47 @@ const Employees = () => {
     fetchData();
   }, [role]);
 
-  // Filter function
-  const filterPeople = (people, filters) => {
+  const filterPeople = (people, filters = {}) => {
     return people.filter((person) => {
+      const name = person.basicinfo?.username?.toLowerCase() || person.basic_info?.username?.toLowerCase() || "";
+      const position = person.position?.toLowerCase() || "";
+      const region = person.region?.toLowerCase() || "";
+
+      const matchesSearch = name.includes(searchParam) || position.includes(searchParam) || region.includes(searchParam);
+
+      if (Object.keys(filters).length === 0) {
+        return matchesSearch;
+      }
+
       return (
-        (filters.region === "" || person.region === filters.region) &&
-        (filters.position === "" || person.position === filters.position) &&
-        (filters.is_coordinator === "" ||
+        (filters.region === "" || region.includes(filters.region.toLowerCase())) &&
+        (filters.position === "" || position.includes(filters.position.toLowerCase())) &&
+        (filters.is_coordinator === undefined || filters.is_coordinator === "" ||
           String(person.is_coordinator) === filters.is_coordinator) &&
         (filters.application_link === "" ||
-          person.application_link === filters.application_link) // Add this condition
+          person.application_link === filters.application_link) &&
+        matchesSearch
       );
     });
   };
 
-  // Get unique values for filter options
   const getUniqueValues = (people, key) => {
     const values = people.map((person) => person[key]);
     return [...new Set(values)].filter(
-      (value) => value !== undefined && value !== null
+      (value) => value !== undefined && value !== null && value !== ""
     );
   };
 
-  const renderFilterControls = (filters, setFilters, people, title) => {
+  const renderFilterControls = (filters, setFilters, people, title, showCoordinatorFilter = true) => {
     const regions = getUniqueValues(people, "region");
     const positions = getUniqueValues(people, "position");
-    const applicationLinks = getUniqueValues(people, "application_link"); // Get unique application links
+    const applicationLinks = getUniqueValues(people, "application_link");
 
     return (
       <div className="filter-controls mb-4">
-        <h5>{title} Filters</h5>
+        {/*<h5>{title} Filters</h5>*/}
         <div className="row">
           <div className="col-md-3">
-            {" "}
-            {/* Changed from col-md-4 to col-md-3 to fit 4 filters */}
             <label className="form-label">Region</label>
             <select
               className="form-select"
@@ -113,8 +130,6 @@ const Employees = () => {
             </select>
           </div>
           <div className="col-md-3">
-            {" "}
-            {/* Changed from col-md-4 to col-md-3 */}
             <label className="form-label">Position</label>
             <select
               className="form-select"
@@ -131,25 +146,23 @@ const Employees = () => {
               ))}
             </select>
           </div>
+          {showCoordinatorFilter && (
+            <div className="col-md-3">
+              <label className="form-label">Coordinator</label>
+              <select
+                className="form-select"
+                value={filters.is_coordinator}
+                onChange={(e) =>
+                  setFilters({ ...filters, is_coordinator: e.target.value })
+                }
+              >
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          )}
           <div className="col-md-3">
-            {" "}
-            {/* Changed from col-md-4 to col-md-3 */}
-            <label className="form-label">Coordinator</label>
-            <select
-              className="form-select"
-              value={filters.is_coordinator}
-              onChange={(e) =>
-                setFilters({ ...filters, is_coordinator: e.target.value })
-              }
-            >
-              <option value="">All</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </select>
-          </div>
-          <div className="col-md-3">
-            {" "}
-            {/* New filter column */}
             <label className="form-label">Application Link</label>
             <select
               className="form-select"
@@ -177,7 +190,7 @@ const Employees = () => {
     <div className="row g-4">
       {data.map((person) => (
         <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={person.id}>
-          <Link to={getPath(person)} className="text-decoration-none">
+          <Link to={getPath(person)} className="text-decoration-none" style={{ cursor: "pointer" }}>
             <BioCard
               name={person.basicinfo?.username || person.basic_info?.username}
               email={person.user?.username}
@@ -201,17 +214,50 @@ const Employees = () => {
     </div>
   );
 
+  const filteredHrs = filterPeople(hrs);
+
   const filteredEmployees = filterPeople(employees, employeeFilters);
   const filteredCandidates = filterPeople(candidates, candidateFilters);
+
+  const indexOfLastHr = currentHrPage * hrsPerPage;
+  const indexOfFirstHr = indexOfLastHr - hrsPerPage;
+  const currentHrs = filteredHrs.slice(indexOfFirstHr, indexOfLastHr);
+  const totalHrPages = Math.ceil(filteredHrs.length / hrsPerPage);
+
+  const indexOfLastEmployee = currentEmployeePage * employeesPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
+  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+  const totalEmployeePages = Math.ceil(filteredEmployees.length / employeesPerPage);
+
+  const indexOfLastCandidate = currentCandidatePage * candidatesPerPage;
+  const indexOfFirstCandidate = indexOfLastCandidate - candidatesPerPage;
+  const currentCandidates = filteredCandidates.slice(indexOfFirstCandidate, indexOfLastCandidate);
+  const totalCandidatePages = Math.ceil(filteredCandidates.length / candidatesPerPage);
+
+  const handleHrPageChange = (pageNumber) => setCurrentHrPage(pageNumber);
+  const handleEmployeePageChange = (pageNumber) => setCurrentEmployeePage(pageNumber);
+  const handleCandidatePageChange = (pageNumber) => setCurrentCandidatePage(pageNumber);
 
   return (
     <div className="employees-page container py-4">
       {role === "admin" && (
         <SectionBlock title="HR Team">
-          {hrs.length > 0 ? (
-            renderGrid(hrs, (hr) => `/dashboard/hrDetails/${hr.id}`)
+          {filteredHrs.length > 0 ? (
+            <>
+              {renderGrid(
+                currentHrs,
+                (hr) => `/dashboard/hrDetails/${hr.id}`
+              )}
+              <div className="d-flex justify-content-center mt-4">
+                <Pagination
+                  currentPage={currentHrPage}
+                  totalPages={totalHrPages}
+                  onPageChange={handleHrPageChange}
+                />
+              </div>
+            </>
           ) : (
-            <div className="no-data">No HR members found</div>
+            <div className="no-data">No HR members match the search</div>
           )}
         </SectionBlock>
       )}
@@ -221,13 +267,23 @@ const Employees = () => {
           employeeFilters,
           setEmployeeFilters,
           employees,
-          "Employees"
+          "Employees",
+          true
         )}
         {filteredEmployees.length > 0 ? (
-          renderGrid(
-            filteredEmployees,
-            (emp) => `/dashboard/employeeDetails/${emp.id}`
-          )
+          <>
+            {renderGrid(
+              currentEmployees,
+              (emp) => `/dashboard/employeeDetails/${emp.id}`
+            )}
+            <div className="d-flex justify-content-center mt-4">
+              <Pagination
+                currentPage={currentEmployeePage}
+                totalPages={totalEmployeePages}
+                onPageChange={handleEmployeePageChange}
+              />
+            </div>
+          </>
         ) : (
           <div className="no-data">No employees match the filters</div>
         )}
@@ -238,13 +294,23 @@ const Employees = () => {
           candidateFilters,
           setCandidateFilters,
           candidates,
-          "Candidates"
+          "Candidates",
+          false
         )}
         {filteredCandidates.length > 0 ? (
-          renderGrid(
-            filteredCandidates,
-            (cand) => `/dashboard/employeeDetails/${cand.id}`
-          )
+          <>
+            {renderGrid(
+              currentCandidates,
+              (cand) => `/dashboard/employeeDetails/${cand.id}`
+            )}
+            <div className="d-flex justify-content-center mt-4">
+              <Pagination
+                currentPage={currentCandidatePage}
+                totalPages={totalCandidatePages}
+                onPageChange={handleCandidatePageChange}
+              />
+            </div>
+          </>
         ) : (
           <div className="no-data">No candidates match the filters</div>
         )}

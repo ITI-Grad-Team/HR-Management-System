@@ -1,4 +1,4 @@
-/* .directories {
+/*.directories {
   background: #f7f7f7;
   width: 100%;
   display: flex;
@@ -23,7 +23,7 @@
   color: #1f2937;
   font-size: 1.25rem; 
   margin: 2rem 0; 
-
+}
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -95,4 +95,13 @@
   font-weight: 500;
   padding: 2rem 0;
   color: #777;
+}
+
+.employees-page .text-decoration-none {
+  cursor: pointer;
+}
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }

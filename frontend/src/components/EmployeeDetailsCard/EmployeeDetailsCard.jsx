@@ -818,7 +818,8 @@ export default function CandidateDetailsCard({
                           <div className="d-flex justify-content-between">
                             <div className="text-center flex-grow-1">
                               <div className="fw-semibold">
-                                {candidate?.avg_task_ratings?.toFixed(1) || 0}/5
+                                {candidate?.avg_task_ratings?.toFixed(1) || 0}
+                                /100
                               </div>
                               <small className="text-muted small">
                                 Average

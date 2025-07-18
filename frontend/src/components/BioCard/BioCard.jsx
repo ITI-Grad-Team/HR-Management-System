@@ -25,7 +25,7 @@ export default function BioCard({
   const isEmployee = role === "employee";
 
   return (
-    <div className="bio-card">
+    <div className="bio-card" style={{ cursor: "pointer" }}>
       {/* Only show coordinator badge for employees */}
       {isEmployee && isCoordinator && (
         <div className="coordinator-floating-badge">

@@ -28,6 +28,7 @@ import PayrollStats from "../../components/payroll/PayrollStats";
 import PayrollCharts from "../../components/payroll/PayrollCharts";
 import GenerateSalaryRecord from "../../components/payroll/GenerateSalaryRecord";
 import { fetchAllPages } from "../../api/pagination";
+import PayrolFallback from "../../components/DashboardFallBack/PayrolFallback";
 
 const Payroll = () => {
   const [records, setRecords] = useState([]);
@@ -138,6 +139,10 @@ const Payroll = () => {
     setStatsMonthFilter("");
     setStatsYearFilter("");
   };
+
+  if (loading) {
+    return <PayrolFallback />
+  }
 
   return (
     <Container fluid className="py-4">
