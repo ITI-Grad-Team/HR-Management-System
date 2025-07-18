@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-toastify';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
+import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
 
 const AdminAttendanceView = () => {
     const [attendance, setAttendance] = useState({ results: [], count: 0 });
@@ -134,7 +135,7 @@ const AdminAttendanceView = () => {
 
     const totalPages = Math.ceil(attendance.count / 8); 
 
-    if (loading && !attendance.results.length) return <Spinner animation="border" />;
+    if (loading && !attendance.results.length) return <AdminAttendanceFallback />;
     if (error) return <Alert variant="danger">{error}</Alert>;
 
     return (
