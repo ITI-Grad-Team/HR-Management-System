@@ -52,78 +52,94 @@ const Employees = () => {
   const [showInviteHrModal, setShowInviteHrModal] = useState(false);
   const [email, setEmail] = useState("");
   const [loadingInviteHr, setLoadingInviteHr] = useState(false);
+  const [loadingHrs, setLoadingHrs] = useState(true);
+const [loadingEmployees, setLoadingEmployees] = useState(true);
+const [loadingCandidates, setLoadingCandidates] = useState(true);
+
+
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  const fetchHRs = async () => {
+    setLoadingHrs(true);
+    try {
+      const res = await axiosInstance.get("/admin/hrs/", {
+        params: { page: currentHrPage, page_size: hrsPerPage }
+      });
+      setHrs(res.data.results);
+      setTotalHrCount(res.data.count);
+    } catch (err) {
+      toast.error("Failed to load HRs");
+    } finally {
+      setLoadingHrs(false);
+    }
+  };
 
-        const paginationParams = (page, pageSize) => ({
-          page: page,
-          page_size: pageSize,
+  if (role === "admin") fetchHRs();
+}, [currentHrPage, role]);
+
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoadingEmployees(true);
+      try {
+        const endpoint =
+          role === "admin"
+            ? "/admin/employees/"
+            : role === "hr"
+            ? "/hr/employees/"
+            : isCoordinator ? "/coordinator/employees/"
+            : "";
+
+        const res = await axiosInstance.get(endpoint, {
+          params: {
+                  page: currentEmployeePage, page_size: employeesPerPage,
+                  interview_state: "accepted",
+                },
         });
 
-        if (role === "admin") {
-          const [hrsRes, employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
-            axiosInstance.get("/admin/hrs/", { params: paginationParams(currentHrPage, hrsPerPage) }),
-            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), 
-            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }),  
-          ]);
+        const allRes = await axiosInstance.get(endpoint, {
+          params: { interview_state: "accepted" },
+        });
 
-          setHrs(hrsRes.data.results);
-          setTotalHrCount(hrsRes.data.count);
-
-          setEmployees(employeesRes.data.results);
-          setTotalEmployeeCount(employeesRes.data.count);
-
-          setCandidates(candidatesRes.data.results);
-          setTotalCandidateCount(candidatesRes.data.count);
-
-          setAllEmployeesForFilters(allEmployeesRes.data.results);
-          setAllCandidatesForFilters(allCandidatesRes.data.results);
-
-        } else if (role === "hr") {
-          const [employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
-            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }),  
-            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), 
-          ]);
-
-          setEmployees(employeesRes.data.results);
-          setTotalEmployeeCount(employeesRes.data.count);
-
-          setCandidates(candidatesRes.data.results);
-          setTotalCandidateCount(candidatesRes.data.count);
-
-          setAllEmployeesForFilters(allEmployeesRes.data.results);
-          setAllCandidatesForFilters(allCandidatesRes.data.results);
-        } else if (isCoordinator) {
-        const [employeesRes, allEmployeesRes] = await Promise.all([
-          axiosInstance.get("/coordinator/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage) } }),
-          axiosInstance.get("/coordinator/employees/")
-        ]);
-
-        setEmployees(employeesRes.data.results);
-        setTotalEmployeeCount(employeesRes.data.count);
-        setAllEmployeesForFilters(allEmployeesRes.data.results);
-        
-        // Clear candidates data for coordinator
-        setCandidates([]);
-        setAllCandidatesForFilters([]);
-      }
-    } catch (err) {
-        toast.error("Failed to load data");
-        /* console.error(err); */
+        setEmployees(res.data.results);
+        setTotalEmployeeCount(res.data.count);
+        setAllEmployeesForFilters(allRes.data.results);
+      } catch (err) {
+        toast.error("Failed to fetch employees");
       } finally {
-        setLoading(false);
+        setLoadingEmployees(false);
       }
     };
+    fetchEmployees();
+  }, [role, currentEmployeePage]);
 
-    fetchData();
-  }, [role, currentHrPage, currentEmployeePage, currentCandidatePage]);
+  useEffect(() => {
+  const fetchCandidates = async () => {
+    setLoadingCandidates(true);
+    try {
+      const res = await axiosInstance.get(
+        role === "admin" ? "/admin/employees/" : "/hr/employees/",
+        {
+          params: {
+            page: currentCandidatePage,
+            page_size: candidatesPerPage,
+            interview_state_not: "accepted",
+          },
+        }
+      );
+      setCandidates(res.data.results);
+      setTotalCandidateCount(res.data.count);
+    } catch (err) {
+      toast.error("Failed to load Candidates");
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  if (role === "hr" || role === "admin") fetchCandidates();
+}, [currentCandidatePage, role]);
+
 
   const filterPeople = (people, filters = {}) => {
     if (Object.keys(filters).length === 0) {
@@ -256,8 +272,6 @@ const Employees = () => {
     );
   };
 
-  if (loading) return <EmployeesFallBack />;
-
   const renderGrid = (data, getPath) => (
     <div className="row g-4">
       {data.map((person) => (
@@ -335,7 +349,8 @@ const Employees = () => {
           </div>
         }
         >
-          {filteredHrs.length > 0 ? (
+          { loadingHrs ? <EmployeesFallBack /> :
+          filteredHrs.length > 0 ? (
             <>
               {renderGrid(
                 filteredHrs,
@@ -363,7 +378,8 @@ const Employees = () => {
           "Employees",
           true
         )}
-        {filteredEmployees.length > 0 ? (
+        { loadingEmployees ? <EmployeesFallBack /> :
+        filteredEmployees.length > 0 ? (
           <>
             {renderGrid(
               filteredEmployees,
@@ -391,7 +407,8 @@ const Employees = () => {
             "Candidates",
             false 
         )}
-        {filteredCandidates.length > 0 ? (
+        {loadingCandidates ? <EmployeesFallBack /> :
+        filteredCandidates.length > 0 ? (
           <>
             {renderGrid(
               filteredCandidates,
