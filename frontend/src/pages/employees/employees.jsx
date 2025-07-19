@@ -137,7 +137,7 @@ const [loadingCandidates, setLoadingCandidates] = useState(true);
     }
   };
 
-  if (role) fetchCandidates();
+  if (role === "hr" || role === "admin") fetchCandidates();
 }, [currentCandidatePage, role]);
 
 
