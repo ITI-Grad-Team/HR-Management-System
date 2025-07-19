@@ -61,6 +61,7 @@ export default function CandidateDetailsCard({
   onSchedule,
   loadingProp,
   onPredictUpdate,
+  onPromote,
 }) {
   const navigate = useNavigate();
   const {
@@ -418,30 +419,49 @@ export default function CandidateDetailsCard({
   };
 
   const handlePromoteEmployee = async () => {
-    try{
+    try {
       setLoading(true);
-      await axiosInstance.post(`/admin/promote-employee/${candidateId}/promote/`);
+      const response = await axiosInstance.post(
+        `/admin/promote-employee/${candidateId}/promote/`
+      );
       toast.success("Employee promoted successfully");
+
+      // Call the parent's onPromote with the updated data
+      onPromote?.({
+        ...candidate,
+        is_coordinator: true, // Update the coordinator status
+      });
     } catch (err) {
-      toast.error(err.response.data.error);
+      consi;
+      toast.error(err.response?.data?.error || "Failed to promote employee");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const renderPromoteEmployeeButton = () => {
     if (role === "admin" && !is_coordinator) {
       return (
         <div className="d-flex align-items-center gap-2 mt-4">
-          <Button variant="success" onClick={handlePromoteEmployee} disabled={loading}>
-          {loading ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
-          <FiTrendingUp className="me-2" /> Promote Employee
-        </Button>
+          <Button
+            variant="success"
+            onClick={handlePromoteEmployee}
+            disabled={loading}
+          >
+            {loading ? (
+              <Spinner
+                as="span"
+                size="sm"
+                animation="border"
+                className="me-2"
+              />
+            ) : null}
+            <FiTrendingUp className="me-2" /> Promote Employee
+          </Button>
         </div>
-       
       );
     }
-  }
+  };
   /* ---------------- Prediction ---------------- */
   const handlePredictAndUpdate = async () => {
     try {
@@ -569,7 +589,7 @@ export default function CandidateDetailsCard({
                 </Badge>
               )}
             </div>
-              {renderPromoteEmployeeButton()}
+            {renderPromoteEmployeeButton()}
           </Col>
 
           <Col md={8}>

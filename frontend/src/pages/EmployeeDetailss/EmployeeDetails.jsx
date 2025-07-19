@@ -82,7 +82,9 @@ export default function CandidateDetails() {
   if (loading || !candidate) {
     return <CandidatesFallBack />;
   }
-
+  const handlePromote = (updatedCandidate) => {
+    setCandidate(updatedCandidate);
+  };
   const isCurrentInterviewer = candidate.interviewer === user.hr?.id;
 
   return (
@@ -96,6 +98,7 @@ export default function CandidateDetails() {
             onTake={handleTake}
             onPredictUpdate={handlePredictUpdate}
             loadingProp={loadingForm}
+            onPromote={handlePromote}
           />
         </Col>
 
