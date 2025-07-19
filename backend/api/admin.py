@@ -142,24 +142,39 @@ class FileAdmin(admin.ModelAdmin):
 # Register EmployeeLeavePolicy
 @admin.register(EmployeeLeavePolicy)
 class EmployeeLeavePolicyAdmin(admin.ModelAdmin):
-    list_display = ("employee", "yearly_quota", "max_days_per_request")
+    list_display = ("get_employee_name", "yearly_quota", "max_days_per_request")
     search_fields = ("employee__user__username",)
+
+    def get_employee_name(self, obj):
+        return obj.employee.user.username if obj.employee and obj.employee.user else "-"
+
+    get_employee_name.short_description = "Employee Name"
 
 
 # Register CasualLeave
 @admin.register(CasualLeave)
 class CasualLeaveAdmin(admin.ModelAdmin):
     list_display = (
-        "employee",
+        "get_employee_name",
         "start_date",
         "end_date",
         "duration",
         "status",
         "created_at",
-        "reviewed_by",
+        "get_reviewed_by_name",
     )
     search_fields = ("employee__user__username", "status")
     list_filter = ("status", "created_at")
+
+    def get_employee_name(self, obj):
+        return obj.employee.user.username if obj.employee and obj.employee.user else "-"
+
+    get_employee_name.short_description = "Employee Name"
+
+    def get_reviewed_by_name(self, obj):
+        return obj.reviewed_by.username if obj.reviewed_by else "-"
+
+    get_reviewed_by_name.short_description = "Reviewed By"
 
 
 from django.contrib import admin
