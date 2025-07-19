@@ -116,6 +116,9 @@ export default function Sidebar() {
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname.startsWith("/dashboard/attendance") ? "active" : ""}>
                 <FaCalendarCheck /> <span>Attendance</span>
             </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/tasks" className={pathname.startsWith("/dashboard/tasks") ? "active" : ""}>
+                <FaCalendarCheck /> <span>Tasks</span>
+            </Nav.Link>
           </Nav>
           <div className="spacer" />
           <h6>OTHER</h6>

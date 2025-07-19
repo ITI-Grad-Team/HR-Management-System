@@ -27,6 +27,7 @@ const Payroll = lazy(() => import("./pages/payroll/Payroll"));
 const Attendance = lazy(() => import("./pages/attendance/Attendance"));
 const HrDetails = lazy(() => import("./pages/HrDetails/HrDetails"));
 const SearchResultsPage = lazy(() => import("./pages/SearchResultsPage/SearchResultsPage.jsx"));
+const Tasks = lazy(() => import("./pages/Tasks/Tasks.jsx"));
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             <Route path="EmployeeDetails/:id" element={<EmployeeDetails />} />
             <Route path="hrDetails/:id" element={<HrDetails />} />
             <Route path="search-results" element={<SearchResultsPage />} />
+            <Route path="tasks" element={<Tasks />} />
           </Route>
         </Route>
       </Routes>
