@@ -10,7 +10,6 @@ import { useAuth } from "../../hooks/useAuth";
 
 export default function CandidateDetails() {
   const { id } = useParams();
-  const { user } = useAuth();
 
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,14 +18,17 @@ export default function CandidateDetails() {
   const formRef = useRef(null);
 
   /* ---------- fetch candidate ---------- */
-  const { role } = useAuth();
-  const isSelfView = user?.employee?.id === parseInt(id);
-  console.log(user);
+  const { user } = useAuth();
+  const { role, employee } = user;
+  const isSelfView = employee?.id === parseInt(id);
+  console.log(employee);
   const endpoint = isSelfView
     ? "/view-profile/"
-    : role === "admin"
-      ? `/admin/employees/${id}/`
-      : `/hr/employees/${id}/`;
+    : role === "hr"
+      ? `/hr/employees/${id}/`
+      : employee?.is_coordinator === true
+        ? `/coordinator/employees/${id}/`
+        : `/admin/employees/${id}/`;
   const fetchCandidate = async () => {
     const res = await axiosInstance.get(endpoint);
     setCandidate(res.data);
@@ -82,7 +84,9 @@ export default function CandidateDetails() {
   if (loading || !candidate) {
     return <CandidatesFallBack />;
   }
-
+  const handlePromote = (updatedCandidate) => {
+    setCandidate(updatedCandidate);
+  };
   const isCurrentInterviewer = candidate.interviewer === user.hr?.id;
 
   return (
@@ -96,6 +100,7 @@ export default function CandidateDetails() {
             onTake={handleTake}
             onPredictUpdate={handlePredictUpdate}
             loadingProp={loadingForm}
+            onPromote={handlePromote}
           />
         </Col>
 

@@ -61,6 +61,7 @@ export default function CandidateDetailsCard({
   onSchedule,
   loadingProp,
   onPredictUpdate,
+  onPromote,
 }) {
   const navigate = useNavigate();
   const {
@@ -89,6 +90,13 @@ export default function CandidateDetailsCard({
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+  const [taskFormData, setTaskFormData] = useState({
+    title: "",
+    description: "",
+    deadline: "",
+  });
+  const [assignTaskLoading, setAssignTaskLoading] = useState(false);
   const [formData, setFormData] = useState({
     basic_salary: "",
     overtime_hour_salary: "",
@@ -416,14 +424,23 @@ export default function CandidateDetailsCard({
   const handlePromoteEmployee = async () => {
     try {
       setLoading(true);
-      await axiosInstance.post(`/admin/promote-employee/${candidateId}/promote/`);
+      const response = await axiosInstance.post(
+        `/admin/promote-employee/${candidateId}/promote/`
+      );
       toast.success("Employee promoted successfully");
+
+      // Call the parent's onPromote with the updated data
+      onPromote?.({
+        ...candidate,
+        is_coordinator: true, // Update the coordinator status
+      });
     } catch (err) {
-      toast.error(err.response.data.error);
+      consi;
+      toast.error(err.response?.data?.error || "Failed to promote employee");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const renderPromoteEmployeeButton = () => {
     if (role === "admin" && !is_coordinator) {
@@ -437,7 +454,7 @@ export default function CandidateDetailsCard({
 
       );
     }
-  }
+  };
   /* ---------------- Prediction ---------------- */
   const handlePredictAndUpdate = async () => {
     try {
@@ -509,6 +526,56 @@ export default function CandidateDetailsCard({
       console.error(err);
     }
   };
+
+  // handle assign task
+  const handleAssignTask = async () => {
+    try {
+      setAssignTaskLoading(true);
+
+      const response = await axiosInstance.post("/tasks/", {
+        assigned_to: candidateId,
+        title: taskFormData.title,
+        description: taskFormData.description,
+        deadline: taskFormData.deadline,
+      });
+
+      toast.success("Task assigned successfully");
+      setShowAssignTaskModal(false);
+      setTaskFormData({
+        title: "",
+        description: "",
+        deadline: "",
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to assign task");
+      console.error(err);
+    } finally {
+      setAssignTaskLoading(false);
+    }
+  };
+
+  const handleTaskInputChange = (e) => {
+    const { name, value } = e.target;
+    setTaskFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const renderAssignTaskButton = () => {
+    const { user } = useAuth();
+    const isCoordinator =
+      user.role === "employee" && user.employee?.is_coordinator === true;
+    if (isCoordinator && candidate.interview_state === "accepted") {
+      return (
+        <div className="d-flex align-items-center gap-2 mt-4">
+          <Button
+            variant="primary"
+            onClick={() => setShowAssignTaskModal(true)}
+          >
+            <FaClipboardCheck className="me-2" /> Assign Task
+          </Button>
+        </div>
+      );
+    }
+  };
   return (
     <>
       <Card
@@ -564,6 +631,7 @@ export default function CandidateDetailsCard({
               )}
             </div>
             {renderPromoteEmployeeButton()}
+            {renderAssignTaskButton()}
           </Col>
 
           <Col md={8}>
@@ -1749,6 +1817,75 @@ export default function CandidateDetailsCard({
             }
           >
             Update CV Data
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* Assign Task Modal */}
+      <Modal
+        show={showAssignTaskModal}
+        onHide={() => setShowAssignTaskModal(false)}
+        centered
+      >
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">
+            <FaClipboardCheck className="me-2" /> Assign New Task
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Task Title</Form.Label>
+              <Form.Control
+                type="text"
+                name="title"
+                value={taskFormData.title}
+                onChange={handleTaskInputChange}
+                placeholder="Enter task title"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                value={taskFormData.description}
+                onChange={handleTaskInputChange}
+                placeholder="Enter task description"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Deadline</Form.Label>
+              <Form.Control
+                type="datetime-local"
+                name="deadline"
+                value={taskFormData.deadline}
+                onChange={handleTaskInputChange}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowAssignTaskModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleAssignTask}
+            disabled={
+              assignTaskLoading || !taskFormData.title || !taskFormData.deadline
+            }
+          >
+            {assignTaskLoading ? (
+              <Spinner as="span" size="sm" animation="border" />
+            ) : (
+              "Assign Task"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
