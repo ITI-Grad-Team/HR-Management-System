@@ -666,7 +666,7 @@ export default function CandidateDetailsCard({
                     <div>
                       <small className="text-muted d-block">Phone</small>
                       <span className="fw-semibold">
-                        {basicinfo.phone || "N/A"}
+                        {basicinfo?.phone || "N/A"}
                       </span>
                     </div>
                   </div>

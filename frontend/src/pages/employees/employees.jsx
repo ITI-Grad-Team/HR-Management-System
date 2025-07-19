@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -12,41 +12,34 @@ import { FaUserPlus } from "react-icons/fa";
 import { Button, Modal, Form, Spinner } from "react-bootstrap";
 
 const Employees = () => {
-  const [hrs, setHrs] = useState([]);
-  const [employees, setEmployees] = useState([]); 
-  const [candidates, setCandidates] = useState([]);  
-  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); 
-  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); 
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { role, employee } = user;
-  const isCoordinator = role === "employee" && employee?.is_coordinator === true;
-  const location = useLocation();
-   const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
+  const isCoordinator =
+    role === "employee" && employee?.is_coordinator === true;
 
-
-   const [currentHrPage, setCurrentHrPage] = useState(1);
-  const [hrsPerPage] = useState(8);  
-  const [totalHrCount, setTotalHrCount] = useState(0);
-
-   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const [employeesPerPage] = useState(8); 
-  const [totalEmployeeCount, setTotalEmployeeCount] = useState(0);
-
-   const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
-  const [candidatesPerPage] = useState(8); 
-  const [totalCandidateCount, setTotalCandidateCount] = useState(0);
-
-  const [employeeFilters, setEmployeeFilters] = useState({
+  const [loading, setLoading] = useState(true);
+  const [filterOptions, setFilterOptions] = useState({
+    regions: [],
+    positions: [],
+    application_links: [],
+  });
+  const [filters, setFilters] = useState({
     region: "",
     position: "",
     is_coordinator: "",
     application_link: "",
   });
-  const [candidateFilters, setCandidateFilters] = useState({
-    region: "",
-    position: "",
-    application_link: "",
+  const [hrs, setHrs] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+
+  // Enhanced pagination states
+  const [hrsPagination, setHrsPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
   });
 
   const [showInviteHrModal, setShowInviteHrModal] = useState(false);
@@ -363,9 +356,15 @@ const [loadingCandidates, setLoadingCandidates] = useState(true);
                   onPageChange={handleHrPageChange}
                 />
               </div>
+              <Pagination
+                count={hrsPagination.count}
+                next={hrsPagination.next}
+                previous={hrsPagination.previous}
+                currentPage={hrsPagination.currentPage}
+                totalPages={hrsPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "hrs")}
+              />
             </>
-          ) : (
-            <div className="no-data">No HR members found</div>
           )}
         </SectionBlock>
       )}
@@ -396,9 +395,9 @@ const [loadingCandidates, setLoadingCandidates] = useState(true);
         ) : (
           <div className="no-data">No employees match the filters</div>
         )}
-      </SectionBlock>
 
-      {!isCoordinator && (
+      {/* Candidates Section */}
+      {(role === "admin" || role === "hr") && activeTab === "candidates" && (
         <SectionBlock title="Candidates">
           {renderFilterControls(
             candidateFilters,
@@ -416,51 +415,18 @@ const [loadingCandidates, setLoadingCandidates] = useState(true);
             )}
             <div className="d-flex justify-content-center mt-4">
               <Pagination
-                currentPage={currentCandidatePage}
-                totalPages={totalCandidatePages}
-                onPageChange={handleCandidatePageChange}
+                count={candidatesPagination.count}
+                next={candidatesPagination.next}
+                previous={candidatesPagination.previous}
+                currentPage={candidatesPagination.currentPage}
+                totalPages={candidatesPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "candidates")}
               />
-            </div>
-          </>
-        ) : (
-          <div className="no-data">No candidates match the filters</div>
-        )}
-      </SectionBlock>)}
+            </>
+          )}
+        </SectionBlock>
+      )}
     </div>
-    <Modal
-  show={showInviteHrModal}
-  onHide={() => setShowInviteHrModal(false)}
-  centered
-  backdrop="static"
-  keyboard={false}
->
-  <Modal.Header closeButton>
-    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
-  </Modal.Header>
-
-  <Modal.Body>
-    <form onSubmit={handleInvitaionSubmit}>
-      <Form.Group controlId="email" className="mb-3">
-        <Form.Label className="fw-semibold">Email Address</Form.Label>
-        <Form.Control
-          type="email"
-          placeholder="Enter HR email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="py-2 px-3 rounded-3 shadow-sm border-1"
-        />
-      </Form.Group>
-
-      <div className="d-flex justify-content-end">
-        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
-          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
-          Send Invitation
-        </Button>
-      </div>
-    </form>
-  </Modal.Body>
-</Modal>
-    </>
   );
 };
 

@@ -16,7 +16,7 @@ from .views import (
     ViewSelfViewSet,
     CoordinatorViewEmployeesViewSet,
     AdminViewEmployeesViewSet,ViewProfileViewSet,
-    AdminManageSkillsViewSet,
+    AdminManageSkillsViewSet,FilterOptionsViewSet,
     AdminManagePositionsViewSet,
     AdminViewApplicationLinksViewSet,
     AdminManageRegionsViewSet,
@@ -46,6 +46,7 @@ router.register(r"view-self", ViewSelfViewSet, basename="view-self")
 router.register(r"view-profile", ViewProfileViewSet, basename="view-profile")
 
 router.register(r'employees', EmployeePredictionViewSet, basename='employee')
+router.register(r'filter-options', FilterOptionsViewSet, basename='filter-options')
 
 # Employee
 router.register(
