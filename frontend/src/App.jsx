@@ -10,8 +10,6 @@ import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack"
 import ApplicationPage from "./pages/public_application/ApplicationPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
@@ -28,6 +26,7 @@ const Applications = lazy(() => import("./pages/applications/Applications"));
 const Payroll = lazy(() => import("./pages/payroll/Payroll"));
 const Attendance = lazy(() => import("./pages/attendance/Attendance"));
 const HrDetails = lazy(() => import("./pages/HrDetails/HrDetails"));
+const SearchResultsPage = lazy(() => import("./pages/SearchResultsPage/SearchResultsPage.jsx"));
 
 function App() {
   return (
@@ -46,6 +45,7 @@ function App() {
             <Route path="attendance" element={<Attendance />} />
             <Route path="EmployeeDetails/:id" element={<EmployeeDetails />} />
             <Route path="hrDetails/:id" element={<HrDetails />} />
+            <Route path="search-results" element={<SearchResultsPage />} />
           </Route>
         </Route>
       </Routes>
