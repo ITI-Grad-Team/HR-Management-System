@@ -72,7 +72,7 @@ class AttendancePermission(BasePermission):
             return False
         role = user.basicinfo.role.lower()
         # Allow check-in/check-out for employees only on themselves
-        if view.action in ["check_in", "check_out"]:
+        if view.action in ["check_in", "check_out", "check_in_status"]:
             return role == "employee"
         # Allow can_request_overtime for employees and coordinators
         if view.action == "can_request_overtime":
@@ -110,7 +110,13 @@ class OvertimeRequestPermission(BasePermission):
             )
 
         # Approve/Reject/Pending: HR or Admin only
-        if view.action in ["approve", "reject", "pending", "recent", "revert_to_pending"]:
+        if view.action in [
+            "approve",
+            "reject",
+            "pending",
+            "recent",
+            "revert_to_pending",
+        ]:
             return role in ["hr", "admin"]
 
         # List/Retrieve: All authenticated users (filtered by queryset)

@@ -23,9 +23,18 @@ from .models import (
     Task,
     File,
     Position,
-    Region,EducationDegree,EducationField,CompanyStatistics
+    Region,
+    EducationDegree,
+    EducationField,
+    CompanyStatistics,
 )
-from .models import Employee, OnlineDayYearday, HolidayYearday, HolidayWeekday, OnlineDayWeekday
+from .models import (
+    Employee,
+    OnlineDayYearday,
+    HolidayYearday,
+    HolidayWeekday,
+    OnlineDayWeekday,
+)
 from django.utils import timezone
 from django.core.mail import send_mail
 import string, random
@@ -39,27 +48,20 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BasicInfoSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(
-        required=False,
-        allow_null=True,
-        max_length=None
+        required=False, allow_null=True, max_length=None
     )
-    username = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=150
-    )
+    username = serializers.CharField(required=False, allow_blank=True, max_length=150)
     phone = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-        max_length=15
+        required=False, allow_blank=True, allow_null=True, max_length=15
     )
 
     class Meta:
         model = BasicInfo
-        fields = ['profile_image', 'phone', 'role', 'username']
+        fields = ["profile_image", "phone", "role", "username"]
         extra_kwargs = {
-            'role': {'read_only': True}  # Keep role read-only if it shouldn't be changed
+            "role": {
+                "read_only": True
+            }  # Keep role read-only if it shouldn't be changed
         }
 
     def validate_username(self, value):
@@ -78,14 +80,17 @@ class BasicInfoSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Handle profile image updates efficiently"""
-        profile_image = validated_data.pop('profile_image', None)
-        
+        profile_image = validated_data.pop("profile_image", None)
+
         # Delete old image if new one is provided or if null is explicitly set
         if profile_image is not None:
-            if instance.profile_image and instance.profile_image.name != 'profile_images/default.jpg':
+            if (
+                instance.profile_image
+                and instance.profile_image.name != "profile_images/default.jpg"
+            ):
                 instance.profile_image.delete(save=False)
             instance.profile_image = profile_image
-        
+
         return super().update(instance, validated_data)
 
 
@@ -103,13 +108,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
     region = serializers.StringRelatedField()
     highest_education_degree = serializers.StringRelatedField()
     highest_education_field = serializers.StringRelatedField()
-    
+
     # For ManyToMany fields (skills)
-    skills = serializers.SlugRelatedField(
-        many=True,
-        read_only=True,
-        slug_field='name'
-    )
+    skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
 
     # Holiday and Online day fields
     yearly_holidays = serializers.SerializerMethodField()
@@ -129,41 +130,46 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_yearly_holidays(self, obj):
-        return [{'month': h.month, 'day': h.day} for h in obj.holidayyearday_set.all()]
+        return [{"month": h.month, "day": h.day} for h in obj.holidayyearday_set.all()]
 
     def get_weekly_holidays(self, obj):
         return [h.weekday for h in obj.holidayweekday_set.all()]
 
     def get_yearly_online_days(self, obj):
-        return [{'month': o.month, 'day': o.day} for o in obj.onlinedayyearday_set.all()]
+        return [
+            {"month": o.month, "day": o.day} for o in obj.onlinedayyearday_set.all()
+        ]
 
     def get_weekly_online_days(self, obj):
         return [o.weekday for o in obj.onlinedayweekday_set.all()]
+
 
 class HRSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     user = UserSerializer(read_only=True)
     basicinfo = BasicInfoSerializer(read_only=True, source="user.basicinfo")
     accepted_employees_count = serializers.IntegerField(read_only=True)
-    
+
     class Meta:
         model = HR
-        fields = ['id',
-            'user',
-            'basicinfo',
-            'accepted_employees_avg_task_rating',
-            'accepted_employees_avg_time_remaining',
-            'accepted_employees_avg_lateness_hrs',
-            'accepted_employees_avg_absence_days',
-            'accepted_employees_avg_salary',
-            'accepted_employees_avg_overtime',
-            'accepted_employees_avg_interviewer_rating',
-            'interviewer_rating_to_task_rating_correlation',
-            'interviewer_rating_to_time_remaining_correlation',
-            'interviewer_rating_to_lateness_hrs_correlation',
-            'interviewer_rating_to_absence_days_correlation',
-            'interviewer_rating_to_avg_overtime_correlation',
-            'accepted_employees_count','last_stats_calculation_time'
+        fields = [
+            "id",
+            "user",
+            "basicinfo",
+            "accepted_employees_avg_task_rating",
+            "accepted_employees_avg_time_remaining",
+            "accepted_employees_avg_lateness_hrs",
+            "accepted_employees_avg_absence_days",
+            "accepted_employees_avg_salary",
+            "accepted_employees_avg_overtime",
+            "accepted_employees_avg_interviewer_rating",
+            "interviewer_rating_to_task_rating_correlation",
+            "interviewer_rating_to_time_remaining_correlation",
+            "interviewer_rating_to_lateness_hrs_correlation",
+            "interviewer_rating_to_absence_days_correlation",
+            "interviewer_rating_to_avg_overtime_correlation",
+            "accepted_employees_count",
+            "last_stats_calculation_time",
         ]
         read_only_fields = fields
 
@@ -218,28 +224,28 @@ class PositionSerializer(serializers.ModelSerializer):
 
 class EmployeeAcceptingSerializer(serializers.ModelSerializer):
     holiday_weekdays = serializers.ListField(
-        child=serializers.CharField(), 
-        write_only=True, 
+        child=serializers.CharField(),
+        write_only=True,
         required=False,
-        help_text="List of weekdays (e.g. ['Monday', 'Tuesday'])"
+        help_text="List of weekdays (e.g. ['Monday', 'Tuesday'])",
     )
     holiday_yeardays = serializers.ListField(
         child=serializers.DictField(child=serializers.IntegerField()),
         write_only=True,
         required=False,
-        help_text="List of {'month':1-12, 'day':1-31} dicts"
+        help_text="List of {'month':1-12, 'day':1-31} dicts",
     )
     online_weekdays = serializers.ListField(
         child=serializers.CharField(),
         write_only=True,
         required=False,
-        help_text="List of weekdays for online work"
+        help_text="List of weekdays for online work",
     )
     online_yeardays = serializers.ListField(
         child=serializers.DictField(child=serializers.IntegerField()),
         write_only=True,
         required=False,
-        help_text="List of {'month':1-12, 'day':1-31} for online days"
+        help_text="List of {'month':1-12, 'day':1-31} for online days",
     )
 
     class Meta:
@@ -262,7 +268,7 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
         # Handle holiday days
         holiday_weekdays = validated_data.pop("holiday_weekdays", [])
         holiday_yeardays = validated_data.pop("holiday_yeardays", [])
-        
+
         # Handle online days
         online_weekdays = validated_data.pop("online_weekdays", [])
         online_yeardays = validated_data.pop("online_yeardays", [])
@@ -313,7 +319,9 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
             month = yearday.get("month")
             day = yearday.get("day")
             if month and day:
-                day_obj, _ = OnlineDayYearday.objects.get_or_create(month=month, day=day)
+                day_obj, _ = OnlineDayYearday.objects.get_or_create(
+                    month=month, day=day
+                )
                 day_obj.employees.add(instance)
 
         return instance
@@ -326,31 +334,6 @@ class EmployeeRejectingSerializer(serializers.ModelSerializer):
 
 
 # --- Salary & Attendance System Serializers ---
-
-class AttendanceRecordSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-    user_email = serializers.EmailField(source="user.username", read_only=True)
-
-    class Meta:
-        model = AttendanceRecord
-        fields = [
-            "id",
-            "user",
-            "user_email",
-            "date",
-            "check_in_time",
-            "check_out_time",
-            "attendance_type",
-            "status",
-            "mac_address",
-            "overtime_hours",
-            "overtime_approved",
-        ]
-
-    def validate_overtime_hours(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Overtime hours cannot be negative.")
-        return round(value, 2)
 
 
 class OvertimeRequestSerializer(serializers.ModelSerializer):
@@ -383,20 +366,49 @@ class OvertimeRequestSerializer(serializers.ModelSerializer):
         read_only_fields = ["status", "reviewed_at", "reviewed_by"]
 
 
+class AttendanceRecordSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    user_email = serializers.EmailField(source="user.username", read_only=True)
+    overtime_request = OvertimeRequestSerializer(read_only=True)
+    lateness_hours = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = AttendanceRecord
+        fields = [
+            "id",
+            "user",
+            "user_email",
+            "date",
+            "check_in_time",
+            "check_out_time",
+            "attendance_type",
+            "status",
+            "mac_address",
+            "overtime_hours",
+            "overtime_approved",
+            "overtime_request",
+            "lateness_hours",
+        ]
+
+    def validate_overtime_hours(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Overtime hours cannot be negative.")
+        return round(value, 2)
+
+
 class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OvertimeRequest
-        fields = ["requested_hours"]  
+        fields = ["requested_hours"]
 
     def validate(self, attrs):
         """Automatically fetch and validate today's attendance record"""
-        request = self.context['request']
+        request = self.context["request"]
         today = timezone.localdate()
-        
+
         try:
             attendance_record = AttendanceRecord.objects.get(
-                user=request.user,
-                date=today
+                user=request.user, date=today
             )
         except AttendanceRecord.DoesNotExist:
             raise serializers.ValidationError(
@@ -414,16 +426,18 @@ class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
         if not can_request:
             raise serializers.ValidationError(reason)
 
-        attrs['attendance_record'] = attendance_record
+        attrs["attendance_record"] = attendance_record
         return attrs
 
     def create(self, validated_data):
         """Modified to use the auto-fetched attendance record"""
-        attendance_record = validated_data['attendance_record']
-        
+        attendance_record = validated_data["attendance_record"]
+
         # Keep your existing overtime calculation logic
-        if (hasattr(attendance_record.user, "employee") and 
-            attendance_record.user.employee.expected_leave_time):
+        if (
+            hasattr(attendance_record.user, "employee")
+            and attendance_record.user.employee.expected_leave_time
+        ):
             expected_leave_time = attendance_record.user.employee.expected_leave_time
 
         if not attendance_record.check_out_time:
@@ -431,7 +445,9 @@ class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
             attendance_record.save()
 
         if attendance_record.check_out_time > expected_leave_time:
-            checkout_dt = datetime.combine(attendance_record.date, attendance_record.check_out_time)
+            checkout_dt = datetime.combine(
+                attendance_record.date, attendance_record.check_out_time
+            )
             expected_dt = datetime.combine(attendance_record.date, expected_leave_time)
             overtime_delta = checkout_dt - expected_dt
             calculated_hours = round(overtime_delta.total_seconds() / 3600.0, 2)
@@ -440,8 +456,7 @@ class OvertimeRequestCreateSerializer(serializers.ModelSerializer):
             final_hours = 0
 
         return OvertimeRequest.objects.create(
-            attendance_record=attendance_record,
-            requested_hours=final_hours
+            attendance_record=attendance_record, requested_hours=final_hours
         )
 
 
@@ -473,13 +488,18 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "generated_at",
         ]
 
+
 class EmployeeListSerializer(serializers.ModelSerializer):
-    position = serializers.CharField(source='position.name', read_only=True) 
-    region = serializers.CharField(source='region.name', read_only=True)
+    position = serializers.CharField(source="position.name", read_only=True)
+    region = serializers.CharField(source="region.name", read_only=True)
     user = UserSerializer(read_only=True)
-    basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
-    highest_education_field = serializers.CharField(source='highest_education_field.name', read_only=True)
-    application_link = serializers.CharField(source="application_link.distinction_name", read_only=True)
+    basic_info = BasicInfoSerializer(source="user.basicinfo", read_only=True)
+    highest_education_field = serializers.CharField(
+        source="highest_education_field.name", read_only=True
+    )
+    application_link = serializers.CharField(
+        source="application_link.distinction_name", read_only=True
+    )
 
     class Meta:
         model = Employee
@@ -488,71 +508,70 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "position",
             "region",
             "is_coordinator",
-            "user",         
-            "basic_info","highest_education_field","years_of_experience","application_link"
+            "user",
+            "basic_info",
+            "highest_education_field",
+            "years_of_experience",
+            "application_link",
         ]
-
-
 
 
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ['id', 'name', 'distance_to_work']
+        fields = ["id", "name", "distance_to_work"]
 
 
 class EducationDegreeSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationDegree
-        fields = ['id', 'name']
+        fields = ["id", "name"]
 
 
 class EducationFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationField
-        fields = ['id', 'name']
+        fields = ["id", "name"]
 
 
 class CompanyStatisticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyStatistics
-        fields = '__all__'
+        fields = "__all__"
+
 
 class HRListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    basic_info = BasicInfoSerializer(source='user.basicinfo', read_only=True)
+    basic_info = BasicInfoSerializer(source="user.basicinfo", read_only=True)
 
     class Meta:
         model = HR
-        fields = ['id', 'user', 'basic_info']
+        fields = ["id", "user", "basic_info"]
 
 
 class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
     skills = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Skill.objects.all(),
-        required=False
+        many=True, queryset=Skill.objects.all(), required=False
     )
 
     class Meta:
         model = Employee
         fields = [
-            'region',
-            'highest_education_degree',
-            'highest_education_field',
-            'years_of_experience',
-            'had_leadership_role',
-            'percentage_of_matching_skills',
-            'has_position_related_high_education',
-            'skills'
+            "region",
+            "highest_education_degree",
+            "highest_education_field",
+            "years_of_experience",
+            "had_leadership_role",
+            "percentage_of_matching_skills",
+            "has_position_related_high_education",
+            "skills",
         ]
         extra_kwargs = {
-            'region': {'required': True},
-            'highest_education_degree': {'required': True},
-            'highest_education_field': {'required': True},
-            'years_of_experience': {'required': True},
+            "region": {"required": True},
+            "highest_education_degree": {"required": True},
+            "highest_education_field": {"required": True},
+            "years_of_experience": {"required": True},
         }
-
 
     def validate_years_of_experience(self, value):
         if value is not None and value < 0:

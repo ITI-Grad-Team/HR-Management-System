@@ -1,6 +1,10 @@
 import axiosInstance from "./config";
 
 // Employee actions
+export const getCheckInStatus = () => {
+    return axiosInstance.get('/attendance/check_in_status/');
+};
+
 export const checkIn = (macAddress) => {
   return axiosInstance.post('/attendance/check_in/', { mac_address: macAddress });
 };
@@ -9,16 +13,16 @@ export const checkOut = () => {
   return axiosInstance.patch('/attendance/check_out/');
 };
 
+export const createOvertimeRequest = (data) => {
+    return axiosInstance.post('/overtime-requests/', data);
+};
+
 export const getMyAttendance = (params) => {
     return axiosInstance.get('/attendance/', { params });
 };
 
 export const canRequestOvertime = () => {
     return axiosInstance.get('/attendance/can_request_overtime/');
-};
-
-export const createOvertimeRequest = (data) => {
-    return axiosInstance.post('/overtime-requests/', data);
 };
 
 

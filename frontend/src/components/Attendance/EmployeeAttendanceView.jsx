@@ -1,53 +1,59 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Col, Row, Spinner, Alert, Table, Modal, Form } from 'react-bootstrap';
-import { getMyAttendance, checkIn, checkOut, canRequestOvertime, createOvertimeRequest } from '../../api/attendanceApi';
+import { Button, Card, Col, Row, Spinner, Alert, Table, Modal, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import {
+    getMyAttendance,
+    checkIn,
+    checkOut,
+    getCheckInStatus,
+    createOvertimeRequest,
+} from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
+import DailyOvertimeStatus from './DailyOvertimeStatus';
+import EmployeeAttendanceFallback from '../DashboardFallBack/EmployeeAttendanceFallback';
 
 const EmployeeAttendanceView = () => {
     const [attendance, setAttendance] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [todayRecord, setTodayRecord] = useState(null);
-    const [overtimeStatus, setOvertimeStatus] = useState({ can_request: false, reason: '', has_existing_request: false });
+    const [checkInStatus, setCheckInStatus] = useState({ can_check_in: false, reason: '' });
     const [showOvertimeModal, setShowOvertimeModal] = useState(false);
-    const [overtimeHours, setOvertimeHours] = useState('');
+    const [overtimeDetails, setOvertimeDetails] = useState({ attendance_record_id: null, requested_hours: '' });
 
-    const fetchAttendance = useCallback(async () => {
+    const fetchAllData = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await getMyAttendance();
-            setAttendance(res.data);
+            const [attRes, statusRes] = await Promise.all([
+                getMyAttendance(),
+                getCheckInStatus(),
+            ]);
+
             const today = new Date().toISOString().split('T')[0];
-            const todayRec = res.data.find(rec => rec.date === today);
+            const todayRec = attRes.data.results.find(rec => rec.date === today);
+
+            setAttendance(attRes.data.results);
             setTodayRecord(todayRec);
-        } catch (err) {
-            setError('Failed to fetch attendance records.');
-            toast.error('Failed to fetch attendance records.');
+            setCheckInStatus(statusRes.data);
+        } catch {
+            setError('Failed to fetch attendance data.');
+            toast.error('Failed to fetch attendance data.');
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const fetchOvertimeStatus = useCallback(async () => {
-        try {
-            const res = await canRequestOvertime();
-            setOvertimeStatus(res.data);
-        } catch (err) {
-            // This can fail if there's no attendance record for today, which is fine.
-        }
-    }, []);
-
     useEffect(() => {
-        fetchAttendance();
-        fetchOvertimeStatus();
-    }, [fetchAttendance, fetchOvertimeStatus]);
+        fetchAllData();
+    }, [fetchAllData]);
 
     const handleCheckIn = async () => {
         try {
-            // For simplicity, MAC address is null. In a real scenario, you might get this from the device.
-            await checkIn(null);
+            const res = await checkIn(null);
             toast.success('Checked in successfully!');
-            fetchAttendance();
+            if (res.data.status === 'late') {
+                toast.warning("You are marked as late.");
+            }
+            fetchAllData();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Check-in failed.');
         }
@@ -55,10 +61,14 @@ const EmployeeAttendanceView = () => {
 
     const handleCheckOut = async () => {
         try {
-            await checkOut();
-            toast.success('Checked out successfully!');
-            fetchAttendance();
-            fetchOvertimeStatus(); // Re-check overtime status after checkout
+            const res = await checkOut();
+            if (res.status === 202) { // Overtime eligible
+                setOvertimeDetails({ ...overtimeDetails, attendance_record_id: res.data.attendance_record_id });
+                setShowOvertimeModal(true);
+            } else {
+                toast.success('Checked out successfully!');
+                fetchAllData();
+            }
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Check-out failed.');
         }
@@ -67,15 +77,18 @@ const EmployeeAttendanceView = () => {
     const handleOvertimeRequest = async (e) => {
         e.preventDefault();
         try {
-            await createOvertimeRequest({ requested_hours: overtimeHours });
-            toast.success('Overtime request submitted!');
+            await createOvertimeRequest({
+                attendance_record: overtimeDetails.attendance_record_id,
+                requested_hours: overtimeDetails.requested_hours
+            });
+            toast.success('Overtime request submitted successfully.');
             setShowOvertimeModal(false);
-            setOvertimeHours('');
-            fetchOvertimeStatus();
+            fetchAllData();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Failed to submit overtime request.');
         }
     };
+
 
     const renderStatus = (status) => {
         const variants = {
@@ -86,38 +99,42 @@ const EmployeeAttendanceView = () => {
         return <span className={`badge bg-${variants[status]}`}>{status}</span>;
     };
 
-    const renderOvertimeButton = () => {
-        if (overtimeStatus.has_existing_request) {
-            return <Button variant="secondary" size="sm" disabled>Overtime Requested</Button>;
-        }
-        if (overtimeStatus.can_request) {
-            return <Button variant="info" size="sm" onClick={() => setShowOvertimeModal(true)}>Request Overtime</Button>;
-        }
-        return <Button variant="secondary" size="sm" disabled title={overtimeStatus.reason}>Request Overtime</Button>;
-    };
-
-    if (loading) return <Spinner animation="border" />;
+    if (loading) return <EmployeeAttendanceFallback />;
     if (error) return <Alert variant="danger">{error}</Alert>;
+
+    const dailyOvertimeRequest = todayRecord?.overtime_request;
 
     return (
         <>
-            <Row className="mb-4">
-                <Col>
-                    <Card className="attendance-card">
-                        <Card.Body className="d-flex justify-content-around">
-                            <Button variant="success" onClick={handleCheckIn} disabled={!!todayRecord}>
-                                Check-In
-                            </Button>
-                            <Button variant="danger" onClick={handleCheckOut} disabled={!todayRecord || !!todayRecord.check_out_time}>
+            <Row className="mb-4 align-items-center">
+                <Col md={6}>
+                    <Card className="attendance-card shadow-sm">
+                        <Card.Body className="d-flex justify-content-around p-4">
+                            <OverlayTrigger overlay={<Tooltip>{checkInStatus.reason}</Tooltip>}>
+                                <span>
+                                    <Button
+                                        variant="success"
+                                        onClick={handleCheckIn}
+                                        disabled={!checkInStatus.can_check_in || !!todayRecord}
+                                        style={{ pointerEvents: !checkInStatus.can_check_in || !!todayRecord ? 'none' : 'auto' }}
+                                    >
+                                        Check-In
+                                    </Button>
+                                </span>
+                            </OverlayTrigger>
+                            <Button variant="danger" onClick={handleCheckOut} disabled={!todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time}>
                                 Check-Out
                             </Button>
                         </Card.Body>
                     </Card>
                 </Col>
+                <Col md={6}>
+                    {dailyOvertimeRequest && <DailyOvertimeStatus overtimeRequest={dailyOvertimeRequest} />}
+                </Col>
             </Row>
 
-            <Card className="attendance-card">
-                <Card.Header>
+            <Card className="attendance-card shadow-sm">
+                <Card.Header className="bg-light">
                     <h5 className="mb-0">My Attendance History</h5>
                 </Card.Header>
                 <Card.Body>
@@ -128,8 +145,8 @@ const EmployeeAttendanceView = () => {
                                 <th>Check-In</th>
                                 <th>Check-Out</th>
                                 <th>Status</th>
+                                <th>Lateness (hrs)</th>
                                 <th>Overtime (hrs)</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -139,10 +156,8 @@ const EmployeeAttendanceView = () => {
                                     <td>{rec.check_in_time || 'N/A'}</td>
                                     <td>{rec.check_out_time || 'N/A'}</td>
                                     <td>{renderStatus(rec.status)}</td>
-                                    <td>{rec.overtime_approved ? rec.overtime_hours : 'N/A'}</td>
-                                    <td>
-                                        {rec.date === new Date().toISOString().split('T')[0] && rec.check_out_time && renderOvertimeButton()}
-                                    </td>
+                                    <td>{rec.lateness_hours > 0 ? rec.lateness_hours.toFixed(2) : 'N/A'}</td>
+                                    <td>{rec.overtime_approved ? rec.overtime_hours.toFixed(2) : 'N/A'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -150,19 +165,20 @@ const EmployeeAttendanceView = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showOvertimeModal} onHide={() => setShowOvertimeModal(false)}>
+            <Modal show={showOvertimeModal} onHide={() => setShowOvertimeModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Request Overtime</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleOvertimeRequest}>
                     <Modal.Body>
+                        <p>You are eligible to request overtime for today.</p>
                         <Form.Group>
-                            <Form.Label>Overtime Hours</Form.Label>
+                            <Form.Label>Hours to Request:</Form.Label>
                             <Form.Control
                                 type="number"
                                 step="0.1"
-                                value={overtimeHours}
-                                onChange={(e) => setOvertimeHours(e.target.value)}
+                                value={overtimeDetails.requested_hours}
+                                onChange={(e) => setOvertimeDetails({ ...overtimeDetails, requested_hours: e.target.value })}
                                 required
                                 placeholder="Enter hours"
                             />
