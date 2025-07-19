@@ -25,14 +25,12 @@ export default function HeaderBar() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Log the searchQuery value right before navigation
-    console.log("HeaderBar: Submitting search query:", searchQuery);
+     console.log("HeaderBar: Submitting search query:", searchQuery);
 
     if (searchQuery.trim()) {
       navigate(`/dashboard/search-results?query=${searchQuery.trim()}`);
     } else {
-      // If search bar is cleared or empty, navigate back to the employees page
-      navigate('/dashboard/employees');
+       navigate('/dashboard/employees');
     }
   };
 
