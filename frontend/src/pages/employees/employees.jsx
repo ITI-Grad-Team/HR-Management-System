@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -12,118 +12,127 @@ import { FaUserPlus } from "react-icons/fa";
 import { Button, Modal, Form, Spinner } from "react-bootstrap";
 
 const Employees = () => {
-  const [hrs, setHrs] = useState([]);
-  const [employees, setEmployees] = useState([]); 
-  const [candidates, setCandidates] = useState([]);  
-  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); 
-  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); 
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { role, employee } = user;
-  const isCoordinator = role === "employee" && employee?.is_coordinator === true;
-  const location = useLocation();
-   const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
+  const isCoordinator =
+    role === "employee" && employee?.is_coordinator === true;
 
-
-   const [currentHrPage, setCurrentHrPage] = useState(1);
-  const [hrsPerPage] = useState(8);  
-  const [totalHrCount, setTotalHrCount] = useState(0);
-
-   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const [employeesPerPage] = useState(8); 
-  const [totalEmployeeCount, setTotalEmployeeCount] = useState(0);
-
-   const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
-  const [candidatesPerPage] = useState(8); 
-  const [totalCandidateCount, setTotalCandidateCount] = useState(0);
-
-  const [employeeFilters, setEmployeeFilters] = useState({
+  const [loading, setLoading] = useState(true);
+  const [filterOptions, setFilterOptions] = useState({
+    regions: [],
+    positions: [],
+    application_links: [],
+  });
+  const [filters, setFilters] = useState({
     region: "",
     position: "",
     is_coordinator: "",
     application_link: "",
   });
-  const [candidateFilters, setCandidateFilters] = useState({
-    region: "",
-    position: "",
-    application_link: "",
+  const [hrs, setHrs] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+
+  // Enhanced pagination states
+  const [hrsPagination, setHrsPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
   });
 
   const [showInviteHrModal, setShowInviteHrModal] = useState(false);
   const [email, setEmail] = useState("");
   const [loadingInviteHr, setLoadingInviteHr] = useState(false);
+  const [loadingHrs, setLoadingHrs] = useState(true);
+const [loadingEmployees, setLoadingEmployees] = useState(true);
+const [loadingCandidates, setLoadingCandidates] = useState(true);
+
+
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  const fetchHRs = async () => {
+    setLoadingHrs(true);
+    try {
+      const res = await axiosInstance.get("/admin/hrs/", {
+        params: { page: currentHrPage, page_size: hrsPerPage }
+      });
+      setHrs(res.data.results);
+      setTotalHrCount(res.data.count);
+    } catch (err) {
+      toast.error("Failed to load HRs");
+    } finally {
+      setLoadingHrs(false);
+    }
+  };
 
-        const paginationParams = (page, pageSize) => ({
-          page: page,
-          page_size: pageSize,
+  if (role === "admin") fetchHRs();
+}, [currentHrPage, role]);
+
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoadingEmployees(true);
+      try {
+        const endpoint =
+          role === "admin"
+            ? "/admin/employees/"
+            : role === "hr"
+            ? "/hr/employees/"
+            : isCoordinator ? "/coordinator/employees/"
+            : "";
+
+        const res = await axiosInstance.get(endpoint, {
+          params: {
+                  page: currentEmployeePage, page_size: employeesPerPage,
+                  interview_state: "accepted",
+                },
         });
 
-        if (role === "admin") {
-          const [hrsRes, employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
-            axiosInstance.get("/admin/hrs/", { params: paginationParams(currentHrPage, hrsPerPage) }),
-            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), 
-            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }),  
-          ]);
+        const allRes = await axiosInstance.get(endpoint, {
+          params: { interview_state: "accepted" },
+        });
 
-          setHrs(hrsRes.data.results);
-          setTotalHrCount(hrsRes.data.count);
-
-          setEmployees(employeesRes.data.results);
-          setTotalEmployeeCount(employeesRes.data.count);
-
-          setCandidates(candidatesRes.data.results);
-          setTotalCandidateCount(candidatesRes.data.count);
-
-          setAllEmployeesForFilters(allEmployeesRes.data.results);
-          setAllCandidatesForFilters(allCandidatesRes.data.results);
-
-        } else if (role === "hr") {
-          const [employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
-            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }),  
-            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), 
-          ]);
-
-          setEmployees(employeesRes.data.results);
-          setTotalEmployeeCount(employeesRes.data.count);
-
-          setCandidates(candidatesRes.data.results);
-          setTotalCandidateCount(candidatesRes.data.count);
-
-          setAllEmployeesForFilters(allEmployeesRes.data.results);
-          setAllCandidatesForFilters(allCandidatesRes.data.results);
-        } else if (isCoordinator) {
-        const [employeesRes, allEmployeesRes] = await Promise.all([
-          axiosInstance.get("/coordinator/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage) } }),
-          axiosInstance.get("/coordinator/employees/")
-        ]);
-
-        setEmployees(employeesRes.data.results);
-        setTotalEmployeeCount(employeesRes.data.count);
-        setAllEmployeesForFilters(allEmployeesRes.data.results);
-        
-        // Clear candidates data for coordinator
-        setCandidates([]);
-        setAllCandidatesForFilters([]);
-      }
-    } catch (err) {
-        toast.error("Failed to load data");
-        /* console.error(err); */
+        setEmployees(res.data.results);
+        setTotalEmployeeCount(res.data.count);
+        setAllEmployeesForFilters(allRes.data.results);
+      } catch (err) {
+        toast.error("Failed to fetch employees");
       } finally {
-        setLoading(false);
+        setLoadingEmployees(false);
       }
     };
+    fetchEmployees();
+  }, [role, currentEmployeePage]);
 
-    fetchData();
-  }, [role, currentHrPage, currentEmployeePage, currentCandidatePage]);
+  useEffect(() => {
+  const fetchCandidates = async () => {
+    setLoadingCandidates(true);
+    try {
+      const res = await axiosInstance.get(
+        role === "admin" ? "/admin/employees/" : "/hr/employees/",
+        {
+          params: {
+            page: currentCandidatePage,
+            page_size: candidatesPerPage,
+            interview_state_not: "accepted",
+          },
+        }
+      );
+      setCandidates(res.data.results);
+      setTotalCandidateCount(res.data.count);
+    } catch (err) {
+      toast.error("Failed to load Candidates");
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  if (role === "hr" || role === "admin") fetchCandidates();
+}, [currentCandidatePage, role]);
+
 
   const filterPeople = (people, filters = {}) => {
     if (Object.keys(filters).length === 0) {
@@ -256,8 +265,6 @@ const Employees = () => {
     );
   };
 
-  if (loading) return <EmployeesFallBack />;
-
   const renderGrid = (data, getPath) => (
     <div className="row g-4">
       {data.map((person) => (
@@ -335,7 +342,8 @@ const Employees = () => {
           </div>
         }
         >
-          {filteredHrs.length > 0 ? (
+          { loadingHrs ? <EmployeesFallBack /> :
+          filteredHrs.length > 0 ? (
             <>
               {renderGrid(
                 filteredHrs,
@@ -348,9 +356,15 @@ const Employees = () => {
                   onPageChange={handleHrPageChange}
                 />
               </div>
+              <Pagination
+                count={hrsPagination.count}
+                next={hrsPagination.next}
+                previous={hrsPagination.previous}
+                currentPage={hrsPagination.currentPage}
+                totalPages={hrsPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "hrs")}
+              />
             </>
-          ) : (
-            <div className="no-data">No HR members found</div>
           )}
         </SectionBlock>
       )}
@@ -363,7 +377,8 @@ const Employees = () => {
           "Employees",
           true
         )}
-        {filteredEmployees.length > 0 ? (
+        { loadingEmployees ? <EmployeesFallBack /> :
+        filteredEmployees.length > 0 ? (
           <>
             {renderGrid(
               filteredEmployees,
@@ -380,9 +395,9 @@ const Employees = () => {
         ) : (
           <div className="no-data">No employees match the filters</div>
         )}
-      </SectionBlock>
 
-      {!isCoordinator && (
+      {/* Candidates Section */}
+      {(role === "admin" || role === "hr") && activeTab === "candidates" && (
         <SectionBlock title="Candidates">
           {renderFilterControls(
             candidateFilters,
@@ -391,7 +406,8 @@ const Employees = () => {
             "Candidates",
             false 
         )}
-        {filteredCandidates.length > 0 ? (
+        {loadingCandidates ? <EmployeesFallBack /> :
+        filteredCandidates.length > 0 ? (
           <>
             {renderGrid(
               filteredCandidates,
@@ -399,51 +415,18 @@ const Employees = () => {
             )}
             <div className="d-flex justify-content-center mt-4">
               <Pagination
-                currentPage={currentCandidatePage}
-                totalPages={totalCandidatePages}
-                onPageChange={handleCandidatePageChange}
+                count={candidatesPagination.count}
+                next={candidatesPagination.next}
+                previous={candidatesPagination.previous}
+                currentPage={candidatesPagination.currentPage}
+                totalPages={candidatesPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "candidates")}
               />
-            </div>
-          </>
-        ) : (
-          <div className="no-data">No candidates match the filters</div>
-        )}
-      </SectionBlock>)}
+            </>
+          )}
+        </SectionBlock>
+      )}
     </div>
-    <Modal
-  show={showInviteHrModal}
-  onHide={() => setShowInviteHrModal(false)}
-  centered
-  backdrop="static"
-  keyboard={false}
->
-  <Modal.Header closeButton>
-    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
-  </Modal.Header>
-
-  <Modal.Body>
-    <form onSubmit={handleInvitaionSubmit}>
-      <Form.Group controlId="email" className="mb-3">
-        <Form.Label className="fw-semibold">Email Address</Form.Label>
-        <Form.Control
-          type="email"
-          placeholder="Enter HR email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="py-2 px-3 rounded-3 shadow-sm border-1"
-        />
-      </Form.Group>
-
-      <div className="d-flex justify-content-end">
-        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
-          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
-          Send Invitation
-        </Button>
-      </div>
-    </form>
-  </Modal.Body>
-</Modal>
-    </>
   );
 };
 
