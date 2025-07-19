@@ -28,6 +28,8 @@ from .models import (
     InterviewQuestion,
     Task,
     File,
+    EmployeeLeavePolicy,
+    CasualLeave,
 )
 
 
@@ -136,6 +138,28 @@ class FileAdmin(admin.ModelAdmin):
     list_display = ("file", "task")
     search_fields = ("task__title",)
 
+
+# Register EmployeeLeavePolicy
+@admin.register(EmployeeLeavePolicy)
+class EmployeeLeavePolicyAdmin(admin.ModelAdmin):
+    list_display = ("employee", "yearly_quota", "max_days_per_request")
+    search_fields = ("employee__user__username",)
+
+
+# Register CasualLeave
+@admin.register(CasualLeave)
+class CasualLeaveAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "start_date",
+        "end_date",
+        "duration",
+        "status",
+        "created_at",
+        "reviewed_by",
+    )
+    search_fields = ("employee__user__username", "status")
+    list_filter = ("status", "created_at")
 
 
 from django.contrib import admin
