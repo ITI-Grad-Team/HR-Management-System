@@ -43,13 +43,8 @@ import {
   FaRobot,
   FaInfo,
   FaMoneyBill,
-  FaCalendar,
-  FaCalendarPlus,
-  FaTimesCircle,
-  FaLaptopHouse,
   FaStar,
   FaClock,
-  FaCalendarMinus,
 } from "react-icons/fa";
 import { Tooltip } from "react-bootstrap";
 import { OverlayTrigger } from "react-bootstrap";
@@ -58,6 +53,7 @@ import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { FaClipboardCheck, FaCheckDouble } from "react-icons/fa";
+import { FiTrendingUp } from "react-icons/fi";
 export default function CandidateDetailsCard({
   candidate,
   loggedInHrId,
@@ -420,6 +416,32 @@ export default function CandidateDetailsCard({
       </div>
     );
   };
+
+  const handlePromoteEmployee = async () => {
+    try{
+      setLoading(true);
+      await axiosInstance.post(`/admin/promote-employee/${candidateId}/promote/`);
+      toast.success("Employee promoted successfully");
+    } catch (err) {
+      toast.error(err.response.data.error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const renderPromoteEmployeeButton = () => {
+    if (role === "admin" && !is_coordinator) {
+      return (
+        <div className="d-flex align-items-center gap-2 mt-4">
+          <Button variant="success" onClick={handlePromoteEmployee} disabled={loading}>
+          {loading ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
+          <FiTrendingUp className="me-2" /> Promote Employee
+        </Button>
+        </div>
+       
+      );
+    }
+  }
   /* ---------------- Prediction ---------------- */
   const handlePredictAndUpdate = async () => {
     try {
@@ -547,6 +569,7 @@ export default function CandidateDetailsCard({
                 </Badge>
               )}
             </div>
+              {renderPromoteEmployeeButton()}
           </Col>
 
           <Col md={8}>
