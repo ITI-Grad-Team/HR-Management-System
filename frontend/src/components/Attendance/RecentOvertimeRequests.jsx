@@ -14,7 +14,7 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
             setLoading(true);
             const res = await getRecentOvertimeRequests();
             setRequests(res.data);
-        } catch (err) {
+        } catch {
             setError('Failed to fetch recent requests.');
             toast.error('Failed to fetch recent requests.');
         } finally {

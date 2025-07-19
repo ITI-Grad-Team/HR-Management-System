@@ -29,7 +29,7 @@ const AdminAttendanceView = () => {
         try {
             const res = await getPendingOvertimeRequests();
             setOvertimeRequests(res.data);
-        } catch (err) {
+        } catch {
             toast.error("Failed to fetch pending requests.");
         }
     }, []);
@@ -42,7 +42,7 @@ const AdminAttendanceView = () => {
                 getAllAttendance(params),
             ]);
             setAttendance({ results: attRes.data.results, count: attRes.data.count });
-        } catch (err) {
+        } catch {
             setError('Failed to fetch data.');
             toast.error('Failed to fetch data.');
         } finally {
