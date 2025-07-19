@@ -15,7 +15,7 @@ const SearchResultsPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8); // Backend page size for results
+  const [itemsPerPage] = useState(8); 
   const [totalResultsCount, setTotalResultsCount] = useState(0);
 
   useEffect(() => {
@@ -29,7 +29,6 @@ const SearchResultsPage = () => {
 
       setLoading(true);
       try {
-        // Function to create URLSearchParams for consistent query string formatting
         const createSearchParams = (params) => {
           const sp = new URLSearchParams();
           for (const key in params) {
@@ -110,13 +109,13 @@ const SearchResultsPage = () => {
       <SectionBlock>
         {searchQuery && results.length > 0 ? (
           <>
-            {/* Cards side-by-side using Bootstrap's row and col classes */}
-            <div className="row g-4"> {/* Use Bootstrap's row with gutter */}
+            
+            <div className="row g-4"> 
               {results.map((person) => (
-                <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={person.id}> {/* Responsive columns */}
+                <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={person.id}> 
                   <Link
                     to={`/dashboard/employeeDetails/${person.id}`}
-                    className="text-decoration-none" // Bootstrap class for no underline
+                    className="text-decoration-none"  
                   >
                     <BioCard
                       name={person.basicinfo?.username || person.basic_info?.username}
@@ -138,10 +137,9 @@ const SearchResultsPage = () => {
                   </Link>
                 </div>
               ))}
-            </div>
-            {/* Conditionally render Pagination only if there's more than one page */}
+            </div> 
             {totalPages > 1 && (
-              <div className="d-flex justify-content-center mt-4"> {/* Changed mt-8 to mt-4 for pagination */}
+              <div className="d-flex justify-content-center mt-4">  
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -161,11 +159,10 @@ const SearchResultsPage = () => {
         )}
       </SectionBlock>
 
-      {/* Back to Home button at the very end, centered */}
-      <div className="d-flex justify-content-center mt-5"> {/* Changed mt-8 to mt-5 for more space */}
+      <div className="d-flex justify-content-center mt-5">  
         <button
           onClick={handleBackToHome}
-          className="btn btn-dark btn-lg shadow-sm" // Changed to btn-dark for black color
+          className="btn btn-dark btn-lg shadow-sm"  
         >
           Back to Home
         </button>

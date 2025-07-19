@@ -11,30 +11,26 @@ import "./employees.css";
 
 const Employees = () => {
   const [hrs, setHrs] = useState([]);
-  const [employees, setEmployees] = useState([]); // Stores current page's employees
-  const [candidates, setCandidates] = useState([]); // Stores current page's candidates
-  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); // Stores all employees for filter options
-  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); // Stores all candidates for filter options
+  const [employees, setEmployees] = useState([]); 
+  const [candidates, setCandidates] = useState([]);  
+  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); 
+  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); 
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
   const location = useLocation();
-  // searchParam is no longer used for filtering on this page, it's handled by SearchResultsPage
-  const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
+   const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
 
-  // Pagination states for HR Team
-  const [currentHrPage, setCurrentHrPage] = useState(1);
-  const [hrsPerPage] = useState(8); // Backend page size
+   const [currentHrPage, setCurrentHrPage] = useState(1);
+  const [hrsPerPage] = useState(8);  
   const [totalHrCount, setTotalHrCount] = useState(0);
 
-  // Pagination states for Employees
-  const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const [employeesPerPage] = useState(8); // Backend page size
+   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
+  const [employeesPerPage] = useState(8); 
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0);
 
-  // Pagination states for Candidates
-  const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
-  const [candidatesPerPage] = useState(8); // Backend page size
+   const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
+  const [candidatesPerPage] = useState(8); 
   const [totalCandidateCount, setTotalCandidateCount] = useState(0);
 
   const [employeeFilters, setEmployeeFilters] = useState({
@@ -64,8 +60,8 @@ const Employees = () => {
             axiosInstance.get("/admin/hrs/", { params: paginationParams(currentHrPage, hrsPerPage) }),
             axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
             axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), // Fetch all accepted employees for filters
-            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }), // Fetch all non-accepted candidates for filters
+            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), 
+            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }),  
           ]);
 
           setHrs(hrsRes.data.results);
@@ -84,8 +80,8 @@ const Employees = () => {
           const [employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
             axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
             axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }), // Fetch all accepted employees for filters
-            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), // Fetch all non-accepted candidates for filters
+            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }),  
+            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), 
           ]);
 
           setEmployees(employeesRes.data.results);
@@ -99,7 +95,7 @@ const Employees = () => {
         }
       } catch (err) {
         toast.error("Failed to load data");
-        console.error(err);
+        /* console.error(err); */
       } finally {
         setLoading(false);
       }
@@ -140,11 +136,9 @@ const Employees = () => {
     const positions = getUniqueValues(peopleForOptions, "position");
     const applicationLinks = getUniqueValues(peopleForOptions, "application_link");
 
-    // Check if any filter is active
-    const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
+     const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
 
-    // Define the reset function specific to this filter set
-    const handleReset = () => {
+     const handleReset = () => {
       setFilters({
         region: "",
         position: "",
@@ -155,8 +149,8 @@ const Employees = () => {
 
     return (
       <div className="filter-controls mb-4">
-        <h5>{title} Filters</h5>
-        <div className="row g-3 align-items-end"> {/* Use g-3 for smaller gutter, align-items-end for button alignment */}
+       {/*  <h5>{title} Filters</h5> */}
+        <div className="row g-3 align-items-end">  
           <div className="col-md-3">
             <label className="form-label">Region</label>
             <select
@@ -224,9 +218,8 @@ const Employees = () => {
               ))}
             </select>
           </div>
-          {/* Conditionally render the Clear Filters button */}
-          {isFilterActive && (
-            <div className="col-md-3"> {/* Use a column for consistent spacing */}
+           {isFilterActive && (
+            <div className="col-md-3">  
               <button className="btn btn-outline-secondary w-100 mt-md-4" onClick={handleReset}>
                 Clear Filters
               </button>
@@ -334,9 +327,9 @@ const Employees = () => {
         {renderFilterControls(
           candidateFilters,
           setCandidateFilters,
-          allCandidatesForFilters, // Use allCandidatesForFilters for options
+          allCandidatesForFilters,  
           "Candidates",
-          true // Changed to true to show Coordinator filter for candidates
+          true  
         )}
         {filteredCandidates.length > 0 ? (
           <>
