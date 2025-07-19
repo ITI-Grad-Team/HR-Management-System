@@ -70,7 +70,6 @@ export default function CandidateDetailsCard({
     region,
     highest_education_degree,
     highest_education_field,
-    phone,
     cv,
     had_leadership_role,
     has_position_related_high_education,
@@ -562,7 +561,9 @@ export default function CandidateDetailsCard({
                     <FaPhone className="me-2 text-muted" />
                     <div>
                       <small className="text-muted d-block">Phone</small>
-                      <span className="fw-semibold">{phone || "N/A"}</span>
+                      <span className="fw-semibold">
+                        {basicinfo.phone || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </Col>
