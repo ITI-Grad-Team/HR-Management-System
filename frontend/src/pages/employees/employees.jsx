@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
+import { FaUserPlus } from "react-icons/fa";
+import { Button, Modal, Form, Spinner } from "react-bootstrap";
 
 const Employees = () => {
   const [hrs, setHrs] = useState([]);
@@ -44,6 +46,10 @@ const Employees = () => {
     position: "",
     application_link: "",
   });
+
+  const [showInviteHrModal, setShowInviteHrModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loadingInviteHr, setLoadingInviteHr] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -272,10 +278,43 @@ const Employees = () => {
   const handleEmployeePageChange = (pageNumber) => setCurrentEmployeePage(pageNumber);
   const handleCandidatePageChange = (pageNumber) => setCurrentCandidatePage(pageNumber);
 
+  const handleInviteHr = () => setShowInviteHrModal(true);
+
+  const handleInvitaionSubmit = async (e) => {
+    e.preventDefault();
+    setLoadingInviteHr(true);
+
+    if (!email.trim()) {
+  toast.error("Please enter an email address");
+  setLoadingInviteHr(false);
+  return;
+}
+
+    try{
+      await axiosInstance.post(`/admin/invite-hr/`, { email });
+      toast.success("HR Invited Successfully");
+      setShowInviteHrModal(false);
+      setEmail("");
+    } catch (err) {
+      toast.error(err.response.data.error);
+    } finally {
+      setLoadingInviteHr(false);
+    }  
+  };
+
   return (
+    <>
     <div className="employees-page container py-4">
       {role === "admin" && (
-        <SectionBlock title="HR Team">
+        <SectionBlock title="HR Team"
+        extraHeader={
+          <div className="d-flex justify-content-end">
+            <button className="btn btn-outline-primary d-flex align-items-center" onClick={handleInviteHr}>
+            <FaUserPlus className="me-2"/> Invite HR
+            </button>
+          </div>
+        }
+        >
           {filteredHrs.length > 0 ? (
             <>
               {renderGrid(
@@ -350,6 +389,40 @@ const Employees = () => {
         )}
       </SectionBlock>
     </div>
+    <Modal
+  show={showInviteHrModal}
+  onHide={() => setShowInviteHrModal(false)}
+  centered
+  backdrop="static"
+  keyboard={false}
+>
+  <Modal.Header closeButton>
+    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
+  </Modal.Header>
+
+  <Modal.Body>
+    <form onSubmit={handleInvitaionSubmit}>
+      <Form.Group controlId="email" className="mb-3">
+        <Form.Label className="fw-semibold">Email Address</Form.Label>
+        <Form.Control
+          type="email"
+          placeholder="Enter HR email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="py-2 px-3 rounded-3 shadow-sm border-1"
+        />
+      </Form.Group>
+
+      <div className="d-flex justify-content-end">
+        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
+          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
+          Send Invitation
+        </Button>
+      </div>
+    </form>
+  </Modal.Body>
+</Modal>
+    </>
   );
 };
 
