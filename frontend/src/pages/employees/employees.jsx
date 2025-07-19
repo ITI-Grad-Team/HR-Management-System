@@ -18,7 +18,9 @@ const Employees = () => {
   const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); 
   const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const { role } = useAuth();
+  const { user } = useAuth();
+  const { role, employee } = user;
+  const isCoordinator = role === "employee" && employee?.is_coordinator === true;
   const location = useLocation();
    const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
@@ -98,8 +100,21 @@ const Employees = () => {
 
           setAllEmployeesForFilters(allEmployeesRes.data.results);
           setAllCandidatesForFilters(allCandidatesRes.data.results);
-        }
-      } catch (err) {
+        } else if (isCoordinator) {
+        const [employeesRes, allEmployeesRes] = await Promise.all([
+          axiosInstance.get("/coordinator/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage) } }),
+          axiosInstance.get("/coordinator/employees/")
+        ]);
+
+        setEmployees(employeesRes.data.results);
+        setTotalEmployeeCount(employeesRes.data.count);
+        setAllEmployeesForFilters(allEmployeesRes.data.results);
+        
+        // Clear candidates data for coordinator
+        setCandidates([]);
+        setAllCandidatesForFilters([]);
+      }
+    } catch (err) {
         toast.error("Failed to load data");
         /* console.error(err); */
       } finally {
@@ -120,9 +135,14 @@ const Employees = () => {
       const region = person.region?.toLowerCase() || "";
 
       return (
-        (filters.region === "" || region.includes(filters.region.toLowerCase())) &&
-        (filters.position === "" || position.includes(filters.position.toLowerCase())) &&
-        (filters.is_coordinator === undefined || filters.is_coordinator === "" ||
+        (filters.region === "" ||
+          region.includes(filters.region.toLowerCase())) &&
+        (filters.position === "" ||
+          position.includes(filters.position.toLowerCase())) &&
+        // Only include coordinator filter if not coordinator view
+        (!isCoordinator ||
+          filters.is_coordinator === undefined ||
+          filters.is_coordinator === "" ||
           String(person.is_coordinator) === filters.is_coordinator) &&
         (filters.application_link === "" ||
           person.application_link === filters.application_link)
@@ -191,7 +211,7 @@ const Employees = () => {
               ))}
             </select>
           </div>
-          {showCoordinatorFilter && (
+          {showCoordinatorFilter && !isCoordinator && (
             <div className="col-md-3">
               <label className="form-label">Coordinator</label>
               <select
@@ -362,13 +382,14 @@ const Employees = () => {
         )}
       </SectionBlock>
 
-      <SectionBlock title="Candidates">
-        {renderFilterControls(
-          candidateFilters,
-          setCandidateFilters,
-          allCandidatesForFilters,  
-          "Candidates",
-          true  
+      {!isCoordinator && (
+        <SectionBlock title="Candidates">
+          {renderFilterControls(
+            candidateFilters,
+            setCandidateFilters,
+            allCandidatesForFilters,  
+            "Candidates",
+            false 
         )}
         {filteredCandidates.length > 0 ? (
           <>
@@ -387,7 +408,7 @@ const Employees = () => {
         ) : (
           <div className="no-data">No candidates match the filters</div>
         )}
-      </SectionBlock>
+      </SectionBlock>)}
     </div>
     <Modal
   show={showInviteHrModal}

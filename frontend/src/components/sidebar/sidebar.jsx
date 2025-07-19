@@ -113,8 +113,15 @@ export default function Sidebar() {
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>
             </Nav.Link>
+            { employee?.is_coordinator && (
+            <Nav.Link as={Link} to="/dashboard/employees" className={pathname === "/dashboard/employees" ? "active" : ""}>
+              <FaUserFriends /> <span>Employee Directory</span>
+            </Nav.Link>)}
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname.startsWith("/dashboard/attendance") ? "active" : ""}>
                 <FaCalendarCheck /> <span>Attendance</span>
+            </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/tasks" className={pathname.startsWith("/dashboard/tasks") ? "active" : ""}>
+                <FaCalendarCheck /> <span>Tasks</span>
             </Nav.Link>
           </Nav>
           <div className="spacer" />
