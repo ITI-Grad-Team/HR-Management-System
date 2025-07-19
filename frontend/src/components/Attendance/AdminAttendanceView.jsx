@@ -204,12 +204,13 @@ const AdminAttendanceView = () => {
                                 <th>Check-In</th>
                                 <th>Check-Out</th>
                                 <th>Status</th>
+                                <th>Attendance Type</th>
                                 <th>Overtime (hrs)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading && attendance.results.length === 0 ? (
-                                <tr><td colSpan="6" className="text-center"><Spinner /></td></tr>
+                                <tr><td colSpan="7" className="text-center"><Spinner /></td></tr>
                             ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
@@ -217,6 +218,7 @@ const AdminAttendanceView = () => {
                                     <td>{rec.check_in_time || 'N/A'}</td>
                                     <td>{rec.check_out_time || 'N/A'}</td>
                                     <td>{renderStatus(rec.status)}</td>
+                                    <td>{rec.attendance_type}</td>
                                     <td>{rec.overtime_approved ? rec.overtime_hours : 'N/A'}</td>
                                 </tr>
                             ))}

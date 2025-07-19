@@ -6,6 +6,7 @@ from .models import CasualLeave, EmployeeLeavePolicy, Employee
 from .serializers import CasualLeaveSerializer, EmployeeLeavePolicySerializer
 from .permissions import IsEmployee, IsHRorAdmin
 from django.db.models import Sum
+from django.utils import timezone
 
 
 class CasualLeaveViewSet(viewsets.ModelViewSet):

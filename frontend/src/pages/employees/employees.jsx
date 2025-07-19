@@ -53,6 +53,7 @@ const Employees = () => {
         const paginationParams = (page, pageSize) => ({
           page: page,
           page_size: pageSize,
+          search: searchParam,
         });
 
         if (role === "admin") {
@@ -102,7 +103,7 @@ const Employees = () => {
     };
 
     fetchData();
-  }, [role, currentHrPage, currentEmployeePage, currentCandidatePage]);
+  }, [role, currentHrPage, currentEmployeePage, currentCandidatePage, searchParam]);
 
   const filterPeople = (people, filters = {}) => {
     if (Object.keys(filters).length === 0) {

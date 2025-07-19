@@ -48,8 +48,8 @@ const EmployeeLeaveView = () => {
             setFormData({ start_date: '', end_date: '', reason: '' });
             fetchData();
         } catch (err) {
-            toast.error(err?.response?.data?.detail || 'Failed to submit request.');
-            // setError(err?.response?.data?.detail || 'Failed to submit request.');
+            const errorMsg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || 'Failed to submit request.';
+            toast.error(errorMsg);
         }
     };
 

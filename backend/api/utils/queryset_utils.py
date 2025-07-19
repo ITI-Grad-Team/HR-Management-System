@@ -11,10 +11,15 @@ def get_role_based_queryset(user, model):
     if model.__name__ == "AttendanceRecord":
         if role in ["admin", "hr"]:
             return model.objects.all()
-        elif hasattr(user, "employee") and user.employee.is_coordinator:
-            return model.objects.filter(user__employee__position=user.employee.position)
-        else:
+        # For any employee, including coordinators, only their own records should be shown
+        # on a "my attendance" style page. A separate view should handle team views.
+        # elif hasattr(user, "employee") and user.employee.is_coordinator:
+        #     return model.objects.filter(user__employee__position=user.employee.position)
+
+        elif role == "employee":
             return model.objects.filter(user=user)
+        else:
+            return model.objects.none()
 
     elif model.__name__ == "OvertimeRequest":
         if role in ["admin", "hr"]:

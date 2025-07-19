@@ -6,10 +6,12 @@ import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import { toast } from "react-toastify";
+import { useAuth } from "../../hooks/useAuth.js";
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { role } = useAuth();
   const searchQuery = new URLSearchParams(location.search).get("query")?.toLowerCase() || "";
 
   const [results, setResults] = useState([]);
@@ -20,7 +22,7 @@ const SearchResultsPage = () => {
 
   useEffect(() => {
     const fetchSearchResults = async () => {
-      if (!searchQuery) {
+      if (!searchQuery || !role) {
         setResults([]);
         setTotalResultsCount(0);
         setLoading(false);
@@ -39,11 +41,7 @@ const SearchResultsPage = () => {
           return sp.toString();
         };
 
-        const hrsParams = {
-          page: currentPage,
-          page_size: itemsPerPage,
-          search: searchQuery,
-        };
+        const baseApiUrl = role === 'admin' ? '/admin' : '/hr';
 
         const employeesParams = {
           page: currentPage,
@@ -59,24 +57,32 @@ const SearchResultsPage = () => {
           interview_state_not: "accepted",
         };
 
-        const [hrsRes, employeesRes, candidatesRes] = await Promise.all([
-          axiosInstance.get(`/admin/hrs/?${createSearchParams(hrsParams)}`),
-          axiosInstance.get(`/admin/employees/?${createSearchParams(employeesParams)}`),
-          axiosInstance.get(`/admin/employees/?${createSearchParams(candidatesParams)}`),
-        ]);
-
-        const combinedResults = [
-          ...hrsRes.data.results,
-          ...employeesRes.data.results,
-          ...candidatesRes.data.results,
+        const promises = [
+          axiosInstance.get(`${baseApiUrl}/employees/?${createSearchParams(employeesParams)}`),
+          axiosInstance.get(`${baseApiUrl}/employees/?${createSearchParams(candidatesParams)}`),
         ];
-        const combinedCount = hrsRes.data.count + employeesRes.data.count + candidatesRes.data.count;
 
+        if (role === 'admin') {
+          const hrsParams = {
+            page: currentPage,
+            page_size: itemsPerPage,
+            search: searchQuery,
+          };
+          promises.unshift(axiosInstance.get(`/admin/hrs/?${createSearchParams(hrsParams)}`));
+        }
+
+        const responses = await Promise.all(promises);
+
+        const combinedResults = responses.flatMap(res => res.data.results);
+        const combinedCount = responses.reduce((acc, res) => acc + res.data.count, 0);
+        
         setResults(combinedResults);
         setTotalResultsCount(combinedCount);
 
       } catch (err) {
-        toast.error("Failed to fetch search results.");
+        if (err.response?.status !== 403) { // Don't show toast for auth errors
+          toast.error("Failed to fetch search results.");
+        }
         console.error("Search results fetch error:", err);
         setResults([]);
         setTotalResultsCount(0);
@@ -86,7 +92,7 @@ const SearchResultsPage = () => {
     };
 
     fetchSearchResults();
-  }, [searchQuery, currentPage, itemsPerPage]);
+  }, [searchQuery, currentPage, itemsPerPage, role]);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);

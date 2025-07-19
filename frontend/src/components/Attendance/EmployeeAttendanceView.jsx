@@ -122,9 +122,15 @@ const EmployeeAttendanceView = () => {
                                     </Button>
                                 </span>
                             </OverlayTrigger>
-                            <Button variant="danger" onClick={handleCheckOut} disabled={!todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time}>
-                                Check-Out
-                            </Button>
+                            <OverlayTrigger overlay={<Tooltip>
+                                {!todayRecord ? "You must check in first." : (todayRecord.check_out_time ? "You have already checked out." : "Click to check out.")}
+                            </Tooltip>}>
+                                <span>
+                                    <Button variant="danger" onClick={handleCheckOut} disabled={!todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time} style={{ pointerEvents: !todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time ? 'none' : 'auto' }}>
+                                        Check-Out
+                                    </Button>
+                                </span>
+                            </OverlayTrigger>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -145,21 +151,29 @@ const EmployeeAttendanceView = () => {
                                 <th>Check-In</th>
                                 <th>Check-Out</th>
                                 <th>Status</th>
+                                <th>Attendance Type</th>
                                 <th>Lateness (hrs)</th>
                                 <th>Overtime (hrs)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {attendance.map(rec => (
-                                <tr key={rec.id}>
-                                    <td>{rec.date}</td>
-                                    <td>{rec.check_in_time || 'N/A'}</td>
-                                    <td>{rec.check_out_time || 'N/A'}</td>
-                                    <td>{renderStatus(rec.status)}</td>
-                                    <td>{rec.lateness_hours > 0 ? rec.lateness_hours.toFixed(2) : 'N/A'}</td>
-                                    <td>{rec.overtime_approved ? rec.overtime_hours.toFixed(2) : 'N/A'}</td>
+                            {attendance.length > 0 ? (
+                                attendance.map(rec => (
+                                    <tr key={rec.id}>
+                                        <td>{rec.date}</td>
+                                        <td>{rec.check_in_time || 'N/A'}</td>
+                                        <td>{rec.check_out_time || 'N/A'}</td>
+                                        <td>{renderStatus(rec.status)}</td>
+                                        <td>{rec.attendance_type}</td>
+                                        <td>{rec.lateness_hours > 0 ? rec.lateness_hours.toFixed(2) : 'N/A'}</td>
+                                        <td>{rec.overtime_approved ? rec.overtime_hours.toFixed(2) : 'N/A'}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="7" className="text-center">No attendance history found.</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </Table>
                 </Card.Body>

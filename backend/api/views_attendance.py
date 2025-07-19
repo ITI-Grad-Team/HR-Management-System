@@ -45,7 +45,7 @@ class AttendanceRecordFilter(DjangoFilterBackend):
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
-    queryset = AttendanceRecord.objects.all()
+    queryset = AttendanceRecord.objects.all().order_by('-date')
     serializer_class = AttendanceRecordSerializer
     permission_classes = [IsAuthenticated, AttendancePermission]
     pagination_class = EightPerPagePagination
@@ -216,6 +216,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             mac_address_used = None
 
         # Changed: Status determination based on employee's expected times
+        if now < employee.expected_attend_time:
+            return Response(
+                {"detail": f"You can check in after {employee.expected_attend_time.strftime('%I:%M %p')}. Try again later"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if now <= grace_end:
             status_val = "present"
         elif now > grace_end and now < employee.expected_leave_time:
@@ -263,11 +268,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # --- TEMPORARY OVERRIDE FOR TESTING ---
-        # Simulate current time as 16:00:00
-        now_dt = datetime.combine(today, time(16, 0, 0))
-        now_dt = timezone.make_aware(now_dt)
-        # --------------------------------------
+        now_dt = timezone.localtime()
         record.check_out_time = now_dt.time()
         record.save()
 
