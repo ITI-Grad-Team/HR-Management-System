@@ -19,7 +19,6 @@ import { GiProgression } from "react-icons/gi";
 const HRDetailsCard = ({ candidate, loadingProp }) => {
   const { basicinfo, user, id: candidateId, ...stats } = candidate;
   const [loading, setLoading] = useState(false);
-
   // HR Performance Metrics
   const metrics = [
     {
@@ -195,7 +194,8 @@ const HRDetailsCard = ({ candidate, loadingProp }) => {
               style={{ background: "rgba(248,249,250,0.8)" }}
             >
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                <FaChartLine className="me-2" /> Performance Metrics
+                <FaChartLine className="me-2" /> Performance Metrics Based On
+                Hires
               </h6>
               <Row className="g-3">
                 {metrics.map((metric, idx) => (

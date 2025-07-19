@@ -15,7 +15,7 @@ from .views import (
     TaskViewSet,
     ViewSelfViewSet,
     CoordinatorViewEmployeesViewSet,
-    AdminViewEmployeesViewSet,
+    AdminViewEmployeesViewSet,ViewProfileViewSet,
     AdminManageSkillsViewSet,
     AdminManagePositionsViewSet,
     AdminViewApplicationLinksViewSet,
@@ -42,6 +42,9 @@ router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
 
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
+
+router.register(r"view-profile", ViewProfileViewSet, basename="view-profile")
+
 router.register(r'employees', EmployeePredictionViewSet, basename='employee')
 
 # Employee

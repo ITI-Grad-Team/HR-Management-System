@@ -20,8 +20,13 @@ export default function CandidateDetails() {
 
   /* ---------- fetch candidate ---------- */
   const { role } = useAuth();
-  const endpoint =
-    role === "admin" ? `/admin/employees/${id}/` : `/hr/employees/${id}/`;
+  const isSelfView = user?.employee?.id === parseInt(id);
+  console.log(user);
+  const endpoint = isSelfView
+    ? "/view-profile/"
+    : role === "admin"
+    ? `/admin/employees/${id}/`
+    : `/hr/employees/${id}/`;
   const fetchCandidate = async () => {
     const res = await axiosInstance.get(endpoint);
     setCandidate(res.data);

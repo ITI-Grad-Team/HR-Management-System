@@ -14,6 +14,7 @@ import {
   FaPhone,
   FaStarHalfAlt,
   FaDownload,
+  FaInfoCircle,
   FaChartLine,
   FaBriefcase,
   FaLaptop,
@@ -50,6 +51,8 @@ import {
   FaClock,
   FaCalendarMinus,
 } from "react-icons/fa";
+import { Tooltip } from "react-bootstrap";
+import { OverlayTrigger } from "react-bootstrap";
 import Select from "react-select";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
@@ -668,7 +671,7 @@ export default function CandidateDetailsCard({
                 <FaFileAlt className="me-2" /> Resume
               </h6>
               <Row className="g-4">
-                <Col md={4}>
+                <Col md={3}>
                   <a
                     href={cv}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
@@ -679,15 +682,6 @@ export default function CandidateDetailsCard({
                     <FaDownload /> Download CV
                   </a>
                 </Col>
-
-                <Col md={4}>
-                  <button
-                    className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
-                    onClick={() => setShowCvEditModal(true)}
-                  >
-                    <FaEdit /> Edit CV info.
-                  </button>
-                </Col>
                 <Col md={4}>
                   <button
                     className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
@@ -696,6 +690,50 @@ export default function CandidateDetailsCard({
                     <FaRobot /> View Predictions
                   </button>
                 </Col>
+                {role !== "employee" ? (
+                  <Col md={5}>
+                    <button
+                      className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                      onClick={() => setShowCvEditModal(true)}
+                    >
+                      <FaInfoCircle /> Update CV Extracted Info.
+                    </button>
+                  </Col>
+                ) : (
+                  <Col md={5}>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={
+                        <Tooltip id="cv-tooltip">
+                          <small>
+                            <div>• Information is auto-extracted </div>
+                            <div>• Only HR/Admin can update it</div>
+                            <div
+                              style={{
+                                fontStyle: "italic",
+                                color: "#b3b3b3d7",
+                              }}
+                            >
+                              (Affects only AI predictions)
+                            </div>
+                          </small>
+                        </Tooltip>
+                      }
+                    >
+                      <span className="d-inline-block">
+                        {" "}
+                        {/* Wrapper for disabled button tooltip */}
+                        <button
+                          className="btn btn-outline-secondary d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                          disabled
+                          style={{ cursor: "not-allowed", opacity: 0.7 }}
+                        >
+                          <FaInfoCircle /> Update CV Extracted Info.
+                        </button>
+                      </span>
+                    </OverlayTrigger>
+                  </Col>
+                )}
               </Row>
             </div>
 

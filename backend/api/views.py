@@ -1481,6 +1481,47 @@ class ViewSelfViewSet(ViewSet):
         return Response({"detail": "Unknown role."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+class ViewProfileViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        user = request.user
+        basicinfo = user.basicinfo
+        role = basicinfo.role
+
+        if role == "hr":
+            try:
+                hr = HR.objects.get(user=user)
+                # Use your HRSerializer which includes all the fields you want
+                hr_data = HRSerializer(hr).data
+                return Response(hr_data)
+            except HR.DoesNotExist:
+                return Response({"detail": "HR profile not found."}, status=404)
+
+        elif role == "employee":
+            try:
+                emp = Employee.objects.get(user=user)
+                # Use your EmployeeSerializer which includes all the fields you want
+                emp_data = EmployeeSerializer(emp).data
+                return Response(emp_data)
+            except Employee.DoesNotExist:
+                return Response({"detail": "Employee profile not found."}, status=404)
+
+        elif role == "admin":
+            # For admin, return basic user info
+            user_data = UserSerializer(user).data
+            basicinfo_data = BasicInfoSerializer(basicinfo).data
+            return Response({
+                "user": user_data,
+                "basicinfo": basicinfo_data,
+                "role": "admin"
+            })
+
+        return Response({"detail": "Unknown role."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 class CoordinatorViewEmployeesViewSet(ModelViewSet):
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAuthenticated, IsCoordinator]
