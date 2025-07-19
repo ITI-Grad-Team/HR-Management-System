@@ -4,7 +4,7 @@ import axiosInstance from '../../api/config'
 import { Link } from "react-router-dom";
 import './login.css'
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 function parseJwt(token) {
   const base64Url = token.split(".")[1];
@@ -24,21 +24,21 @@ function parseJwt(token) {
 const Login = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-    
-    const [formData, setFormData] = useState({ username: "", password: "" });
-     const [isSubmitting, setIsSubmitting] = useState(false);
-     const [alert, setAlert] = useState({ message: "", type: "" });
-    const handleChange = (e) => {
+
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alert, setAlert] = useState({ message: "", type: "" });
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-   useEffect(() => {
-  if (user !== null) {
-    navigate("/dashboard", { replace: true });
-  }
-}, [user, navigate]);
+  useEffect(() => {
+    if (user !== null) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -57,98 +57,98 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error.response?.data || error.message);
-      
-        setAlert({
-          message:
-            error.response?.data?.non_field_errors?.[0] ||
-            error.response?.data?.detail ||
-            "Login failed. Please check your credentials.",
-          type: "danger",
-        });
-      
+
+      setAlert({
+        message:
+          error.response?.data?.non_field_errors?.[0] ||
+          error.response?.data?.detail ||
+          "Login failed. Please check your credentials.",
+        type: "danger",
+      });
+
       setTimeout(() => setAlert({ message: "", type: "" }), 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-    return (
-        <section className="login">
-        <div className="container">
-          <div
-            className="card shadow my-login-card-style"
-            style={{ borderRadius: 20 }}
-          >
-            <div className="column-1">
-              <img src="/login.jpg" alt="login page image" />
-            </div>
+  return (
+    <section className="login">
+      <div className="container">
+        <div
+          className="card shadow my-login-card-style"
+          style={{ borderRadius: 20 }}
+        >
+          <div className="column-1">
+            <img src="/login.jpg" alt="login page image" />
+          </div>
 
-            <div className="card-body column-2">
-              <h4 className="text-center mb-2">Welcome</h4>
-              <p className="text-center text-secondary mb-4">
-                Please login to your account
-              </p>
-              {alert.message && (
-                <div className={`alert alert-${alert.type}`} role="alert">
-                  {alert.message}
-                </div>
-              )}
-              <form onSubmit={handleSubmit}>
-                <div className="form-floating mb-3">
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    className="form-control"
-                    placeholder="email"
-                    required
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="username">email</label>
-                </div>
-                <div className="form-floating mb-4">
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    className="form-control"
-                    placeholder="Password"
-                    required
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="password">Password</label>
-                </div>
-                <div className="text-center mb-3">
-                  <Link to="/forgot-password" className="text-secondary">
-                    Forgot Password?
-                  </Link>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-dark w-100 mb-3"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
+          <div className="card-body column-2">
+            <h4 className="text-center mb-2">Welcome</h4>
+            <p className="text-center text-secondary mb-4">
+              Please login to your account
+            </p>
+            {alert.message && (
+              <div className={`alert alert-${alert.type}`} role="alert">
+                {alert.message}
+              </div>
+            )}
+            <form onSubmit={handleSubmit}>
+              <div className="form-floating mb-3">
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  className="form-control"
+                  placeholder="email"
+                  required
+                  onChange={handleChange}
+                />
+                <label htmlFor="username">email</label>
+              </div>
+              <div className="form-floating mb-4">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  className="form-control"
+                  placeholder="Password"
+                  required
+                  onChange={handleChange}
+                />
+                <label htmlFor="password">Password</label>
+              </div>
+              <div className="text-center mb-3">
+                <Link to="/forgot-password" className="text-secondary">
+                  Forgot Password?
+                </Link>
+              </div>
+              <button
+                type="submit"
+                className="btn btn-dark w-100 mb-3"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
 
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Logging in...
-                    </>
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Logging in...
+                  </>
 
-                  ) : (
-                    "Login"
-                  )}
-                </button>
-              </form>
-            </div>
+                ) : (
+                  "Login"
+                )}
+              </button>
+            </form>
           </div>
         </div>
-      </section>
-    );
+      </div>
+    </section>
+  );
 }
 
 export default Login;

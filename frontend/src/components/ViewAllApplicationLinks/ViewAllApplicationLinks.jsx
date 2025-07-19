@@ -13,8 +13,8 @@ import {
 import Select from "react-select";
 import axiosInstance from "../../api/config";
 import "./ViewAllApplicationLinks.css";
-import { useAuth } from "../../context/AuthContext";
 import ApplicationsReportFallback from "../DashboardFallBack/ApplicationsReportFallback";
+import { useAuth } from "../../hooks/useAuth";
 
 const PAGE_SIZE = 10;
 

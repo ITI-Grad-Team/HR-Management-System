@@ -1,8 +1,8 @@
 import React from "react";
-import { useAuth } from "../../context/AuthContext";
 import AccountSettings from "../../components/AccountSettings/AccountSettings";
 import AdminSettings from "../../components/AdminSettings/AdminSettings";
 import HrSettings from "../../components/HrSettings/HrSettings";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function Settings() {
   const { role } = useAuth();

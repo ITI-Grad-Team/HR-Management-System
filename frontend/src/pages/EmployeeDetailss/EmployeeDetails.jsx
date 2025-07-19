@@ -4,9 +4,9 @@ import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/config";
 import EmployeeDetailsCard from "../../components/EmployeeDetailsCard/EmployeeDetailsCard";
 import InterviewForm from "../../components/InterviewForm/InterviewForm";
-import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import CandidatesFallBack from "../../components/DashboardFallBack/CandidatesFallback";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function CandidateDetails() {
   const { id } = useParams();
@@ -25,8 +25,8 @@ export default function CandidateDetails() {
   const endpoint = isSelfView
     ? "/view-profile/"
     : role === "admin"
-    ? `/admin/employees/${id}/`
-    : `/hr/employees/${id}/`;
+      ? `/admin/employees/${id}/`
+      : `/hr/employees/${id}/`;
   const fetchCandidate = async () => {
     const res = await axiosInstance.get(endpoint);
     setCandidate(res.data);
@@ -72,7 +72,7 @@ export default function CandidateDetails() {
         formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 300);
       toast.success("Interview Responsibility Taken");
-    } catch (err) {
+    } catch {
       toast.error("Failed to take interview");
     } finally {
       setLoadingForm(false);

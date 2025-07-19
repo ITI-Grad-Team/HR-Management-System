@@ -1,9 +1,9 @@
-import React from 'react';
 import { Form, InputGroup, Button } from "react-bootstrap";
 import { FaSearch, FaRegBell } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from '../../context/AuthContext';
-import { useSearch } from '../../context/SearchContext';
+import { useAuth } from '../../hooks/useAuth';
+import { useSearch } from '../../hooks/useSearch';
+
 
 const pageTitles = {
   "/dashboard/home": "Dashboard",
@@ -25,12 +25,12 @@ export default function HeaderBar() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-     console.log("HeaderBar: Submitting search query:", searchQuery);
+    console.log("HeaderBar: Submitting search query:", searchQuery);
 
     if (searchQuery.trim()) {
       navigate(`/dashboard/search-results?query=${searchQuery.trim()}`);
     } else {
-       navigate('/dashboard/employees');
+      navigate('/dashboard/employees');
     }
   };
 

@@ -3,8 +3,8 @@ import { Container, Row, Col } from "react-bootstrap";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/config";
 import HRDetailsCard from "../../components/HRDetailsCard/HRDetailsCard";
-import { useAuth } from "../../context/AuthContext";
 import CandidatesFallBack from "../../components/DashboardFallBack/CandidatesFallback";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function HRDetails() {
   const { id } = useParams();

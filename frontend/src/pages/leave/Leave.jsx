@@ -1,4 +1,3 @@
-import React from 'react';
 import EmployeeLeaveView from '../../components/Leave/EmployeeLeaveView';
 import AdminLeaveView from '../../components/Leave/AdminLeaveView';
 import { useAuth } from '../../hooks/useAuth';

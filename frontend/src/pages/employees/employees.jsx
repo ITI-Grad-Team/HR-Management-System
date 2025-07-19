@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
 import SectionBlock from "../../components/SectionBlock/SectionBlock.jsx";
@@ -8,29 +7,30 @@ import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
+import { useAuth } from "../../hooks/useAuth.js";
 
 const Employees = () => {
   const [hrs, setHrs] = useState([]);
-  const [employees, setEmployees] = useState([]); 
-  const [candidates, setCandidates] = useState([]);  
-  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]); 
-  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]); 
+  const [employees, setEmployees] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [allEmployeesForFilters, setAllEmployeesForFilters] = useState([]);
+  const [allCandidatesForFilters, setAllCandidatesForFilters] = useState([]);
   const [loading, setLoading] = useState(true);
   const { role } = useAuth();
   const location = useLocation();
-   const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
+  const searchParam = new URLSearchParams(location.search).get("search")?.toLowerCase() || "";
 
 
-   const [currentHrPage, setCurrentHrPage] = useState(1);
-  const [hrsPerPage] = useState(8);  
+  const [currentHrPage, setCurrentHrPage] = useState(1);
+  const [hrsPerPage] = useState(8);
   const [totalHrCount, setTotalHrCount] = useState(0);
 
-   const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
-  const [employeesPerPage] = useState(8); 
+  const [currentEmployeePage, setCurrentEmployeePage] = useState(1);
+  const [employeesPerPage] = useState(8);
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0);
 
-   const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
-  const [candidatesPerPage] = useState(8); 
+  const [currentCandidatePage, setCurrentCandidatePage] = useState(1);
+  const [candidatesPerPage] = useState(8);
   const [totalCandidateCount, setTotalCandidateCount] = useState(0);
 
   const [employeeFilters, setEmployeeFilters] = useState({
@@ -60,8 +60,8 @@ const Employees = () => {
             axiosInstance.get("/admin/hrs/", { params: paginationParams(currentHrPage, hrsPerPage) }),
             axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
             axiosInstance.get("/admin/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }), 
-            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }),  
+            axiosInstance.get("/admin/employees/", { params: { interview_state: "accepted" } }),
+            axiosInstance.get("/admin/employees/", { params: { interview_state_not: "accepted" } }),
           ]);
 
           setHrs(hrsRes.data.results);
@@ -80,8 +80,8 @@ const Employees = () => {
           const [employeesRes, candidatesRes, allEmployeesRes, allCandidatesRes] = await Promise.all([
             axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentEmployeePage, employeesPerPage), interview_state: "accepted" } }),
             axiosInstance.get("/hr/employees/", { params: { ...paginationParams(currentCandidatePage, candidatesPerPage), interview_state_not: "accepted" } }),
-            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }),  
-            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }), 
+            axiosInstance.get("/hr/employees/", { params: { interview_state: "accepted" } }),
+            axiosInstance.get("/hr/employees/", { params: { interview_state_not: "accepted" } }),
           ]);
 
           setEmployees(employeesRes.data.results);
@@ -93,7 +93,7 @@ const Employees = () => {
           setAllEmployeesForFilters(allEmployeesRes.data.results);
           setAllCandidatesForFilters(allCandidatesRes.data.results);
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load data");
         /* console.error(err); */
       } finally {
@@ -136,9 +136,9 @@ const Employees = () => {
     const positions = getUniqueValues(peopleForOptions, "position");
     const applicationLinks = getUniqueValues(peopleForOptions, "application_link");
 
-     const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
+    const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
 
-     const handleReset = () => {
+    const handleReset = () => {
       setFilters({
         region: "",
         position: "",
@@ -149,8 +149,8 @@ const Employees = () => {
 
     return (
       <div className="filter-controls mb-4">
-       {/*  <h5>{title} Filters</h5> */}
-        <div className="row g-3 align-items-end">  
+        {/*  <h5>{title} Filters</h5> */}
+        <div className="row g-3 align-items-end">
           <div className="col-md-3">
             <label className="form-label">Region</label>
             <select
@@ -218,8 +218,8 @@ const Employees = () => {
               ))}
             </select>
           </div>
-           {isFilterActive && (
-            <div className="col-md-3">  
+          {isFilterActive && (
+            <div className="col-md-3">
               <button className="btn btn-outline-secondary w-100 mt-md-4" onClick={handleReset}>
                 Clear Filters
               </button>
@@ -327,9 +327,9 @@ const Employees = () => {
         {renderFilterControls(
           candidateFilters,
           setCandidateFilters,
-          allCandidatesForFilters,  
+          allCandidatesForFilters,
           "Candidates",
-          true  
+          true
         )}
         {filteredCandidates.length > 0 ? (
           <>

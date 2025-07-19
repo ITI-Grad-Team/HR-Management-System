@@ -16,7 +16,7 @@ import {
   FaAngleRight,
 } from "react-icons/fa";
 import "./sidebar.css";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from '../../hooks/useAuth';
 
 
 export default function Sidebar() {
@@ -46,7 +46,7 @@ export default function Sidebar() {
               <FaCalendarCheck /> <span>Attendance</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/leave" className={pathname === "/dashboard/leave" ? "active" : ""}>
-              <FaSuitcase /> <span>Leave</span>
+              <FaSuitcase /> <span>Casual Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
               <FaMoneyBillWave /> <span>Payroll</span>
@@ -74,7 +74,7 @@ export default function Sidebar() {
         <>
           <Nav className="flex-column">
             <Nav.Link as={Link} to={`/dashboard/hrDetails/${hr?.id}`} className={pathname === `/dashboard/hrDetails/${hr?.id}` ? "active" : ""}>
-              <FaUserCircle  /> <span>Profile</span>
+              <FaUserCircle /> <span>Profile</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>
@@ -86,7 +86,7 @@ export default function Sidebar() {
               <FaCalendarCheck /> <span>Attendance</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/leave" className={pathname === "/dashboard/leave" ? "active" : ""}>
-              <FaSuitcase /> <span>Leave</span>
+              <FaSuitcase /> <span>Casual Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
               <FaMoneyBillWave /> <span>Payroll</span>
@@ -114,16 +114,16 @@ export default function Sidebar() {
         <>
           <Nav className="flex-column">
             <Nav.Link as={Link} to={`/dashboard/employeeDetails/${employee?.id}`} className={pathname === `/dashboard/employeeDetails/${employee?.id}` ? "active" : ""}>
-              <FaUserCircle  /> <span>Profile</span>
+              <FaUserCircle /> <span>Profile</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname.startsWith("/dashboard/attendance") ? "active" : ""}>
-                <FaCalendarCheck /> <span>Attendance</span>
+              <FaCalendarCheck /> <span>Attendance</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/leave" className={pathname.startsWith("/dashboard/leave") ? "active" : ""}>
-                <FaSuitcase /> <span>Leave</span>
+              <FaSuitcase /> <span>Casual Leave</span>
             </Nav.Link>
           </Nav>
           <div className="spacer" />

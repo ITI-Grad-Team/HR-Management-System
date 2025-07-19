@@ -2,7 +2,7 @@ import React from 'react';
 import EmployeeAttendanceView from '../../components/Attendance/EmployeeAttendanceView';
 import AdminAttendanceView from '../../components/Attendance/AdminAttendanceView';
 import "../../components/Attendance/Attendance.css"
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 const Attendance = () => {
   const { user } = useAuth();
 

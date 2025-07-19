@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
 import {
   Card,
   Button,
@@ -54,6 +53,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { FaClipboardCheck, FaCheckDouble } from "react-icons/fa";
 import { FiTrendingUp } from "react-icons/fi";
+import { useAuth } from "../../hooks/useAuth";
 export default function CandidateDetailsCard({
   candidate,
   loggedInHrId,
@@ -120,23 +120,19 @@ export default function CandidateDetailsCard({
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
@@ -418,7 +414,7 @@ export default function CandidateDetailsCard({
   };
 
   const handlePromoteEmployee = async () => {
-    try{
+    try {
       setLoading(true);
       await axiosInstance.post(`/admin/promote-employee/${candidateId}/promote/`);
       toast.success("Employee promoted successfully");
@@ -434,11 +430,11 @@ export default function CandidateDetailsCard({
       return (
         <div className="d-flex align-items-center gap-2 mt-4">
           <Button variant="success" onClick={handlePromoteEmployee} disabled={loading}>
-          {loading ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
-          <FiTrendingUp className="me-2" /> Promote Employee
-        </Button>
+            {loading ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
+            <FiTrendingUp className="me-2" /> Promote Employee
+          </Button>
         </div>
-       
+
       );
     }
   }
@@ -462,8 +458,7 @@ export default function CandidateDetailsCard({
         setPredictError(err.response.data.error);
         if (err.response.data.missing_fields) {
           setPredictError(
-            `${
-              err.response.data.error
+            `${err.response.data.error
             }: ${err.response.data.missing_fields.join(", ")}`
           );
         }
@@ -502,8 +497,7 @@ export default function CandidateDetailsCard({
       };
 
       const response = await axiosInstance.patch(
-        `/${
-          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
         }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
@@ -569,7 +563,7 @@ export default function CandidateDetailsCard({
                 </Badge>
               )}
             </div>
-              {renderPromoteEmployeeButton()}
+            {renderPromoteEmployeeButton()}
           </Col>
 
           <Col md={8}>
@@ -620,8 +614,8 @@ export default function CandidateDetailsCard({
                   {has_position_related_high_education
                     ? "✓"
                     : has_position_related_high_education === false
-                    ? "✗"
-                    : "❔"}
+                      ? "✗"
+                      : "❔"}
                 </span>
               </h6>
               <div>
@@ -1069,13 +1063,12 @@ export default function CandidateDetailsCard({
                               return (
                                 <div key={day} className="text-center">
                                   <div
-                                    className={`rounded-circle p-2 ${
-                                      isHoliday
-                                        ? "bg-warning text-white"
-                                        : isOnline
+                                    className={`rounded-circle p-2 ${isHoliday
+                                      ? "bg-warning text-white"
+                                      : isOnline
                                         ? "bg-info text-white"
                                         : "bg-light"
-                                    }`}
+                                      }`}
                                     style={{
                                       width: "32px",
                                       height: "32px",

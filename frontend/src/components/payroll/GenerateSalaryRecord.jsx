@@ -13,8 +13,8 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext";
 import { fetchAllPages } from "../../api/pagination";
+import { useAuth } from "../../hooks/useAuth";
 
 const GenerateSalaryRecord = ({
   show,
@@ -78,8 +78,7 @@ const GenerateSalaryRecord = ({
     request
       .then(() => {
         toast.success(
-          `Salary record ${
-            isEditMode ? "updated" : "generated"
+          `Salary record ${isEditMode ? "updated" : "generated"
           } successfully!`
         );
         onRecordGenerated();

@@ -1,8 +1,7 @@
-import React from "react";
-import { useAuth } from "../../context/AuthContext";
 import AdminDashboard from "../AdminDashboard/AdminDashboard";
 import HrDashboard from "../HrDashboard/HrDashboard";
 import EmployeeDashboard from "../EmployeeDashboard/EmployeeDashboard";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function RoleBasedDashboard() {
   const { role } = useAuth();
