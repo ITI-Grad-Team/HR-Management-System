@@ -1490,11 +1490,12 @@ class ViewProfileViewSet(ViewSet):
         basicinfo = user.basicinfo
         role = basicinfo.role
 
+        context = {'request': request}  # Add this line
+
         if role == "hr":
             try:
                 hr = HR.objects.get(user=user)
-                # Use your HRSerializer which includes all the fields you want
-                hr_data = HRSerializer(hr).data
+                hr_data = HRSerializer(hr, context=context).data  # Pass context
                 return Response(hr_data)
             except HR.DoesNotExist:
                 return Response({"detail": "HR profile not found."}, status=404)
@@ -1502,16 +1503,14 @@ class ViewProfileViewSet(ViewSet):
         elif role == "employee":
             try:
                 emp = Employee.objects.get(user=user)
-                # Use your EmployeeSerializer which includes all the fields you want
-                emp_data = EmployeeSerializer(emp).data
+                emp_data = EmployeeSerializer(emp, context=context).data  # Pass context
                 return Response(emp_data)
             except Employee.DoesNotExist:
                 return Response({"detail": "Employee profile not found."}, status=404)
 
         elif role == "admin":
-            # For admin, return basic user info
-            user_data = UserSerializer(user).data
-            basicinfo_data = BasicInfoSerializer(basicinfo).data
+            user_data = UserSerializer(user, context=context).data  # Pass context
+            basicinfo_data = BasicInfoSerializer(basicinfo, context=context).data
             return Response({
                 "user": user_data,
                 "basicinfo": basicinfo_data,
