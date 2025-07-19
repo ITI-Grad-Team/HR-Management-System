@@ -510,3 +510,44 @@ class CompanyStatistics(models.Model):
 
     def __str__(self):
         return f"Company Stats - {self.snapshot_date}"
+
+class EmployeeLeavePolicy(models.Model):
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, related_name="leave_policy")
+    yearly_quota = models.IntegerField(default=21)
+    max_days_per_request = models.IntegerField(default=5)
+
+    def __str__(self):
+        return f"Leave Policy for {self.employee.user.username}"
+
+class CasualLeave(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="casual_leaves")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_casual_leaves",
+    )
+    rejection_reason = models.TextField(blank=True)
+
+
+    @property
+    def duration(self):
+        return (self.end_date - self.start_date).days + 1
+
+    def __str__(self):
+        return f"{self.duration}-day leave for {self.employee.user.username} ({self.status})"
+
+    class Meta:
+        ordering = ['-created_at']

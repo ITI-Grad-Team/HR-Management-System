@@ -43,7 +43,10 @@ export default function Sidebar() {
               <FaUserFriends /> <span>Employee Directory</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname === "/dashboard/attendance" ? "active" : ""}>
-              <FaCalendarCheck /> <span>Attendance & Leave</span>
+              <FaCalendarCheck /> <span>Attendance</span>
+            </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/leave" className={pathname === "/dashboard/leave" ? "active" : ""}>
+              <FaSuitcase /> <span>Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
               <FaMoneyBillWave /> <span>Payroll</span>
@@ -80,7 +83,10 @@ export default function Sidebar() {
               <FaUserFriends /> <span>Employee Directory</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname === "/dashboard/attendance" ? "active" : ""}>
-              <FaCalendarCheck /> <span>Attendance & Leave</span>
+              <FaCalendarCheck /> <span>Attendance</span>
+            </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/leave" className={pathname === "/dashboard/leave" ? "active" : ""}>
+              <FaSuitcase /> <span>Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/payroll" className={pathname === "/dashboard/payroll" ? "active" : ""}>
               <FaMoneyBillWave /> <span>Payroll</span>
@@ -115,6 +121,9 @@ export default function Sidebar() {
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/attendance" className={pathname.startsWith("/dashboard/attendance") ? "active" : ""}>
                 <FaCalendarCheck /> <span>Attendance</span>
+            </Nav.Link>
+            <Nav.Link as={Link} to="/dashboard/leave" className={pathname.startsWith("/dashboard/leave") ? "active" : ""}>
+                <FaSuitcase /> <span>Leave</span>
             </Nav.Link>
           </Nav>
           <div className="spacer" />

@@ -38,6 +38,8 @@ from .models import (
 from django.utils import timezone
 from django.core.mail import send_mail
 import string, random
+from .models import CasualLeave, EmployeeLeavePolicy
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -465,30 +467,6 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
         model = OvertimeRequest
         fields = ["hr_comment"]
 
-
-class SalaryRecordSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    employee_position = serializers.CharField(
-        source="user.employee.position.name", read_only=True
-    )
-    employee_id = serializers.IntegerField(source="user.employee.id", read_only=True)
-
-    class Meta:
-        model = SalaryRecord
-        fields = [
-            "id",
-            "user",
-            "employee_position",
-            "employee_id",
-            "month",
-            "year",
-            "base_salary",
-            "final_salary",
-            "details",
-            "generated_at",
-        ]
-
-
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.CharField(source="position.name", read_only=True)
     region = serializers.CharField(source="region.name", read_only=True)
@@ -513,6 +491,29 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             "highest_education_field",
             "years_of_experience",
             "application_link",
+        ]
+
+
+class SalaryRecordSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    employee_position = serializers.CharField(
+        source="user.employee.position.name", read_only=True
+    )
+    employee_id = serializers.IntegerField(source="user.employee.id", read_only=True)
+
+    class Meta:
+        model = SalaryRecord
+        fields = [
+            "id",
+            "user",
+            "employee_position",
+            "employee_id",
+            "month",
+            "year",
+            "base_salary",
+            "final_salary",
+            "details",
+            "generated_at",
         ]
 
 
@@ -577,3 +578,25 @@ class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
         if value is not None and value < 0:
             raise serializers.ValidationError("Years of experience cannot be negative")
         return value
+
+class CasualLeaveSerializer(serializers.ModelSerializer):
+    employee = EmployeeListSerializer(read_only=True)
+    duration = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = CasualLeave
+        fields = '__all__'
+
+    def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError("Start date cannot be after end date.")
+        
+        return data
+
+class EmployeeLeavePolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeLeavePolicy
+        fields = '__all__'

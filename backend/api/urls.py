@@ -34,6 +34,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from .views_overtime_requests import OvertimeRequestViewSet
+from .views_casual_leave import CasualLeaveViewSet
 
 router = DefaultRouter()
 
@@ -125,6 +126,7 @@ router.register(
     r"overtime-requests", OvertimeRequestViewSet, basename="overtime-requests"
 )
 router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
+router.register(r"casual-leave", CasualLeaveViewSet, basename="casual-leave")
 
 urlpatterns = [
     path("", include(router.urls)),
