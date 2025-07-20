@@ -1380,6 +1380,19 @@ class TaskViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+
+        try:
+            # Use file_set instead of files (Django's default reverse relation)
+            for file in task.file_set.all():
+                # Delete the physical file from storage
+                if file.file:
+                    if os.path.isfile(file.file.path):
+                        os.remove(file.file.path)
+                # Delete the file record
+                file.delete()
+        except Exception as e:
+            print(f"Error deleting task files: {str(e)}")
+
         # Update task
         task.is_submitted = False  # Reset submission
         task.is_refused = True
