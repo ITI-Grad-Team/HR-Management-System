@@ -2012,3 +2012,23 @@ class HRUpdateEmployeeCVDateViewSet(ModelViewSet):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class FilterOptionsViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        # Get all regions with id and name
+        regions = list(Region.objects.values_list('id', 'name').distinct())
+        
+        # Get all positions with id and name
+        positions = list(Position.objects.values_list('id', 'name').distinct())
+        
+        # Get all application links with id and distinction_name
+        application_links = list(ApplicationLink.objects.values_list('id', 'distinction_name').distinct())
+        
+        return Response({
+            'regions': regions,
+            'positions': positions,
+            'application_links': application_links
+        })
