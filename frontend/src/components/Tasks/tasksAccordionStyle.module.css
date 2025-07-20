@@ -1,0 +1,74 @@
+/* tasksAccordionStyle.css */
+.status-badge {
+  min-width: 160px; /* Increased from 140px */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35em 0.65em;
+  margin: 0 8px; /* Added horizontal margins */
+}
+
+.awaiting-submission {
+  background-color: rgb(255, 230, 0) !important;
+  color: var(--bs-dark) !important;
+}
+
+.accepted {
+  background-color: var(--bs-info) !important;
+  color: white !important;
+}
+
+.refused {
+  background-color: #ef44a8ff !important;
+  color: white !important;
+}
+
+.awaiting-review {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+.assignedEmployeeContainer {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #2974ff;
+  border-radius: 6px;
+  background-color: rgba(0, 89, 255, 0.05);
+  transition: all 0.2s ease;
+  margin: 2px 0;
+  max-width: 100%;
+}
+
+.assignedEmployeeContainer:hover {
+  background-color: rgba(0, 89, 255, 0.1);
+  border-color: #266eff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Add to tasksAccordionStyle.module.css */
+.employeeTooltip {
+  --tooltip-width: 300px; /* Adjust this value as needed */
+
+  max-width: var(--tooltip-width) !important;
+  width: var(--tooltip-width) !important;
+  padding: 12px !important;
+  background-color: #000 !important;
+  color: white !important;
+  border-radius: 6px !important;
+}
+
+.employeeTooltip.show {
+  opacity: 1 !important;
+}
+
+/* This is the arrow of the tooltip */
+.employeeTooltip .tooltip-arrow {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.employeeTooltip .tooltip-arrow::before {
+  border-top-color: #000 !important;
+  border-width: 6px 6px 0 !important;
+}

@@ -194,7 +194,38 @@ class InterviewQuestionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+
+class EmployeeForTaskSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.basicinfo.username', read_only=True)
+    phone = serializers.CharField(source='user.basicinfo.phone', read_only=True)
+    profile_image = serializers.ImageField(source='user.basicinfo.profile_image', read_only=True)
+    email = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Employee
+        fields = ['id','username', 'phone', 'profile_image','email']
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Simplify the structure as requested
+        return {
+            'id': representation['id'],
+            'username': representation['username'],
+            'phone': representation['phone'],
+            'profile_image': representation['profile_image'], 
+            'email':representation['email'], 
+        }
+
+class FileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = File
+        fields = ['id', 'file']
+
 class TaskSerializer(serializers.ModelSerializer):
+    created_by = EmployeeForTaskSerializer(read_only=True)
+    assigned_to = EmployeeForTaskSerializer(read_only=True)
+    files = FileSerializer(many=True, read_only=True, source='file_set')
+    
     class Meta:
         model = Task
         fields = "__all__"
@@ -203,13 +234,27 @@ class TaskSerializer(serializers.ModelSerializer):
             "is_submitted",
             "is_accepted",
             "is_refused",
-        )  # All auto-managed fields
+        )
 
     def validate(self, data):
-        # Manual validation for business logic
         if "deadline" in data and data["deadline"] < timezone.now():
             raise serializers.ValidationError("Deadline must be in the future")
         return data
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Simplify the created_by and assigned_to structure
+        for field in ['created_by', 'assigned_to']:
+            if field in representation:
+                employee_data = representation[field]
+                representation[field] = {
+                    'id': employee_data.get('id'),
+                    'username': employee_data.get('username'),
+                    'phone': employee_data.get('phone'),
+                    'profile_image': employee_data.get('profile_image'),
+                    'email':employee_data.get('email'),
+                }
+        return representation
 
 
 class FileSerializer(serializers.ModelSerializer):

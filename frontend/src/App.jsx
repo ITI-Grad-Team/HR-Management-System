@@ -26,9 +26,11 @@ const Applications = lazy(() => import("./pages/applications/Applications"));
 const Payroll = lazy(() => import("./pages/payroll/Payroll"));
 const Attendance = lazy(() => import("./pages/attendance/Attendance"));
 const HrDetails = lazy(() => import("./pages/HrDetails/HrDetails"));
-const SearchResultsPage = lazy(() => import("./pages/SearchResultsPage/SearchResultsPage.jsx"));
+const SearchResultsPage = lazy(() =>
+  import("./pages/SearchResultsPage/SearchResultsPage.jsx")
+);
 const Leave = lazy(() => import("./pages/leave/Leave.jsx"));
-const Tasks = lazy(() => import("./pages/Tasks/Tasks.jsx"));
+const Tasks = lazy(() => import("./pages/Tasks/Tasks"));
 
 function App() {
   return (
