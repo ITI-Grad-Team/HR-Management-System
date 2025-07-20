@@ -42,319 +42,368 @@ const Employees = () => {
     totalPages: 1,
   });
 
-  const [showInviteHrModal, setShowInviteHrModal] = useState(false);
-  const [email, setEmail] = useState("");
-  const [loadingInviteHr, setLoadingInviteHr] = useState(false);
-  const [loadingHrs, setLoadingHrs] = useState(true);
-const [loadingEmployees, setLoadingEmployees] = useState(true);
-const [loadingCandidates, setLoadingCandidates] = useState(true);
+  const [employeesPagination, setEmployeesPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
+  });
 
+  const [candidatesPagination, setCandidatesPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
+  });
 
+  const [activeTab, setActiveTab] = useState("employees");
 
-
-  useEffect(() => {
-  const fetchHRs = async () => {
-    setLoadingHrs(true);
+  // Fetch filter options
+  const fetchFilterOptions = async () => {
     try {
-      const res = await axiosInstance.get("/admin/hrs/", {
-        params: { page: currentHrPage, page_size: hrsPerPage }
+      const response = await axiosInstance.get("/filter-options/");
+      setFilterOptions({
+        regions: response.data.regions,
+        positions: response.data.positions,
+        application_links: response.data.application_links,
       });
-      setHrs(res.data.results);
-      setTotalHrCount(res.data.count);
-    } catch (err) {
-      toast.error("Failed to load HRs");
-    } finally {
-      setLoadingHrs(false);
+    } catch (error) {
+      toast.error("Failed to fetch filter options");
+      console.error(error);
     }
   };
 
-  if (role === "admin") fetchHRs();
-}, [currentHrPage, role]);
+  // Enhanced fetch functions with proper pagination handling and filters
+  const fetchHrs = async (page = 1) => {
+    if (role !== "admin") return;
 
-
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      setLoadingEmployees(true);
-      try {
-        const endpoint =
-          role === "admin"
-            ? "/admin/employees/"
-            : role === "hr"
-            ? "/hr/employees/"
-            : isCoordinator ? "/coordinator/employees/"
-            : "";
-
-        const res = await axiosInstance.get(endpoint, {
-          params: {
-                  page: currentEmployeePage, page_size: employeesPerPage,
-                  interview_state: "accepted",
-                },
-        });
-
-        const allRes = await axiosInstance.get(endpoint, {
-          params: { interview_state: "accepted" },
-        });
-
-        setEmployees(res.data.results);
-        setTotalEmployeeCount(res.data.count);
-        setAllEmployeesForFilters(allRes.data.results);
-      } catch (err) {
-        toast.error("Failed to fetch employees");
-      } finally {
-        setLoadingEmployees(false);
-      }
-    };
-    fetchEmployees();
-  }, [role, currentEmployeePage]);
-
-  useEffect(() => {
-  const fetchCandidates = async () => {
-    setLoadingCandidates(true);
     try {
-      const res = await axiosInstance.get(
-        role === "admin" ? "/admin/employees/" : "/hr/employees/",
-        {
-          params: {
-            page: currentCandidatePage,
-            page_size: candidatesPerPage,
-            interview_state_not: "accepted",
-          },
-        }
-      );
-      setCandidates(res.data.results);
-      setTotalCandidateCount(res.data.count);
-    } catch (err) {
-      toast.error("Failed to load Candidates");
+      setLoading(true);
+      const response = await axiosInstance.get(`/admin/hrs/?page=${page}`);
+      setHrs(response.data.results);
+      setHrsPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch HRs");
+      console.error(error);
     } finally {
-      setLoadingCandidates(false);
+      setLoading(false);
     }
   };
 
-  if (role === "hr" || role === "admin") fetchCandidates();
-}, [currentCandidatePage, role]);
-
-
-  const filterPeople = (people, filters = {}) => {
-    if (Object.keys(filters).length === 0) {
-      return people;
+  const buildQueryString = (filters) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value) {
+        // For region, position, and application_link, we want to filter by ID
+        if (
+          key === "region" ||
+          key === "position" ||
+          key === "application_link"
+        ) {
+          params.append(`${key}`, value);
+        } else {
+          params.append(key, value);
+        }
+      }
     }
+    return params.toString();
+  };
 
-    return people.filter((person) => {
-      const position = person.position?.toLowerCase() || "";
-      const region = person.region?.toLowerCase() || "";
+  const fetchEmployees = async (page = 1) => {
+    if (!(role === "admin" || role === "hr" || isCoordinator)) return;
 
-      return (
-        (filters.region === "" ||
-          region.includes(filters.region.toLowerCase())) &&
-        (filters.position === "" ||
-          position.includes(filters.position.toLowerCase())) &&
-        // Only include coordinator filter if not coordinator view
-        (!isCoordinator ||
-          filters.is_coordinator === undefined ||
-          filters.is_coordinator === "" ||
-          String(person.is_coordinator) === filters.is_coordinator) &&
-        (filters.application_link === "" ||
-          person.application_link === filters.application_link)
-      );
+    try {
+      setLoading(true);
+      let queryString = buildQueryString(filters);
+      if (queryString) queryString = `&${queryString}`;
+
+      const endpoint =
+        role === "admin"
+          ? `/admin/employees/?interview_state=accepted&page=${page}${queryString}`
+          : role === "hr"
+          ? `/hr/employees/?interview_state=accepted&page=${page}${queryString}`
+          : `/coordinator/employees/?page=${page}`;
+
+      console.log(endpoint);
+
+      const response = await axiosInstance.get(endpoint);
+      setEmployees(response.data.results);
+      setEmployeesPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch employees");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCandidates = async (page = 1) => {
+    if (!(role === "admin" || role === "hr")) return;
+
+    try {
+      setLoading(true);
+      let queryString = buildQueryString(filters);
+      if (queryString) queryString = `&${queryString}`;
+
+      const endpoint =
+        role === "admin"
+          ? `/admin/employees/?interview_state_not=accepted&page=${page}${queryString}`
+          : `/hr/employees/?interview_state_not=accepted&page=${page}${queryString}`;
+
+      const response = await axiosInstance.get(endpoint);
+      setCandidates(response.data.results);
+      setCandidatesPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch candidates");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const applyFilters = () => {
+    if (activeTab === "employees") {
+      fetchEmployees(1);
+    } else if (activeTab === "candidates") {
+      fetchCandidates(1);
+    }
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      region: "",
+      position: "",
+      is_coordinator: "",
+      application_link: "",
     });
   };
 
-  const getUniqueValues = (people, key) => {
-    const values = people.map((person) => person[key]);
-    return [...new Set(values)].filter(
-      (value) => value !== undefined && value !== null && value !== ""
-    );
+  useEffect(() => {
+    fetchFilterOptions();
+  }, []);
+
+  useEffect(() => {
+    if (role === "admin") {
+      fetchHrs();
+      fetchEmployees();
+      fetchCandidates();
+    } else if (role === "hr") {
+      fetchEmployees();
+      fetchCandidates();
+    } else if (isCoordinator) {
+      fetchEmployees();
+    }
+  }, [role, isCoordinator]);
+
+  // Reset page and refetch when filters change
+  useEffect(() => {
+    if (activeTab === "employees") {
+      fetchEmployees(1);
+    } else if (activeTab === "candidates") {
+      fetchCandidates(1);
+    }
+  }, [filters]);
+
+  const handlePageChange = (page, section) => {
+    if (section === "hrs") {
+      fetchHrs(page);
+    } else if (section === "employees") {
+      fetchEmployees(page);
+    } else if (section === "candidates") {
+      fetchCandidates(page);
+    }
   };
 
-  const renderFilterControls = (filters, setFilters, peopleForOptions, title, showCoordinatorFilter = true) => {
-    const regions = getUniqueValues(peopleForOptions, "region");
-    const positions = getUniqueValues(peopleForOptions, "position");
-    const applicationLinks = getUniqueValues(peopleForOptions, "application_link");
-
-     const isFilterActive = Object.values(filters).some(value => value !== "" && value !== undefined && value !== null);
-
-     const handleReset = () => {
-      setFilters({
-        region: "",
-        position: "",
-        is_coordinator: "",
-        application_link: "",
-      });
-    };
-
-    return (
-      <div className="filter-controls mb-4">
-       {/*  <h5>{title} Filters</h5> */}
-        <div className="row g-3 align-items-end">  
-          <div className="col-md-3">
-            <label className="form-label">Region</label>
-            <select
-              className="form-select"
-              value={filters.region}
-              onChange={(e) =>
-                setFilters({ ...filters, region: e.target.value })
-              }
-            >
-              <option value="">All Regions</option>
-              {regions.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3">
-            <label className="form-label">Position</label>
-            <select
-              className="form-select"
-              value={filters.position}
-              onChange={(e) =>
-                setFilters({ ...filters, position: e.target.value })
-              }
-            >
-              <option value="">All Positions</option>
-              {positions.map((position) => (
-                <option key={position} value={position}>
-                  {position}
-                </option>
-              ))}
-            </select>
-          </div>
-          {showCoordinatorFilter && !isCoordinator && (
-            <div className="col-md-3">
-              <label className="form-label">Coordinator</label>
-              <select
-                className="form-select"
-                value={filters.is_coordinator}
-                onChange={(e) =>
-                  setFilters({ ...filters, is_coordinator: e.target.value })
-                }
-              >
-                <option value="">All</option>
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
+  const renderFilters = () => {
+    if (
+      (role === "admin" || role === "hr") &&
+      (activeTab === "employees" || activeTab === "candidates")
+    ) {
+      return (
+        <div className="card mb-4">
+          <div className="card-body">
+            <h5 className="card-title">Filters</h5>
+            <div className="row">
+              <div className="col-md-3">
+                <Form.Group>
+                  <Form.Label>Region</Form.Label>
+                  <Form.Select
+                    name="region"
+                    value={filters.region}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All Regions</option>
+                    {filterOptions.regions.map((region) => (
+                      <option key={region[0]} value={region[0]}>
+                        {region[1]}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              <div className="col-md-3">
+                <Form.Group>
+                  <Form.Label>Position</Form.Label>
+                  <Form.Select
+                    name="position"
+                    value={filters.position}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All Positions</option>
+                    {filterOptions.positions.map((position) => (
+                      <option key={position[0]} value={position[0]}>
+                        {position[1]}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              <div className="col-md-3">
+                <Form.Group>
+                  <Form.Label>Coordinator</Form.Label>
+                  <Form.Select
+                    name="is_coordinator"
+                    value={filters.is_coordinator}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </Form.Select>
+                </Form.Group>
+              </div>
+              <div className="col-md-3">
+                <Form.Group>
+                  <Form.Label>Application Link</Form.Label>
+                  <Form.Select
+                    name="application_link"
+                    value={filters.application_link}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">All Applications</option>
+                    {filterOptions.application_links.map((link) => (
+                      <option key={link[0]} value={link[0]}>
+                        {link[1]}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </div>
             </div>
-          )}
-          <div className="col-md-3">
-            <label className="form-label">Application Link</label>
-            <select
-              className="form-select"
-              value={filters.application_link}
-              onChange={(e) =>
-                setFilters({ ...filters, application_link: e.target.value })
-              }
-            >
-              <option value="">All Applications</option>
-              {applicationLinks.map((link) => (
-                <option key={link} value={link}>
-                  {link}
-                </option>
-              ))}
-            </select>
-          </div>
-           {isFilterActive && (
-            <div className="col-md-3">  
-              <button className="btn btn-outline-secondary w-100 mt-md-4" onClick={handleReset}>
-                Clear Filters
-              </button>
+            <div className="mt-3">
+              <Button variant="outline-secondary" onClick={resetFilters}>
+                Reset Filters
+              </Button>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    );
-  };
-
-  const renderGrid = (data, getPath) => (
-    <div className="row g-4">
-      {data.map((person) => (
-        <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={person.id}>
-          <Link to={getPath(person)} className="text-decoration-none" style={{ cursor: "pointer" }}>
-            <BioCard
-              name={person.basicinfo?.username || person.basic_info?.username}
-              email={person.user?.username}
-              phone={person.basicinfo?.phone || person.basic_info?.phone}
-              avatar={
-                person.basicinfo?.profile_image ||
-                person.basic_info?.profile_image ||
-                "/default.jpg"
-              }
-              department={person.position}
-              location={person.region}
-              education={person.highest_education_field}
-              isCoordinator={person.is_coordinator}
-              experience={person.years_of_experience}
-              role={person.basic_info?.role}
-              status={person.interview_state}
-            />
-          </Link>
-        </div>
-      ))}
-    </div>
-  );
-
-  const filteredHrs = filterPeople(hrs);
-  const filteredEmployees = filterPeople(employees, employeeFilters);
-  const filteredCandidates = filterPeople(candidates, candidateFilters);
-
-  const totalHrPages = Math.ceil(totalHrCount / hrsPerPage);
-  const totalEmployeePages = Math.ceil(totalEmployeeCount / employeesPerPage);
-  const totalCandidatePages = Math.ceil(totalCandidateCount / candidatesPerPage);
-
-  const handleHrPageChange = (pageNumber) => setCurrentHrPage(pageNumber);
-  const handleEmployeePageChange = (pageNumber) => setCurrentEmployeePage(pageNumber);
-  const handleCandidatePageChange = (pageNumber) => setCurrentCandidatePage(pageNumber);
-
-  const handleInviteHr = () => setShowInviteHrModal(true);
-
-  const handleInvitaionSubmit = async (e) => {
-    e.preventDefault();
-    setLoadingInviteHr(true);
-
-    if (!email.trim()) {
-  toast.error("Please enter an email address");
-  setLoadingInviteHr(false);
-  return;
-}
-
-    try{
-      await axiosInstance.post(`/admin/invite-hr/`, { email });
-      toast.success("HR Invited Successfully");
-      setShowInviteHrModal(false);
-      setEmail("");
-    } catch (err) {
-      toast.error(err.response.data.error);
-    } finally {
-      setLoadingInviteHr(false);
-    }  
+      );
+    }
+    return null;
   };
 
   return (
-    <>
-    <div className="employees-page container py-4">
-      {role === "admin" && (
-        <SectionBlock title="HR Team"
-        extraHeader={
-          <div className="d-flex justify-content-end">
-            <button className="btn btn-outline-primary d-flex align-items-center" onClick={handleInviteHr}>
-            <FaUserPlus className="me-2"/> Invite HR
-            </button>
-          </div>
-        }
-        >
-          { loadingHrs ? <EmployeesFallBack /> :
-          filteredHrs.length > 0 ? (
+    <div className="employees-page">
+      {/* Tabs for navigation between sections */}
+      {(role === "admin" || role === "hr" || isCoordinator) && (
+        <div className="mb-4">
+          <ul className="nav nav-tabs">
+            {role === "admin" && (
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${activeTab === "hrs" ? "active" : ""}`}
+                  onClick={() => setActiveTab("hrs")}
+                >
+                  HRs
+                </button>
+              </li>
+            )}
+            {(role === "admin" || role === "hr" || isCoordinator) && (
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${
+                    activeTab === "employees" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("employees")}
+                >
+                  Employees
+                </button>
+              </li>
+            )}
+            {(role === "admin" || role === "hr") && (
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${
+                    activeTab === "candidates" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("candidates")}
+                >
+                  Candidates
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/* Render filters if applicable */}
+      {renderFilters()}
+
+      {/* HR Section (only for admin) */}
+      {role === "admin" && activeTab === "hrs" && (
+        <SectionBlock title="HRs">
+          {loading ? (
+            <EmployeesFallBack />
+          ) : hrs.length === 0 ? (
+            <p>No HRs found</p>
+          ) : (
             <>
-              {renderGrid(
-                filteredHrs,
-                (hr) => `/dashboard/hrDetails/${hr.id}`
-              )}
-              <div className="d-flex justify-content-center mt-4">
-                <Pagination
-                  currentPage={currentHrPage}
-                  totalPages={totalHrPages}
-                  onPageChange={handleHrPageChange}
-                />
+              <div className="row">
+                {hrs.map((hr) => (
+                  <div key={hr.id} className="col-md-6 col-lg-3 mb-4">
+                    <Link
+                      to={`/dashboard/hrDetails/${hr.id}`}
+                      className="text-decoration-none"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <BioCard
+                        name={hr.basic_info?.username}
+                        email={hr.user?.username}
+                        phone={hr.basic_info?.phone}
+                        avatar={hr.basic_info?.profile_image || "/default.jpg"}
+                        role={hr.basic_info?.role}
+                      />
+                    </Link>
+                  </div>
+                ))}
               </div>
               <Pagination
                 count={hrsPagination.count}
@@ -369,51 +418,92 @@ const [loadingCandidates, setLoadingCandidates] = useState(true);
         </SectionBlock>
       )}
 
-      <SectionBlock title="Employees">
-        {renderFilterControls(
-          employeeFilters,
-          setEmployeeFilters,
-          allEmployeesForFilters,
-          "Employees",
-          true
-        )}
-        { loadingEmployees ? <EmployeesFallBack /> :
-        filteredEmployees.length > 0 ? (
-          <>
-            {renderGrid(
-              filteredEmployees,
-              (emp) => `/dashboard/employeeDetails/${emp.id}`
+      {/* Employees Section */}
+      {(role === "admin" || role === "hr" || isCoordinator) &&
+        activeTab === "employees" && (
+          <SectionBlock title="Employees">
+            {loading ? (
+              <EmployeesFallBack />
+            ) : employees.length === 0 ? (
+              <p>No employees found</p>
+            ) : (
+              <>
+                <div className="row">
+                  {employees.map((employee) => (
+                    <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
+                      <Link
+                        to={`/dashboard/employeeDetails/${employee.id}`}
+                        className="text-decoration-none"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <BioCard
+                          name={employee.basic_info?.username}
+                          email={employee.user?.username}
+                          phone={employee.basic_info?.phone}
+                          avatar={
+                            employee.basic_info?.profile_image || "/default.jpg"
+                          }
+                          department={employee.position}
+                          location={employee.region}
+                          education={employee.highest_education_field}
+                          isCoordinator={employee.is_coordinator}
+                          experience={employee.years_of_experience}
+                          role={employee.basic_info?.role}
+                          status={employee.interview_state}
+                        />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+                <Pagination
+                  count={employeesPagination.count}
+                  next={employeesPagination.next}
+                  previous={employeesPagination.previous}
+                  currentPage={employeesPagination.currentPage}
+                  totalPages={employeesPagination.totalPages}
+                  onPageChange={(page) => handlePageChange(page, "employees")}
+                />
+              </>
             )}
-            <div className="d-flex justify-content-center mt-4">
-              <Pagination
-                currentPage={currentEmployeePage}
-                totalPages={totalEmployeePages}
-                onPageChange={handleEmployeePageChange}
-              />
-            </div>
-          </>
-        ) : (
-          <div className="no-data">No employees match the filters</div>
+          </SectionBlock>
         )}
 
       {/* Candidates Section */}
       {(role === "admin" || role === "hr") && activeTab === "candidates" && (
         <SectionBlock title="Candidates">
-          {renderFilterControls(
-            candidateFilters,
-            setCandidateFilters,
-            allCandidatesForFilters,  
-            "Candidates",
-            false 
-        )}
-        {loadingCandidates ? <EmployeesFallBack /> :
-        filteredCandidates.length > 0 ? (
-          <>
-            {renderGrid(
-              filteredCandidates,
-              (cand) => `/dashboard/employeeDetails/${cand.id}`
-            )}
-            <div className="d-flex justify-content-center mt-4">
+          {loading ? (
+            <EmployeesFallBack />
+          ) : candidates.length === 0 ? (
+            <p>No candidates found</p>
+          ) : (
+            <>
+              <div className="row">
+                {candidates.map((candidate) => (
+                  <div key={candidate.id} className="col-md-6 col-lg-3 mb-4">
+                    <Link
+                      to={`/dashboard/employeeDetails/${candidate.id}`}
+                      className="text-decoration-none"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <BioCard
+                        name={candidate.basic_info?.username}
+                        email={candidate.user?.username}
+                        phone={candidate.basic_info?.phone}
+                        avatar={
+                          candidate.basic_info?.profile_image || "/default.jpg"
+                        }
+                        department={candidate.position}
+                        location={candidate.region}
+                        education={candidate.highest_education_field}
+                        isCoordinator={candidate.is_coordinator}
+                        experience={candidate.years_of_experience}
+                        role={candidate.basic_info?.role}
+                        status={candidate.interview_state}
+                      />
+                    </Link>
+                  </div>
+                ))}
+              </div>
               <Pagination
                 count={candidatesPagination.count}
                 next={candidatesPagination.next}
