@@ -1250,11 +1250,11 @@ class TaskViewSet(ModelViewSet):
             )
 
         # Check 2: Task must not already be submitted
-        if task.is_submitted:
-            return Response(
-                {"error": "Task is already submitted."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # if task.is_submitted:
+        #     return Response(
+        #         {"error": "Task is already submitted."},
+        #         status=status.HTTP_400_BAD_REQUEST,
+        #     )
 
         if request.FILES:
             for file in request.FILES.getlist("files"):
@@ -1288,7 +1288,7 @@ class TaskViewSet(ModelViewSet):
             )
 
         # Check 2: Must be submitted and not already accepted/refused
-        if not task.is_submitted:
+        if not task.is_submitted and not task.is_refused:
             return Response(
                 {"error": "Task must be submitted before acceptance."},
                 status=status.HTTP_400_BAD_REQUEST,
