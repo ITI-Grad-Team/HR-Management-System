@@ -278,6 +278,7 @@ export default function CandidateDetailsCard({
       toast.success("Candidate accepted successfully");
       setShowAcceptModal(false);
       setLocalState("accepted");
+      onSchedule?.();
       // You might want to redirect or refresh data here
     } catch (err) {
       toast.error("Failed to accept candidate");
@@ -386,7 +387,7 @@ export default function CandidateDetailsCard({
 
   /* ---------------- Render Buttons ---------------- */
   const renderInterviewActions = () => {
-    if (localState === "done" && interviewer === loggedInHrId) {
+    if (candidate.interview_state === "done" && interviewer === loggedInHrId) {
       return (
         <div className="d-flex align-items-center gap-3">
           {/* Interview Rating Card */}
@@ -934,35 +935,37 @@ export default function CandidateDetailsCard({
             </div>
 
             {/* Interview Actions */}
-            {candidate.interview_state !== "accepted" && role === "hr" && (
-              <div
-                className="p-3 rounded-3"
-                style={{ background: "rgba(248,249,250,0.8)" }}
-              >
-                <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                  <FaCalendarAlt className="me-2" />
-                  <span>Interview</span>
-                  {candidate.interview_datetime && (
-                    <span className="fw-semibold text-muted ms-auto">
-                      {new Date(candidate.interview_datetime).toLocaleString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </span>
-                  )}
-                </h6>
-                <div className="d-flex gap-3 flex-wrap mb-3">
-                  {renderInterviewActions()}
+            {candidate.interview_state !== "accepted" &&
+              localState !== "accepted" &&
+              role === "hr" && (
+                <div
+                  className="p-3 rounded-3"
+                  style={{ background: "rgba(248,249,250,0.8)" }}
+                >
+                  <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
+                    <FaCalendarAlt className="me-2" />
+                    <span>Interview</span>
+                    {candidate.interview_datetime && (
+                      <span className="fw-semibold text-muted ms-auto">
+                        {new Date(candidate.interview_datetime).toLocaleString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    )}
+                  </h6>
+                  <div className="d-flex gap-3 flex-wrap mb-3">
+                    {renderInterviewActions()}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {candidate.interview_state === "accepted" && (
+            {localState === "accepted" && (
               <div
                 className="mb-4 p-3 rounded-3"
                 style={{ background: "rgba(248,249,250,0.8)" }}
