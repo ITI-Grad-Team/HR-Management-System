@@ -189,11 +189,11 @@ from .models import (
 class AttendanceRecordAdmin(admin.ModelAdmin):
     list_display = (
         "user",
-        # "date",
+        "date",
         "attendance_type",
         "status",
-        # "check_in_time",
-        "check_in_datetime",
+        "check_in_time",
+        # "check_in_datetime",
         "check_out_time",
         # "mac_address",
         "overtime_hours",

@@ -14,11 +14,15 @@ import {
   Alert,
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
-import { updateRegionLocation } from "../../api/locationApi";
+import { updateRegionLocation, updateRegionLocationAdmin } from "../../api/locationApi";
 import { getCurrentLocation } from "../../utils/geolocation";
+import { useAuth } from "../../hooks/useAuth";
 import SettingsFallback from "../DashboardFallBack/SettingsFallback";
 
 export default function HrSettings() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
   /* ----------------------------- STATE -------------------------------- */
   const [positions, setPositions] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -59,13 +63,14 @@ export default function HrSettings() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
+      const baseEndpoint = isAdmin ? "admin" : "hr";
       const [posRes, skillRes, regionRes, degreeRes, eduRes] =
         await Promise.all([
-          axiosInstance.get("hr/positions/"),
-          axiosInstance.get("hr/skills/"),
-          axiosInstance.get("hr/regions/"),
-          axiosInstance.get("hr/degrees/"),
-          axiosInstance.get("hr/fields/"),
+          axiosInstance.get(`${baseEndpoint}/positions/`),
+          axiosInstance.get(`${baseEndpoint}/skills/`),
+          axiosInstance.get(`${baseEndpoint}/regions/`),
+          axiosInstance.get(`${baseEndpoint}/degrees/`),
+          axiosInstance.get(`${baseEndpoint}/fields/`),
         ]);
       setPositions(posRes.data.results);
       setSkills(skillRes.data.results);
@@ -78,7 +83,7 @@ export default function HrSettings() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast, isAdmin]);
 
   useEffect(() => {
     fetchAll();
@@ -90,8 +95,10 @@ export default function HrSettings() {
     if (!name) return;
     try {
       let payload = { name };
+      const baseEndpoint = isAdmin ? "admin" : "hr";
+      const fullEndpoint = `${baseEndpoint}/${endpoint.split('/')[1]}/`;
 
-      if (endpoint === "hr/regions/") {
+      if (endpoint.includes("regions")) {
         const distance = parseFloat(newRegionDistance);
         if (isNaN(distance)) {
           showToast("Please enter valid distance", "danger");
@@ -100,10 +107,10 @@ export default function HrSettings() {
         payload.distance_to_work = distance;
       }
 
-      const res = await axiosInstance.post(endpoint, payload);
+      const res = await axiosInstance.post(fullEndpoint, payload);
       setter((prev) => [...prev, res.data]);
       valueSetter("");
-      if (endpoint === "hr/regions/") setNewRegionDistance("");
+      if (endpoint.includes("regions")) setNewRegionDistance("");
       showToast("Added successfully");
     } catch (err) {
       console.error(err);
@@ -165,20 +172,21 @@ export default function HrSettings() {
 
   const handleSaveLocation = async () => {
     if (!selectedRegion) return;
-
+    
     setLocationLoading(true);
     try {
-      const response = await updateRegionLocation(selectedRegion.id, locationSettings);
-
+      const updateFunction = isAdmin ? updateRegionLocationAdmin : updateRegionLocation;
+      const response = await updateFunction(selectedRegion.id, locationSettings);
+      
       // Update the region in the local state
-      setRegions(prev =>
-        prev.map(region =>
-          region.id === selectedRegion.id
+      setRegions(prev => 
+        prev.map(region => 
+          region.id === selectedRegion.id 
             ? { ...region, ...response.data }
             : region
         )
       );
-
+      
       setShowLocationModal(false);
       showToast("Location settings updated successfully");
     } catch (error) {
@@ -186,9 +194,7 @@ export default function HrSettings() {
     } finally {
       setLocationLoading(false);
     }
-  };
-
-  /* --------------------------- RENDER --------------------------------- */
+  };  /* --------------------------- RENDER --------------------------------- */
   if (loading) {
     return (
       <SettingsFallback />

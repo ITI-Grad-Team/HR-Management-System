@@ -7,6 +7,7 @@ import {
     rejectOvertimeRequest,
 } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
+import { formatTime, formatNumber } from '../../utils/formatters';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
 import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
@@ -215,11 +216,11 @@ const AdminAttendanceView = () => {
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
                                     <td>{rec.date}</td>
-                                    <td>{rec.check_in_time || 'N/A'}</td>
-                                    <td>{rec.check_out_time || 'N/A'}</td>
+                                    <td>{formatTime(rec.check_in_time)}</td>
+                                    <td>{formatTime(rec.check_out_time)}</td>
                                     <td>{renderStatus(rec.status)}</td>
                                     <td>{rec.attendance_type}</td>
-                                    <td>{rec.overtime_approved ? rec.overtime_hours : 'N/A'}</td>
+                                    <td>{rec.overtime_approved ? formatNumber(rec.overtime_hours, '0') + ' hrs' : '--'}</td>
                                 </tr>
                             ))}
                         </tbody>

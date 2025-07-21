@@ -8,6 +8,7 @@ import {
     createOvertimeRequest,
 } from '../../api/attendanceApi';
 import { getCurrentLocation } from '../../utils/geolocation';
+import { formatTime, formatNumber } from '../../utils/formatters';
 import { toast } from 'react-toastify';
 import DailyOvertimeStatus from './DailyOvertimeStatus';
 import EmployeeAttendanceFallback from '../DashboardFallBack/EmployeeAttendanceFallback';
@@ -205,12 +206,12 @@ const EmployeeAttendanceView = () => {
                                 attendance.map(rec => (
                                     <tr key={rec.id}>
                                         <td>{rec.date}</td>
-                                        <td>{rec.check_in_time || 'N/A'}</td>
-                                        <td>{rec.check_out_time || 'N/A'}</td>
+                                        <td>{formatTime(rec.check_in_time)}</td>
+                                        <td>{formatTime(rec.check_out_time)}</td>
                                         <td>{renderStatus(rec.status)}</td>
                                         <td>{rec.attendance_type}</td>
-                                        <td>{rec.lateness_hours > 0 ? rec.lateness_hours.toFixed(2) : 'N/A'}</td>
-                                        <td>{rec.overtime_approved ? rec.overtime_hours.toFixed(2) : 'N/A'}</td>
+                                        <td>{formatNumber(rec.lateness_hours, '0')} hrs</td>
+                                        <td>{rec.overtime_approved ? formatNumber(rec.overtime_hours, '0') + ' hrs' : '--'}</td>
                                     </tr>
                                 ))
                             ) : (

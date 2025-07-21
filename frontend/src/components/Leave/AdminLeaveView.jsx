@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Spinner, Alert, Button, Badge, Modal, Form } from 'react-bootstrap';
 import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
+import { formatText } from '../../utils/formatters';
 
 const AdminLeaveView = () => {
     const [requests, setRequests] = useState([]);
@@ -94,7 +95,7 @@ const AdminLeaveView = () => {
                                     <td>{req.employee.basic_info.username}</td>
                                     <td>{req.start_date} to {req.end_date}</td>
                                     <td>{req.duration} days</td>
-                                    <td>{req.reason || 'N/A'}</td>
+                                    <td>{formatText(req.reason, 'No reason provided')}</td>
                                     <td>
                                         <Button variant="outline-success" size="sm" onClick={() => handleApprove(req.id)}>Approve</Button>
                                         <Button variant="outline-danger" size="sm" className="ms-2" onClick={() => handleShowRejectModal(req)}>Reject</Button>
