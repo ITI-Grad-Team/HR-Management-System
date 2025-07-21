@@ -26,10 +26,17 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false); // mini sidebar
 
   return (
+    
     <div className={`sidebar ${collapsed ? "collapsed" : "open"}`}>
       <button className="sidebar-toggle" onClick={() => setCollapsed(!collapsed)}>
         {collapsed ? <FaAngleRight /> : <FaAngleLeft />}
       </button>
+
+      <Nav className='flex-column m-0 p-0'>
+        <Nav.Link as={Link} to="/dashboard/home">
+          <img src='/logo.png' alt='logo' style={{ width: "60px" , height: "60px"}} className={`${collapsed ? "logo-collapsed" : "logo"}`}/>
+        </Nav.Link>
+      </Nav>
 
       <h6>MAIN MENU</h6>
 
@@ -112,6 +119,7 @@ export default function Sidebar() {
 
       {role === "employee" && (
         <>
+        
           <Nav className="flex-column">
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>

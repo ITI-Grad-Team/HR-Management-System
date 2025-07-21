@@ -33,6 +33,10 @@ const Login = () => {
   };
 
   useEffect(() => {
+    document.title = "Login | HERA";
+  })
+
+  useEffect(() => {
     if (user !== null) {
       navigate("/dashboard", { replace: true });
     }

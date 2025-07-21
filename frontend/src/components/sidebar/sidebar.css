@@ -36,7 +36,8 @@
 
 .sidebar .nav-link:hover {
   background: #F3F4F6;
-  color: #111827;}
+  color: #111827;
+}
 
 .sidebar .nav-link.active {
   background: rgba(59, 130, 246, .12);
@@ -74,3 +75,14 @@
   cursor: pointer;
   z-index: 999;
 }
+
+
+.logo-collapsed{
+  transform: translateX(-23px);
+  background-size:contain ;
+}
+
+.logo-collapsed :hover{
+  
+}
+
