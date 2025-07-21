@@ -1,4 +1,4 @@
-import React, { act, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -7,8 +7,7 @@ import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
-import { FaUserPlus } from "react-icons/fa";
-import { Button, Modal, Form, Spinner } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 import { useAuth } from "../../hooks/useAuth.js";
 
 const Employees = () => {
@@ -60,19 +59,15 @@ const Employees = () => {
 
   const [activeTab, setActiveTab] = useState("employees");
 
-
   useEffect(() => {
     if (activeTab === "employees") {
       document.title = "Employees | HERA";
-    }
-    else if (activeTab === "hrs") {
+    } else if (activeTab === "hrs") {
       document.title = "HRs | HERA";
-    }
-    else{
+    } else {
       document.title = "Candidates | HERA";
     }
-      
-    }, [activeTab]);
+  }, [activeTab]);
 
   // Fetch filter options
   const fetchFilterOptions = async () => {
@@ -143,8 +138,8 @@ const Employees = () => {
         role === "admin"
           ? `/admin/employees/?interview_state=accepted&page=${page}${queryString}`
           : role === "hr"
-            ? `/hr/employees/?interview_state=accepted&page=${page}${queryString}`
-            : `/coordinator/employees/?page=${page}`;
+          ? `/hr/employees/?interview_state=accepted&page=${page}${queryString}`
+          : `/coordinator/employees/?page=${page}`;
 
       console.log(endpoint);
 
@@ -201,14 +196,6 @@ const Employees = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const applyFilters = () => {
-    if (activeTab === "employees") {
-      fetchEmployees(1);
-    } else if (activeTab === "candidates") {
-      fetchCandidates(1);
-    }
   };
 
   const resetFilters = () => {
@@ -363,8 +350,9 @@ const Employees = () => {
             {(role === "admin" || role === "hr" || isCoordinator) && (
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "employees" ? "active" : ""
-                    }`}
+                  className={`nav-link ${
+                    activeTab === "employees" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("employees")}
                 >
                   Employees
@@ -374,8 +362,9 @@ const Employees = () => {
             {(role === "admin" || role === "hr") && (
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "candidates" ? "active" : ""
-                    }`}
+                  className={`nav-link ${
+                    activeTab === "candidates" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("candidates")}
                 >
                   Candidates
@@ -391,7 +380,7 @@ const Employees = () => {
 
       {/* HR Section (only for admin) */}
       {role === "admin" && activeTab === "hrs" && (
-        <SectionBlock title="HRs">
+        <SectionBlock>
           {loading ? (
             <EmployeesFallBack />
           ) : hrs.length === 0 ? (
@@ -410,7 +399,9 @@ const Employees = () => {
                         name={hr.basic_info?.username}
                         email={hr.user?.username}
                         phone={hr.basic_info?.phone}
-                        avatar={hr.basic_info?.profile_image_url || "/default.jpg"}
+                        avatar={
+                          hr.basic_info?.profile_image_url || "/default.jpg"
+                        }
                         role={hr.basic_info?.role}
                       />
                     </Link>
@@ -453,7 +444,8 @@ const Employees = () => {
                           email={employee.user?.username}
                           phone={employee.basic_info?.phone}
                           avatar={
-                            employee.basic_info?.profile_image_url || "/default.jpg"
+                            employee.basic_info?.profile_image_url ||
+                            "/default.jpg"
                           }
                           department={employee.position}
                           location={employee.region}
@@ -502,7 +494,8 @@ const Employees = () => {
                         email={candidate.user?.username}
                         phone={candidate.basic_info?.phone}
                         avatar={
-                          candidate.basic_info?.profile_image_url || "/default.jpg"
+                          candidate.basic_info?.profile_image_url ||
+                          "/default.jpg"
                         }
                         department={candidate.position}
                         location={candidate.region}
