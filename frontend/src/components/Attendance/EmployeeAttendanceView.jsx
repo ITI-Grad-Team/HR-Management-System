@@ -193,12 +193,12 @@ const EmployeeAttendanceView = () => {
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Check-In</th>
-                                <th>Check-Out</th>
+                                <th>Check-In (HH:MM)</th>
+                                <th>Check-Out (HH:MM)</th>
                                 <th>Status</th>
                                 <th>Attendance Type</th>
-                                <th>Lateness (hrs)</th>
-                                <th>Overtime Approved</th>
+                                <th>Lateness (HH:MM)</th>
+                                <th>Overtime Approved (HH:MM)</th>
                             </tr>
                         </thead>
                         <tbody>

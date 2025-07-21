@@ -8,6 +8,7 @@ import {
 } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
 import { formatTime, formatHoursToTime } from '../../utils/formatters';
+import { FaCheck, FaTimes } from 'react-icons/fa';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
 import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
@@ -202,18 +203,18 @@ const AdminAttendanceView = () => {
                             <tr>
                                 <th>Employee</th>
                                 <th>Date</th>
-                                <th>Check-In</th>
-                                <th>Check-Out</th>
+                                <th>Check-In (HH:MM)</th>
+                                <th>Check-Out (HH:MM)</th>
                                 <th>Status</th>
                                 <th>Attendance Type</th>
-                                <th>Lateness</th>
-                                 <th>Overtime (hrs)</th>
+                                <th>Lateness (HH:MM)</th>
+                                <th>Overtime Hours (HH:MM)</th>
                                 <th>Overtime Approved</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading && attendance.results.length === 0 ? (
-                                <tr><td colSpan="8" className="text-center"><Spinner /></td></tr>
+                                <tr><td colSpan="9" className="text-center"><Spinner /></td></tr>
                             ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
@@ -223,7 +224,14 @@ const AdminAttendanceView = () => {
                                     <td>{renderStatus(rec.status)}</td>
                                     <td>{rec.attendance_type}</td>
                                     <td>{rec.lateness_hours > 0 ? formatHoursToTime(rec.lateness_hours) : '--'}</td>
-                                    <td>{rec.overtime_approved ? formatHoursToTime(rec.overtime_hours || 0) : '--'}</td>
+                                    <td>{rec.overtime_hours > 0 ? formatHoursToTime(rec.overtime_hours) : '--'}</td>
+                                    <td className="text-center">
+                                        {rec.overtime_hours > 0 ? (
+                                            rec.overtime_approved ?
+                                                <FaCheck className="text-success" title="Approved" /> :
+                                                <FaTimes className="text-danger" title="Not Approved" />
+                                        ) : '--'}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
