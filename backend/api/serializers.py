@@ -39,7 +39,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 import string, random
 from .models import CasualLeave, EmployeeLeavePolicy
-
+from .supabase_utils import upload_to_supabase
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -50,8 +50,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BasicInfoSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(
-        required=False, allow_null=True, max_length=None
+        required=False, allow_null=True, max_length=None, write_only=True,
     )
+    profile_image_url = serializers.CharField(read_only=True)
     username = serializers.CharField(required=False, allow_blank=True, max_length=150)
     phone = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, max_length=15
@@ -59,7 +60,7 @@ class BasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicInfo
-        fields = ["profile_image", "phone", "role", "username"]
+        fields = ["profile_image", "profile_image_url", "phone", "role", "username"]
         extra_kwargs = {
             "role": {
                 "read_only": True
@@ -85,13 +86,10 @@ class BasicInfoSerializer(serializers.ModelSerializer):
         profile_image = validated_data.pop("profile_image", None)
 
         # Delete old image if new one is provided or if null is explicitly set
-        if profile_image is not None:
-            if (
-                instance.profile_image
-                and instance.profile_image.name != "profile_images/default.jpg"
-            ):
-                instance.profile_image.delete(save=False)
-            instance.profile_image = profile_image
+        if profile_image:
+            # ارفع الصورة على Supabase
+            url = upload_to_supabase("profile-images", profile_image, profile_image.name)
+            instance.profile_image_url = url
 
         return super().update(instance, validated_data)
 
@@ -127,10 +125,40 @@ class EmployeeSerializer(serializers.ModelSerializer):
     avg_lateness_hours = serializers.FloatField(read_only=True)
     avg_absent_days = serializers.FloatField(read_only=True)
 
+    cv = serializers.FileField(write_only=True, required=False, allow_null=True)
+    cv_url = serializers.CharField(read_only=True)
+
     class Meta:
         model = Employee
         fields = "__all__"
 
+    def create(self, validated_data):
+        cv_file = validated_data.pop("cv", None)
+
+        # إنشاء الـ instance
+        instance = Employee.objects.create(**validated_data)
+
+        # رفع الملف لو موجود
+        if cv_file:
+            instance.temp_cv = cv_file
+
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        cv_file = validated_data.pop("cv", None)
+        
+        # باقي البيانات
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # رفع الملف لو موجود
+        if cv_file:
+            instance.temp_cv = cv_file
+
+        instance.save()
+        return instance
+    
     def get_yearly_holidays(self, obj):
         return [{"month": h.month, "day": h.day} for h in obj.holidayyearday_set.all()]
 
@@ -194,67 +222,65 @@ class InterviewQuestionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-
 class EmployeeForTaskSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.basicinfo.username', read_only=True)
-    phone = serializers.CharField(source='user.basicinfo.phone', read_only=True)
-    profile_image = serializers.ImageField(source='user.basicinfo.profile_image', read_only=True)
-    email = serializers.CharField(source='user.username', read_only=True)
+    username = serializers.CharField(source="user.basicinfo.username", read_only=True)
+    phone = serializers.CharField(source="user.basicinfo.phone", read_only=True)
+    profile_image = serializers.CharField(
+    source="user.basicinfo.profile_image_url", read_only=True
+)
+    email = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
         model = Employee
-        fields = ['id','username', 'phone', 'profile_image','email']
-    
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Simplify the structure as requested
-        return {
-            'id': representation['id'],
-            'username': representation['username'],
-            'phone': representation['phone'],
-            'profile_image': representation['profile_image'], 
-            'email':representation['email'], 
-        }
+        fields = ["id", "username", "phone", "profile_image", "email"]
 
+
+# serializers.py
 class FileSerializer(serializers.ModelSerializer):
+    temp_file = serializers.FileField(write_only=True)
+
     class Meta:
         model = File
-        fields = ['id', 'file']
+        fields = ["id", "file_url", "temp_file"]
+        read_only_fields = ["file_url"]
+
+    def create(self, validated_data):
+        temp_file = validated_data.pop("temp_file")
+        instance = File(**validated_data)
+        instance.temp_file = temp_file
+        instance.save()
+        return instance
+
+
 
 class TaskSerializer(serializers.ModelSerializer):
-    created_by = EmployeeForTaskSerializer(read_only=True)
-    assigned_to = EmployeeForTaskSerializer(read_only=True)
-    files = FileSerializer(many=True, read_only=True, source='file_set')
-    
+    created_by = serializers.SerializerMethodField()
+    assigned_to = serializers.SerializerMethodField()
+    files = FileSerializer(many=True, read_only=True, source="file_set")
+
     class Meta:
         model = Task
         fields = "__all__"
-        read_only_fields = (
-            "created_by",
-            "is_submitted",
-            "is_accepted",
-            "is_refused",
-        )
+        read_only_fields = ("created_by", "is_submitted", "is_accepted", "is_refused")
 
-    def validate(self, data):
-        if "deadline" in data and data["deadline"] < timezone.now():
-            raise serializers.ValidationError("Deadline must be in the future")
-        return data
+    def get_created_by(self, obj):
+        return self._get_employee_data(obj.created_by)
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Simplify the created_by and assigned_to structure
-        for field in ['created_by', 'assigned_to']:
-            if field in representation:
-                employee_data = representation[field]
-                representation[field] = {
-                    'id': employee_data.get('id'),
-                    'username': employee_data.get('username'),
-                    'phone': employee_data.get('phone'),
-                    'profile_image': employee_data.get('profile_image'),
-                    'email':employee_data.get('email'),
-                }
-        return representation
+    def get_assigned_to(self, obj):
+        return self._get_employee_data(obj.assigned_to)
+
+    def _get_employee_data(self, employee):
+        if not employee:
+            return None
+
+        return {
+            "id": employee.id,
+            "username": employee.user.basicinfo.username,
+            "phone": employee.user.basicinfo.phone,
+            "profile_image_url": employee.user.basicinfo.profile_image_url,  # Supabase URL directly
+            "email": employee.user.username,
+        }
+
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -435,6 +461,10 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
             "overtime_approved",
             "overtime_request",
             "lateness_hours",
+            "check_in_latitude",
+            "check_in_longitude",
+            "check_out_latitude",
+            "check_out_longitude",
         ]
 
     def validate_overtime_hours(self, value):
@@ -512,6 +542,7 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
         model = OvertimeRequest
         fields = ["hr_comment"]
 
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.CharField(source="position.name", read_only=True)
     region = serializers.CharField(source="region.name", read_only=True)
@@ -565,7 +596,14 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ["id", "name", "distance_to_work"]
+        fields = [
+            "id",
+            "name",
+            "distance_to_work",
+            "latitude",
+            "longitude",
+            "allowed_radius_meters",
+        ]
 
 
 class EducationDegreeSerializer(serializers.ModelSerializer):
@@ -624,27 +662,29 @@ class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Years of experience cannot be negative")
         return value
 
+
 class CasualLeaveSerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     duration = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CasualLeave
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
+        start_date = data.get("start_date")
+        end_date = data.get("end_date")
 
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError("Start date cannot be after end date.")
-        
+
         if start_date and start_date < timezone.now().date():
             raise serializers.ValidationError("Cannot request leave for a past date.")
 
         return data
 
+
 class EmployeeLeavePolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeLeavePolicy
-        fields = '__all__'
+        fields = "__all__"

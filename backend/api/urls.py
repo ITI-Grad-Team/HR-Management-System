@@ -21,7 +21,7 @@ from .views import (
     AdminViewApplicationLinksViewSet,
     AdminManageRegionsViewSet,
     AdminManageEducationDegreesViewSet,
-    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,
+    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,BasicInfoViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,AdminViewTopViewSet,
     HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet,AdminRankViewSet
@@ -79,7 +79,7 @@ router.register(
     r"hr/reject-employee", HRRejectEmployeeViewSet, basename="hr-reject-employee"
 )
 router.register(r'hr/statistics', HRStatsViewSet, basename='hr-statistics')
-from .views import HRViewTopInterviewedEmployeesViewSet
+from .views import HRViewTopInterviewedEmployeesViewSet, ForgotPasswordView, ResetPasswordView, ChangePasswordView
 
 router.register(
     r'hr/top-interviewed-employees',
@@ -121,6 +121,10 @@ router.register(r'admin/top', AdminViewTopViewSet, basename='admin-top-employees
 # Employee
 router.register(r"tasks", TaskViewSet, basename="tasks")
 
+#Both
+router.register(r'basic-info', BasicInfoViewSet, basename='basic-info')
+
+
 # Attendance & Salary
 router.register(r"attendance", AttendanceViewSet, basename="attendance")
 router.register(
@@ -133,5 +137,9 @@ urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path('basic-info/', BasicInfoViewSet.as_view({'patch': 'partial_update'}), name='basic-info'),
+    path("auth/forgot-password/", ForgotPasswordView.as_view()),
+    path("auth/reset-password/", ResetPasswordView.as_view()),
+    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
 ]
 

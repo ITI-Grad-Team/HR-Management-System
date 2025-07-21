@@ -7,7 +7,7 @@ import {
   FaCalendarCheck,
   FaSuitcase,
   FaMoneyBillWave,
-  FaChartBar,
+  FaTasks,
   FaCog,
   FaUserCircle,
   FaSignOutAlt,
@@ -73,9 +73,6 @@ export default function Sidebar() {
       {role === "hr" && (
         <>
           <Nav className="flex-column">
-            <Nav.Link as={Link} to={`/dashboard/hrDetails/${hr?.id}`} className={pathname === `/dashboard/hrDetails/${hr?.id}` ? "active" : ""}>
-              <FaUserCircle /> <span>Profile</span>
-            </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>
             </Nav.Link>
@@ -116,10 +113,6 @@ export default function Sidebar() {
       {role === "employee" && (
         <>
           <Nav className="flex-column">
-            <Nav.Link as={Link} to={`/dashboard/employeeDetails/${employee?.id}`} className={pathname === `/dashboard/employeeDetails/${employee?.id}` ? "active" : ""}>
-              <FaUserCircle /> <span>Profile</span>
-            </Nav.Link>
-
             <Nav.Link as={Link} to="/dashboard/home" className={pathname === "/dashboard/home" ? "active" : ""}>
               <FaHome /> <span>Dashboard</span>
             </Nav.Link>
@@ -134,7 +127,7 @@ export default function Sidebar() {
               <FaSuitcase /> <span>Casual Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/tasks" className={pathname.startsWith("/dashboard/tasks") ? "active" : ""}>
-              <FaCalendarCheck /> <span>Tasks</span>
+              <FaTasks /> <span>Tasks</span>
             </Nav.Link>
           </Nav>
           <div className="spacer" />

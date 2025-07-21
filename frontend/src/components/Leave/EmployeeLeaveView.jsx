@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge } from 'react-bootstrap';
 import { getMyLeaveRequests, getMyLeaveBalance, createLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
+import { formatText } from '../../utils/formatters';
 
 const EmployeeLeaveView = () => {
     const [requests, setRequests] = useState([]);
@@ -109,7 +110,7 @@ const EmployeeLeaveView = () => {
                                     <td>{req.start_date}</td>
                                     <td>{req.end_date}</td>
                                     <td>{req.duration} days</td>
-                                    <td>{req.reason || 'N/A'}</td>
+                                    <td>{formatText(req.reason, 'No reason provided')}</td>
                                     <td><Badge bg={getStatusVariant(req.status)}>{req.status}</Badge></td>
                                 </tr>
                             ))}

@@ -42,16 +42,25 @@ const EmployeeTasksAccordion = () => {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState({});
+  const [pagination, setPagination] = useState({
+    next: null,
+    previous: null,
+    count: 0,
+  });
 
   useEffect(() => {
     fetchMyAssignedTasks();
-  }, []);
+  }, [tasks]);
 
-  const fetchMyAssignedTasks = async () => {
+  const fetchMyAssignedTasks = async (url = "/tasks/my_assigned_tasks/") => {
     try {
-      setLoading(true);
-      const response = await axiosInstance.get("/tasks/my_assigned_tasks/");
-      setTasks(response.data);
+      const response = await axiosInstance.get(url);
+      setTasks(response.data.results);
+      setPagination({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count,
+      });
     } catch (error) {
       toast.error(
         <div>
@@ -62,6 +71,90 @@ const EmployeeTasksAccordion = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const PaginationControls = ({ pagination, fetchMyAssignedTasks }) => {
+    if (!pagination) return null;
+
+    const { next, previous, count } = pagination;
+    const pageSize = 10;
+
+    // Helper to extract page number from URL
+    const getPageNumber = (url) => {
+      if (!url) return null;
+      try {
+        const params = new URL(url).searchParams;
+        return parseInt(params.get("page")) || null;
+      } catch {
+        return null;
+      }
+    };
+
+    // Calculate current page and total pages
+    const currentPage = next
+      ? getPageNumber(next) - 1
+      : previous
+      ? getPageNumber(previous) + 1
+      : 1;
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    // Generate URLs for first/last pages
+    const firstPageUrl = previous
+      ? previous.replace(/([?&])page=\d+/, "$1page=1")
+      : null;
+
+    const lastPageUrl = next
+      ? next.replace(/([?&])page=\d+/, `$1page=${totalPages}`)
+      : null;
+
+    return (
+      <div className="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-4">
+        {/* First Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(firstPageUrl)}
+          disabled={!previous || currentPage === 1}
+          aria-label="Go to first page"
+        >
+          First
+        </button>
+
+        {/* Previous Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(previous)}
+          disabled={!previous}
+          aria-label="Go to previous page"
+        >
+          Previous
+        </button>
+
+        {/* Page Info */}
+        <span className="fw-semibold mx-2">
+          Page {currentPage} of {totalPages}
+        </span>
+
+        {/* Next Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(next)}
+          disabled={!next}
+          aria-label="Go to next page"
+        >
+          Next
+        </button>
+
+        {/* Last Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(lastPageUrl)}
+          disabled={!next || currentPage === totalPages}
+          aria-label="Go to last page"
+        >
+          Last
+        </button>
+      </div>
+    );
   };
 
   const handleFileChange = (e) => {
@@ -87,11 +180,15 @@ const EmployeeTasksAccordion = () => {
         formData.append("files", file);
       });
 
-      await axiosInstance.post(`/tasks/${taskId}/submit/`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axiosInstance.post(
+        `/tasks/${taskId}/submit/`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       toast.success(
         <div>
@@ -99,7 +196,12 @@ const EmployeeTasksAccordion = () => {
           Task submitted successfully
         </div>
       );
-      fetchMyAssignedTasks();
+
+      // Update the specific task in state instead of refetching
+      setTasks(
+        tasks.map((task) => (task.id === taskId ? response.data.task : task))
+      );
+
       setFiles([]);
     } catch (error) {
       toast.error(
@@ -112,11 +214,11 @@ const EmployeeTasksAccordion = () => {
       setSubmitting({ ...submitting, [taskId]: false });
     }
   };
-
+  
   // Reuse the same helper functions from CoordinatorTaskAccordion
   const getTaskStatus = (task) => {
-    if (!task.is_submitted) {
-      if (task.is_refused) {
+    if (!task?.is_submitted) {
+      if (task?.is_refused) {
         return (
           <Badge className={`${styles["status-badge"]} ${styles["refused"]}`}>
             <FaTimesCircle className="me-1" />
@@ -133,7 +235,7 @@ const EmployeeTasksAccordion = () => {
         </Badge>
       );
     }
-    if (task.is_accepted) {
+    if (task?.is_accepted) {
       return (
         <Badge className={`${styles["status-badge"]} ${styles["accepted"]}`}>
           <FaCheckCircle className="me-1" />
@@ -141,7 +243,7 @@ const EmployeeTasksAccordion = () => {
         </Badge>
       );
     }
-    if (task.is_refused) {
+    if (task?.is_refused) {
       return (
         <Badge className={`${styles["status-badge"]} ${styles["refused"]}`}>
           <FaTimesCircle className="me-1" />
@@ -179,34 +281,30 @@ const EmployeeTasksAccordion = () => {
           <div className="text-start">
             <div className="d-flex align-items-center mb-1">
               <FaUserTie className="me-2" style={{ color: "#fff" }} />
-              <strong style={{ color: "#fff" }}>{employee.username}</strong>
+              <strong style={{ color: "#fff" }}>{employee?.username}</strong>
             </div>
             <div className="d-flex align-items-center mb-1">
               <FaPhone className="me-2" style={{ color: "#fff" }} />
               <small style={{ color: "#eee" }}>
-                {employee.phone || "Not provided"}
+                {employee?.phone || "Not provided"}
               </small>
             </div>
             <div className="d-flex align-items-center">
               <FaEnvelope className="me-2" style={{ color: "#fff" }} />
               <small style={{ color: "#eee" }}>
-                {employee.email || "No email"}
+                {employee?.email || "No email"}
               </small>
             </div>
           </div>
         </Tooltip>
       }
     >
-      <Link
-        to={`/dashboard/employeeDetails/${employee.id}`}
-        className="text-decoration-none"
-        style={{ cursor: "pointer" }}
-      >
+
         <div className="d-flex align-items-center gap-2">
-          {employee.profile_image ? (
+          {employee?.profile_image_url ? (
             <img
-              src={employee.profile_image}
-              alt={employee.username}
+              src={employee?.profile_image_url}
+              alt={employee?.username}
               className="rounded-circle"
               style={{
                 width: "28px",
@@ -227,11 +325,10 @@ const EmployeeTasksAccordion = () => {
             </div>
           )}
           <div className="text-truncate" style={{ maxWidth: "150px" }}>
-            <span className="fw-bold">{employee.username}</span>
+            <span className="fw-bold">{employee?.username}</span>
           </div>
           <FaExternalLinkAlt className="text-muted" size={12} />
         </div>
-      </Link>
     </OverlayTrigger>
   );
 
@@ -247,8 +344,8 @@ const EmployeeTasksAccordion = () => {
         <ul className="list-unstyled">
           {files.map((file) => (
             <li key={file.id}>
-              <a href={file.file} target="_blank" rel="noopener noreferrer">
-                {file.file.split("/").pop()}
+              <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                {file.file_url.split("/").pop()}
               </a>
             </li>
           ))}
@@ -293,12 +390,12 @@ const EmployeeTasksAccordion = () => {
         <Card.Body>
           <Accordion flush>
             {tasks.map((task, index) => (
-              <Accordion.Item eventKey={index.toString()} key={task.id}>
+              <Accordion.Item eventKey={index.toString()} key={task?.id}>
                 <Accordion.Header>
                   <Row className="w-100 align-items-center">
                     <Col xs={7} className="d-flex align-items-center">
                       <FaFileAlt className="text-primary me-2" />
-                      <span className="fw-bold">{task.title}</span>
+                      <span className="fw-bold">{task?.title}</span>
                     </Col>
                     <Col xs={5} className="text-end">
                       <div className="d-flex justify-content-end">
@@ -315,7 +412,7 @@ const EmployeeTasksAccordion = () => {
                           <FaInfoCircle className="text-primary me-2" />
                           Description
                         </h6>
-                        <p>{task.description}</p>
+                        <p>{task?.description}</p>
                       </div>
 
                       <div className="mb-3">
@@ -324,7 +421,7 @@ const EmployeeTasksAccordion = () => {
                           Assigned By
                         </h6>
                         <div className={styles.assignedEmployeeContainer}>
-                          {renderAssignedTo(task.created_by)}
+                          {renderAssignedTo(task?.created_by)}
                         </div>
                       </div>
                     </Col>
@@ -337,22 +434,22 @@ const EmployeeTasksAccordion = () => {
                         </h6>
                         <p>
                           <strong>Deadline:</strong>{" "}
-                          {formatDateTime(task.deadline)}
+                          {formatDateTime(task?.deadline)}
                         </p>
-                        {task.submission_time && (
+                        {task?.submission_time && (
                           <p>
                             <strong>Submitted:</strong>{" "}
-                            {formatDateTime(task.submission_time)}
+                            {formatDateTime(task?.submission_time)}
                           </p>
                         )}
                       </div>
 
-                      {task.is_submitted &&
-                        task.time_remaining_before_deadline_when_accepted && (
+                      {task?.is_submitted &&
+                        task?.time_remaining_before_deadline_when_accepted && (
                           <div className="mb-3">
                             <p>
                               <strong>Time Saved:</strong>{" "}
-                              {task.time_remaining_before_deadline_when_accepted.toFixed(
+                              {task?.time_remaining_before_deadline_when_accepted.toFixed(
                                 2
                               )}
                               hours
@@ -362,39 +459,39 @@ const EmployeeTasksAccordion = () => {
                     </Col>
                   </Row>
 
-                  {renderFiles(task.files)}
+                  {renderFiles(task?.files)}
 
                   {/* Task Status and Actions */}
                   <div className="mt-4">
-                    {task.is_submitted && task.is_accepted && (
+                    {task?.is_submitted && task?.is_accepted && (
                       <div className="alert alert-primary">
                         <div className="d-flex align-items-center">
                           <FaCheckCircle className="me-2" size={20} />
                           <div>
-                            <strong>Accepted</strong> - rating: {task.rating}
+                            <strong>Accepted</strong> - rating: {task?.rating}
                             /100
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {task.is_submitted && task.is_refused && (
+                    {task?.is_refused && (
                       <div className="alert alert-danger">
                         <div className="d-flex align-items-center">
                           <FaTimesCircle className="me-2" size={20} />
                           <div>
                             <strong>Refused</strong> - Reason:{" "}
-                            {task.refuse_reason}
+                            {task?.refuse_reason}
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {!task.is_accepted && (
+                    {!task?.is_accepted && (
                       <Card className="border-primary mt-3">
                         <Card.Header className="bg-primary text-white py-2">
                           <FaUpload className="me-2" />
-                          {task.is_refused ? "Resubmit Task" : "Submit Task"}
+                          {task?.is_refused ? "Resubmit Task" : "Submit Task"}
                         </Card.Header>
                         <Card.Body>
                           <Form.Group className="mb-3">
@@ -412,10 +509,10 @@ const EmployeeTasksAccordion = () => {
                           <Button
                             variant="primary"
                             className="w-100"
-                            onClick={() => handleSubmitTask(task.id)}
-                            disabled={submitting[task.id]}
+                            onClick={() => handleSubmitTask(task?.id)}
+                            disabled={submitting[task?.id]}
                           >
-                            {submitting[task.id] ? (
+                            {submitting[task?.id] ? (
                               <>
                                 <Spinner
                                   as="span"
@@ -430,10 +527,10 @@ const EmployeeTasksAccordion = () => {
                             ) : (
                               <>
                                 <FaUpload className="me-2" />
-                                {task.is_refused
+                                {task?.is_refused
                                   ? "Resubmit"
                                   : "Submit"} Task{" "}
-                                {task.is_submitted ? "(Append)" : ""}
+                                {task?.is_submitted ? "(Append)" : ""}
                               </>
                             )}
                           </Button>
@@ -447,6 +544,10 @@ const EmployeeTasksAccordion = () => {
           </Accordion>
         </Card.Body>
       </Card>
+      <PaginationControls
+        pagination={pagination}
+        fetchMyAssignedTasks={fetchMyAssignedTasks}
+      />
     </div>
   );
 };

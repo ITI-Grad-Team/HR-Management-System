@@ -45,6 +45,8 @@ import {
   FaStar,
   FaClock,
 } from "react-icons/fa";
+import { MdOutlineLockReset } from "react-icons/md";
+import "./EmployeeDetailsCard.css";
 import { Tooltip } from "react-bootstrap";
 import { OverlayTrigger } from "react-bootstrap";
 import Select from "react-select";
@@ -62,6 +64,7 @@ export default function CandidateDetailsCard({
   loadingProp,
   onPredictUpdate,
   onPromote,
+  isSelfView,
 }) {
   const navigate = useNavigate();
   const {
@@ -70,7 +73,7 @@ export default function CandidateDetailsCard({
     region,
     highest_education_degree,
     highest_education_field,
-    cv,
+    cv_url,
     had_leadership_role,
     has_position_related_high_education,
     years_of_experience,
@@ -104,8 +107,10 @@ export default function CandidateDetailsCard({
     absence_penalty: "",
     expected_attend_time: "09:00",
     expected_leave_time: "17:00",
-    weekdays: [],
-    yeardays: [{ month: "", day: "" }],
+    holiday_weekdays: [],
+    holiday_yeardays: [{ month: "", day: "" }],
+    online_weekdays: [],
+    online_yeardays: [{ month: "", day: "" }],
   });
   const [predictLoading, setPredictLoading] = useState(false);
   const [predictError, setPredictError] = useState(null);
@@ -122,25 +127,46 @@ export default function CandidateDetailsCard({
   const [allEducationFields, setAllEducationFields] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
 
+  const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
+  const [basicInfoFormData, setBasicInfoFormData] = useState({
+    profile_image: null,
+    username: "",
+    phone: "",
+  });
+
+  useEffect(() => {
+    if (showBasicInfoModal && basicinfo) {
+      setBasicInfoFormData({
+        profile_image: null, // Will handle file separately
+        username: basicinfo.username || "",
+        phone: basicinfo.phone || "",
+      });
+    }
+  }, [showBasicInfoModal, basicinfo]);
+
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
@@ -254,6 +280,7 @@ export default function CandidateDetailsCard({
       toast.success("Candidate accepted successfully");
       setShowAcceptModal(false);
       setLocalState("accepted");
+      onSchedule?.();
       // You might want to redirect or refresh data here
     } catch (err) {
       toast.error("Failed to accept candidate");
@@ -285,34 +312,68 @@ export default function CandidateDetailsCard({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleWeekdayToggle = (day) => {
+  const handleHolidayWeekdayToggle = (day) => {
     setFormData((prev) => {
-      const newWeekdays = prev.weekdays.includes(day)
-        ? prev.weekdays.filter((d) => d !== day)
-        : [...prev.weekdays, day];
-      return { ...prev, weekdays: newWeekdays };
+      const newWeekdays = prev.holiday_weekdays.includes(day)
+        ? prev.holiday_weekdays.filter((d) => d !== day)
+        : [...prev.holiday_weekdays, day];
+      return { ...prev, holiday_weekdays: newWeekdays };
     });
   };
 
-  const handleYeardayChange = (index, field, value) => {
+  const handleHolidayYeardayChange = (index, field, value) => {
     setFormData((prev) => {
-      const newYeardays = [...prev.yeardays];
+      const newYeardays = [...prev.holiday_yeardays];
       newYeardays[index] = { ...newYeardays[index], [field]: value };
-      return { ...prev, yeardays: newYeardays };
+      return { ...prev, holiday_yeardays: newYeardays };
     });
   };
 
-  const addYearday = () => {
+  const addHolidayYearday = () => {
     setFormData((prev) => ({
       ...prev,
-      yeardays: [...prev.yeardays, { month: "", day: "" }],
+      holiday_yeardays: [...prev.holiday_yeardays, { month: "", day: "" }],
     }));
   };
 
-  const removeYearday = (index) => {
+  const removeHolidayYearday = (index) => {
     setFormData((prev) => ({
       ...prev,
-      yeardays: prev.yeardays.filter((_, i) => i !== index),
+      holiday_yeardays: prev.holiday_yeardays.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleOnlineWeekdayToggle = (day) => {
+    setFormData((prev) => {
+      const newOnlineWeekdays = prev.online_weekdays.includes(day)
+        ? prev.online_weekdays.filter((d) => d !== day)
+        : [...prev.online_weekdays, day];
+      return { ...prev, online_weekdays: newOnlineWeekdays };
+    });
+  };
+
+  const handleOnlineYeardayChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newOnlineYeardays = [...prev.online_yeardays];
+      newOnlineYeardays[index] = {
+        ...newOnlineYeardays[index],
+        [field]: value,
+      };
+      return { ...prev, online_yeardays: newOnlineYeardays };
+    });
+  };
+
+  const addOnlineYearday = () => {
+    setFormData((prev) => ({
+      ...prev,
+      online_yeardays: [...prev.online_yeardays, { month: "", day: "" }],
+    }));
+  };
+
+  const removeOnlineYearday = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      online_yeardays: prev.online_yeardays.filter((_, i) => i !== index),
     }));
   };
 
@@ -328,7 +389,7 @@ export default function CandidateDetailsCard({
 
   /* ---------------- Render Buttons ---------------- */
   const renderInterviewActions = () => {
-    if (localState === "done" && interviewer === loggedInHrId) {
+    if (candidate.interview_state === "done" && interviewer === loggedInHrId) {
       return (
         <div className="d-flex align-items-center gap-3">
           {/* Interview Rating Card */}
@@ -421,6 +482,41 @@ export default function CandidateDetailsCard({
     );
   };
 
+  ///
+  const handleBasicInfoUpdate = async () => {
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      if (basicInfoFormData.profile_image) {
+        formData.append("profile_image", basicInfoFormData.profile_image);
+      }
+      if (basicInfoFormData.username !== basicinfo.username) {
+        formData.append("username", basicInfoFormData.username);
+      }
+      if (basicInfoFormData.phone !== basicinfo.phone) {
+        formData.append("phone", basicInfoFormData.phone);
+      }
+
+      const response = await axiosInstance.patch("/basic-info/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Profile updated successfully");
+      setShowBasicInfoModal(false);
+      onPredictUpdate?.();
+      // You'll need to refresh the user data here or update the parent state
+    } catch (error) {
+      toast.error(
+        error.response?.data?.username?.[0] || "Failed to update profile"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePromoteEmployee = async () => {
     try {
       setLoading(true);
@@ -484,7 +580,8 @@ export default function CandidateDetailsCard({
         setPredictError(err.response.data.error);
         if (err.response.data.missing_fields) {
           setPredictError(
-            `${err.response.data.error
+            `${
+              err.response.data.error
             }: ${err.response.data.missing_fields.join(", ")}`
           );
         }
@@ -523,7 +620,8 @@ export default function CandidateDetailsCard({
       };
 
       const response = await axiosInstance.patch(
-        `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        `/${
+          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
         }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
@@ -598,26 +696,33 @@ export default function CandidateDetailsCard({
             className="text-center d-flex flex-column align-items-center"
           >
             <div className="position-relative mb-3">
-              <img
-                src={basicinfo?.profile_image}
-                alt="avatar"
-                className="rounded-circle shadow"
-                style={{
-                  width: "200px",
-                  height: "200px",
-                  objectFit: "cover",
-                  border: "3px solid #fff",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                }}
-              />
-              {percentage_of_matching_skills > 70 && (
-                <div
-                  className="position-absolute top-0 end-0 bg-success rounded-circle p-1"
-                  style={{ transform: "translate(10%, -10%)" }}
-                >
-                  <FaCheck className="text-white" size={12} />
-                </div>
-              )}
+              <div className="position-relative mb-3">
+                <img
+                  src={basicinfo?.profile_image_url || "/default.jpg"}
+                  alt="avatar"
+                  className="rounded-circle shadow"
+                  style={{
+                    width: "200px",
+                    height: "200px",
+                    objectFit: "cover",
+                    border: "3px solid #fff",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  }}
+                />
+                {isSelfView && (
+                  <button
+                    onClick={() => setShowBasicInfoModal(true)}
+                    className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 border-0"
+                    style={{
+                      transform: "translate(-10%, -10%)",
+                      width: "40px",
+                      height: "40px",
+                    }}
+                  >
+                    <FaEdit />
+                  </button>
+                )}
+              </div>
             </div>
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
             <p className="text-muted mb-2">{position}</p>
@@ -676,6 +781,15 @@ export default function CandidateDetailsCard({
                   </div>
                 </Col>
               </Row>
+              {isSelfView && (
+                <button
+                  onClick={() => navigate("/dashboard/change-password/")}
+                  className="btn btn-outline-dark mt-3 password-btn"
+                >
+                  <MdOutlineLockReset className="me-2" size={24} /> Change
+                  Password
+                </button>
+              )}
             </div>
 
             {/* Education */}
@@ -691,8 +805,8 @@ export default function CandidateDetailsCard({
                   {has_position_related_high_education
                     ? "✓"
                     : has_position_related_high_education === false
-                      ? "✗"
-                      : "❔"}
+                    ? "✗"
+                    : "❔"}
                 </span>
               </h6>
               <div>
@@ -767,7 +881,7 @@ export default function CandidateDetailsCard({
               <Row className="g-4">
                 <Col md={3}>
                   <a
-                    href={cv}
+                    href={cv_url}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -832,35 +946,37 @@ export default function CandidateDetailsCard({
             </div>
 
             {/* Interview Actions */}
-            {candidate.interview_state !== "accepted" && role === "hr" && (
-              <div
-                className="p-3 rounded-3"
-                style={{ background: "rgba(248,249,250,0.8)" }}
-              >
-                <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                  <FaCalendarAlt className="me-2" />
-                  <span>Interview</span>
-                  {candidate.interview_datetime && (
-                    <span className="fw-semibold text-muted ms-auto">
-                      {new Date(candidate.interview_datetime).toLocaleString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </span>
-                  )}
-                </h6>
-                <div className="d-flex gap-3 flex-wrap mb-3">
-                  {renderInterviewActions()}
+            {candidate.interview_state !== "accepted" &&
+              localState !== "accepted" &&
+              role === "hr" && (
+                <div
+                  className="p-3 rounded-3"
+                  style={{ background: "rgba(248,249,250,0.8)" }}
+                >
+                  <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
+                    <FaCalendarAlt className="me-2" />
+                    <span>Interview</span>
+                    {candidate.interview_datetime && (
+                      <span className="fw-semibold text-muted ms-auto">
+                        {new Date(candidate.interview_datetime).toLocaleString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    )}
+                  </h6>
+                  <div className="d-flex gap-3 flex-wrap mb-3">
+                    {renderInterviewActions()}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {candidate.interview_state === "accepted" && (
+            {localState === "accepted" && (
               <div
                 className="mb-4 p-3 rounded-3"
                 style={{ background: "rgba(248,249,250,0.8)" }}
@@ -1140,12 +1256,13 @@ export default function CandidateDetailsCard({
                               return (
                                 <div key={day} className="text-center">
                                   <div
-                                    className={`rounded-circle p-2 ${isHoliday
-                                      ? "bg-warning text-white"
-                                      : isOnline
+                                    className={`rounded-circle p-2 ${
+                                      isHoliday
+                                        ? "bg-warning text-white"
+                                        : isOnline
                                         ? "bg-info text-white"
                                         : "bg-light"
-                                      }`}
+                                    }`}
                                     style={{
                                       width: "32px",
                                       height: "32px",
@@ -1392,17 +1509,17 @@ export default function CandidateDetailsCard({
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Working Days</Form.Label>
+              <Form.Label>Days Off</Form.Label>
               <div className="d-flex flex-wrap gap-2">
                 {weekdays.map((day) => (
                   <Button
                     key={day.value}
                     variant={
-                      formData.weekdays.includes(day.value)
+                      formData.holiday_weekdays.includes(day.value)
                         ? "primary"
                         : "outline-secondary"
                     }
-                    onClick={() => handleWeekdayToggle(day.value)}
+                    onClick={() => handleHolidayWeekdayToggle(day.value)}
                     size="sm"
                   >
                     {day.label}
@@ -1413,7 +1530,7 @@ export default function CandidateDetailsCard({
 
             <Form.Group className="mb-3">
               <Form.Label>Year Days Off</Form.Label>
-              {formData.yeardays.map((yearday, index) => (
+              {formData.holiday_yeardays.map((yearday, index) => (
                 <div
                   key={index}
                   className="d-flex align-items-center gap-2 mb-2"
@@ -1425,7 +1542,7 @@ export default function CandidateDetailsCard({
                     max="12"
                     value={yearday.month}
                     onChange={(e) =>
-                      handleYeardayChange(index, "month", e.target.value)
+                      handleHolidayYeardayChange(index, "month", e.target.value)
                     }
                     style={{ width: "120px" }}
                   />
@@ -1436,15 +1553,15 @@ export default function CandidateDetailsCard({
                     max="31"
                     value={yearday.day}
                     onChange={(e) =>
-                      handleYeardayChange(index, "day", e.target.value)
+                      handleHolidayYeardayChange(index, "day", e.target.value)
                     }
                     style={{ width: "120px" }}
                   />
                   <Button
                     variant="outline-danger"
                     size="sm"
-                    onClick={() => removeYearday(index)}
-                    disabled={formData.yeardays.length <= 1}
+                    onClick={() => removeHolidayYearday(index)}
+                    disabled={formData.holiday_yeardays.length <= 1}
                   >
                     <FaTimes />
                   </Button>
@@ -1453,10 +1570,77 @@ export default function CandidateDetailsCard({
               <Button
                 variant="outline-primary"
                 size="sm"
-                onClick={addYearday}
+                onClick={addHolidayYearday}
                 className="mt-2"
               >
                 Add Year Day Off
+              </Button>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Days</Form.Label>
+              <div className="d-flex flex-wrap gap-2">
+                {weekdays.map((day) => (
+                  <Button
+                    key={day.value}
+                    variant={
+                      formData.online_weekdays.includes(day.value)
+                        ? "primary"
+                        : "outline-secondary"
+                    }
+                    onClick={() => handleOnlineWeekdayToggle(day.value)}
+                    size="sm"
+                  >
+                    {day.label}
+                  </Button>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Year Days</Form.Label>
+              {formData.online_yeardays.map((yearday, index) => (
+                <div
+                  key={index}
+                  className="d-flex align-items-center gap-2 mb-2"
+                >
+                  <Form.Control
+                    type="number"
+                    placeholder="Month (1-12)"
+                    min="1"
+                    max="12"
+                    value={yearday.month}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "month", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Form.Control
+                    type="number"
+                    placeholder="Day (1-31)"
+                    min="1"
+                    max="31"
+                    value={yearday.day}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "day", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => removeOnlineYearday(index)}
+                    disabled={formData.online_yeardays.length <= 1}
+                  >
+                    <FaTimes />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={addOnlineYearday}
+                className="mt-2"
+              >
+                Add Online Year Day
               </Button>
             </Form.Group>
           </Form>
@@ -1895,6 +2079,75 @@ export default function CandidateDetailsCard({
             ) : (
               "Assign Task"
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        show={showBasicInfoModal}
+        onHide={() => setShowBasicInfoModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Profile Information</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Profile Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    profile_image: e.target.files[0],
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                value={basicInfoFormData.username}
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    username: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Phone Number</Form.Label>
+              <Form.Control
+                type="tel"
+                value={basicInfoFormData.phone}
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    phone: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowBasicInfoModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleBasicInfoUpdate}
+            disabled={loading}
+          >
+            {loading ? <Spinner size="sm" /> : "Save Changes"}
           </Button>
         </Modal.Footer>
       </Modal>

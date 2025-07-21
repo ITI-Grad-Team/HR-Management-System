@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { Card, Row, Col, Badge } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Badge,
+  Modal,
+  Form,
+  Spinner,
+  Button,
+} from "react-bootstrap";
 import {
   FaPhone,
   FaUser,
@@ -8,17 +17,73 @@ import {
   FaClock,
   FaMoneyBillWave,
   FaUserClock,
+  FaEdit,
   FaCalendarTimes,
   FaUserPlus,
   FaArrowUp, // ↑ (solid)
   FaArrowRight, // → (solid)
   FaArrowDown, // ↓ (solid)
 } from "react-icons/fa";
-import { GiProgression } from "react-icons/gi";
+import { MdOutlineLockReset } from "react-icons/md";
 
-const HRDetailsCard = ({ candidate, loadingProp }) => {
+import { GiProgression } from "react-icons/gi";
+import { toast } from "react-toastify";
+import axiosInstance from "../../api/config";
+import "./HRDetailsCard.css";
+import { useNavigate } from "react-router-dom";
+
+const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
   const { basicinfo, user, id: candidateId, ...stats } = candidate;
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const handleBasicInfoUpdate = async () => {
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      if (basicInfoFormData.profile_image) {
+        formData.append("profile_image", basicInfoFormData.profile_image);
+      }
+      if (basicInfoFormData.username !== basicinfo.username) {
+        formData.append("username", basicInfoFormData.username);
+      }
+      if (basicInfoFormData.phone !== basicinfo.phone) {
+        formData.append("phone", basicInfoFormData.phone);
+      }
+
+      const response = await axiosInstance.patch("/basic-info/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Profile updated successfully");
+      setShowBasicInfoModal(false);
+      onSchedule?.();
+      // You'll need to refresh the user data here or update the parent state
+    } catch (error) {
+      toast.error(
+        error.response?.data?.username?.[0] || "Failed to update profile"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
+  const [basicInfoFormData, setBasicInfoFormData] = useState({
+    profile_image: null,
+    username: "",
+    phone: "",
+  });
+  useEffect(() => {
+    if (showBasicInfoModal && basicinfo) {
+      setBasicInfoFormData({
+        profile_image: null, // Will handle file separately
+        username: basicinfo.username || "",
+        phone: basicinfo.phone || "",
+      });
+    }
+  }, [showBasicInfoModal, basicinfo]);
   // HR Performance Metrics
   const metrics = [
     {
@@ -131,7 +196,7 @@ const HRDetailsCard = ({ candidate, loadingProp }) => {
           >
             <div className="position-relative mb-3">
               <img
-                src={basicinfo?.profile_image}
+                src={basicinfo?.profile_image_url || "/default.jpg"}
                 alt="avatar"
                 className="rounded-circle shadow"
                 style={{
@@ -144,11 +209,24 @@ const HRDetailsCard = ({ candidate, loadingProp }) => {
               />
               <Badge
                 bg={basicinfo?.role === "hr" ? "primary" : "secondary"}
-                className="position-absolute bottom-0 end-0 rounded-pill"
-                style={{ transform: "translate(25%, 25%)" }}
+                className="position-absolute top-0 end-0 rounded-pill"
+                style={{ transform: "translate(75%, 25%)" }}
               >
                 {basicinfo?.role?.toUpperCase() || "N/A"}
               </Badge>
+              {isSelfView && (
+                <button
+                  onClick={() => setShowBasicInfoModal(true)}
+                  className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 border-0"
+                  style={{
+                    transform: "translate(-10%, -10%)",
+                    width: "40px",
+                    height: "40px",
+                  }}
+                >
+                  <FaEdit />
+                </button>
+              )}
             </div>
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
           </Col>
@@ -186,6 +264,15 @@ const HRDetailsCard = ({ candidate, loadingProp }) => {
                   </div>
                 </Col>
               </Row>
+              {isSelfView && (
+                <button
+                  onClick={() => navigate("/dashboard/change-password/")}
+                  className="btn btn-outline-dark mt-3 password-btn"
+                >
+                  <MdOutlineLockReset className="me-2" size={24} /> Change
+                  Password
+                </button>
+              )}
             </div>
 
             {/* Performance Metrics */}
@@ -322,6 +409,89 @@ const HRDetailsCard = ({ candidate, loadingProp }) => {
           </Col>
         </Row>
       </Card>
+      <Modal
+        show={showBasicInfoModal}
+        onHide={() => setShowBasicInfoModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Profile Information</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Profile Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    profile_image: e.target.files[0],
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                value={basicInfoFormData.username}
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    username: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Phone Number</Form.Label>
+              <Form.Control
+                type="tel"
+                value={basicInfoFormData.phone}
+                onChange={(e) => {
+                  // Remove all non-digit characters
+                  const digitsOnly = e.target.value.replace(/\D/g, "");
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    phone: digitsOnly,
+                  });
+                }}
+                onKeyDown={(e) => {
+                  // Prevent non-digit key presses (except backspace, delete, tab, etc.)
+                  if (
+                    !/[0-9]|Backspace|Delete|Tab|ArrowLeft|ArrowRight/.test(
+                      e.key
+                    )
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
+                maxLength={15} // Set maximum allowed digits
+                placeholder="Enter digits only"
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowBasicInfoModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleBasicInfoUpdate}
+            disabled={loading}
+          >
+            {loading ? <Spinner size="sm" /> : "Save Changes"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 };

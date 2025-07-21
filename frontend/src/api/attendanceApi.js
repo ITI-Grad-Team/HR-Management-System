@@ -5,12 +5,22 @@ export const getCheckInStatus = () => {
     return axiosInstance.get('/attendance/check_in_status/');
 };
 
-export const checkIn = (macAddress) => {
-  return axiosInstance.post('/attendance/check_in/', { mac_address: macAddress });
+export const checkIn = (macAddress, latitude, longitude) => {
+    const data = { mac_address: macAddress };
+    if (latitude !== null && longitude !== null) {
+        data.latitude = latitude;
+        data.longitude = longitude;
+    }
+    return axiosInstance.post('/attendance/check_in/', data);
 };
 
-export const checkOut = () => {
-  return axiosInstance.patch('/attendance/check_out/');
+export const checkOut = (latitude, longitude) => {
+    const data = {};
+    if (latitude !== null && longitude !== null) {
+        data.latitude = latitude;
+        data.longitude = longitude;
+    }
+    return axiosInstance.patch('/attendance/check_out/', data);
 };
 
 export const createOvertimeRequest = (data) => {

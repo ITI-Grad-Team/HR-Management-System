@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { act, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -59,6 +59,20 @@ const Employees = () => {
   });
 
   const [activeTab, setActiveTab] = useState("employees");
+
+
+  useEffect(() => {
+    if (activeTab === "employees") {
+      document.title = "Employees | HERA";
+    }
+    else if (activeTab === "hrs") {
+      document.title = "HRs | HERA";
+    }
+    else{
+      document.title = "Candidates | HERA";
+    }
+      
+    }, [activeTab]);
 
   // Fetch filter options
   const fetchFilterOptions = async () => {
@@ -396,7 +410,7 @@ const Employees = () => {
                         name={hr.basic_info?.username}
                         email={hr.user?.username}
                         phone={hr.basic_info?.phone}
-                        avatar={hr.basic_info?.profile_image || "/default.jpg"}
+                        avatar={hr.basic_info?.profile_image_url || "/default.jpg"}
                         role={hr.basic_info?.role}
                       />
                     </Link>
@@ -439,7 +453,7 @@ const Employees = () => {
                           email={employee.user?.username}
                           phone={employee.basic_info?.phone}
                           avatar={
-                            employee.basic_info?.profile_image || "/default.jpg"
+                            employee.basic_info?.profile_image_url || "/default.jpg"
                           }
                           department={employee.position}
                           location={employee.region}
@@ -488,7 +502,7 @@ const Employees = () => {
                         email={candidate.user?.username}
                         phone={candidate.basic_info?.phone}
                         avatar={
-                          candidate.basic_info?.profile_image || "/default.jpg"
+                          candidate.basic_info?.profile_image_url || "/default.jpg"
                         }
                         department={candidate.position}
                         location={candidate.region}

@@ -21,6 +21,10 @@ const SearchResultsPage = () => {
   const [totalResultsCount, setTotalResultsCount] = useState(0);
 
   useEffect(() => {
+      document.title = "Search | HERA";
+    }, []);
+
+  useEffect(() => {
     const fetchSearchResults = async () => {
       if (!searchQuery || !role) {
         setResults([]);

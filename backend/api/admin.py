@@ -31,6 +31,8 @@ from .models import (
     EmployeeLeavePolicy,
     CasualLeave,
 )
+from django import forms
+from .supabase_utils import upload_to_supabase
 
 
 @admin.register(BasicInfo)
@@ -133,10 +135,33 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ("is_submitted", "is_accepted", "is_refused", "deadline")
 
 
+class FileAdminForm(forms.ModelForm):
+    upload = forms.FileField(required=False, label="Upload file")  # فايل جديد
+
+    class Meta:
+        model = File
+        fields = ['task', 'upload']  # بنعرض الاتنين
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        uploaded_file = self.cleaned_data.get("upload")
+        if uploaded_file:
+            url = upload_to_supabase("task-files", uploaded_file, uploaded_file.name)
+            instance.file_url = url
+
+        if commit:
+            instance.save()
+        return instance
+    
 @admin.register(File)
 class FileAdmin(admin.ModelAdmin):
-    list_display = ("file", "task")
+    form = FileAdminForm
+    list_display = ("filename", "task")
     search_fields = ("task__title",)
+
+    def filename(self, obj):
+        return obj.file_url.split("/")[-1] if obj.file_url else "—"
 
 
 # Register EmployeeLeavePolicy
@@ -189,11 +214,11 @@ from .models import (
 class AttendanceRecordAdmin(admin.ModelAdmin):
     list_display = (
         "user",
-        # "date",
+        "date",
         "attendance_type",
         "status",
-        # "check_in_time",
-        "check_in_datetime",
+        "check_in_time",
+        # "check_in_datetime",
         "check_out_time",
         # "mac_address",
         "overtime_hours",

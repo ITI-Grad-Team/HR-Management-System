@@ -21,17 +21,17 @@ export default function CandidateDetails() {
   const { user } = useAuth();
   const { role, employee } = user;
   const isSelfView = employee?.id === parseInt(id);
-  console.log(employee);
   const endpoint = isSelfView
     ? "/view-profile/"
     : role === "hr"
-      ? `/hr/employees/${id}/`
-      : employee?.is_coordinator === true
-        ? `/coordinator/employees/${id}/`
-        : `/admin/employees/${id}/`;
+    ? `/hr/employees/${id}/`
+    : employee?.is_coordinator === true
+    ? `/coordinator/employees/${id}/`
+    : `/admin/employees/${id}/`;
   const fetchCandidate = async () => {
     const res = await axiosInstance.get(endpoint);
     setCandidate(res.data);
+    console.log(res.data, "ddd");
 
     if (
       res.data.interviewer === user.hr?.id &&
@@ -101,6 +101,7 @@ export default function CandidateDetails() {
             onPredictUpdate={handlePredictUpdate}
             loadingProp={loadingForm}
             onPromote={handlePromote}
+            isSelfView={isSelfView}
           />
         </Col>
 
@@ -119,7 +120,6 @@ export default function CandidateDetails() {
                 onSubmitted={(updatedCandidate) => {
                   setShowForm(false);
                   setCandidate(updatedCandidate);
-                  window.location.reload();
                 }}
               />
             </Card>

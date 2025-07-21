@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 import ApplicationLinkBox from '../../components/ApplicationLinkBox/ApplicationLinkBox';
 import { Container, Tabs, Tab } from 'react-bootstrap';
@@ -10,6 +10,10 @@ import { useAuth } from '../../hooks/useAuth';
 const Applications = () => {
   const [key, setKey] = useState('generate');
   const { role } = useAuth();
+
+  useEffect(() => {
+    document.title = "Applications | HERA";
+  }, []);
 
   return (
     <>
