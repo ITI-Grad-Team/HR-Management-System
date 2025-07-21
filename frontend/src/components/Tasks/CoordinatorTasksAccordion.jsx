@@ -369,8 +369,8 @@ const CoordinatorTaskAccordion = () => {
         <ul className="list-unstyled">
           {files.map((file) => (
             <li key={file.id}>
-              <a href={file.file} target="_blank" rel="noopener noreferrer">
-                {file.file.split("/").pop()}
+              <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                {file.file_url.split("/").pop()}
               </a>
             </li>
           ))}

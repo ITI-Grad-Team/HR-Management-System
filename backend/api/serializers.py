@@ -206,10 +206,22 @@ class EmployeeForTaskSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "phone", "profile_image", "email"]
 
 
+# serializers.py
 class FileSerializer(serializers.ModelSerializer):
+    temp_file = serializers.FileField(write_only=True)
+
     class Meta:
         model = File
-        fields = ["id", "file"]
+        fields = ["id", "file_url", "temp_file"]
+        read_only_fields = ["file_url"]
+
+    def create(self, validated_data):
+        temp_file = validated_data.pop("temp_file")
+        instance = File(**validated_data)
+        instance.temp_file = temp_file
+        instance.save()
+        return instance
+
 
 
 class TaskSerializer(serializers.ModelSerializer):

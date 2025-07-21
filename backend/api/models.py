@@ -6,7 +6,7 @@ from django.db.models.functions import Cast
 from django.db.models import FloatField
 import pandas as pd
 from django.utils import timezone
-
+from .supabase_utils import upload_to_supabase
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -541,8 +541,16 @@ class Task(models.Model):
 
 
 class File(models.Model):
-    file = models.FileField(upload_to="task_files/")
+    file_url = models.CharField(max_length=1000)
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
+
+    temp_file = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_file:
+            url = upload_to_supabase("task-files", self.temp_file, self.temp_file.name)
+            self.file_url = url
+        super().save(*args, **kwargs)
 
 
 WEEKDAYS = [

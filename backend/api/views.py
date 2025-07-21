@@ -25,6 +25,7 @@ from rest_framework.views import APIView
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_decode
+from .supabase_utils import upload_to_supabase
 
 User = get_user_model()
 
@@ -1347,33 +1348,23 @@ class TaskViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check 2: Task must not already be submitted
-        # if task.is_submitted:
-        #     return Response(
-        #         {"error": "Task is already submitted."},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-
-        if request.FILES:
-            for file in request.FILES.getlist("files"):
-                File.objects.create(file=file, task=task)
-        else:
+        # Check 2: Must include at least one file
+        if not request.FILES:
             return Response(
                 {"error": "At least one file is required for submission."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update task status
-        task.is_submitted = True
-        task.submission_time = timezone.now()
-        task.is_refused = False  # Reset refusal if resubmitted
-        task.save()
-
-        serializer = self.get_serializer(task, context={"request": request})
+        # Upload files to Supabase
+        uploaded_urls = []
+        for uploaded_file in request.FILES.getlist("files"):
+            url = upload_to_supabase("task-files", uploaded_file, uploaded_file.name)
+            File.objects.create(file_url=url, task=task)
+            uploaded_urls.append(url)
 
         return Response(
-            {"message": "Task submitted successfully.", "task": serializer.data},
-            status=status.HTTP_200_OK,
+            {"message": "Files uploaded successfully.", "files": uploaded_urls},
+            status=status.HTTP_201_CREATED,
         )
 
     # Accept Task (by creator/coordinator)
