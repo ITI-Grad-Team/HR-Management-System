@@ -58,9 +58,9 @@ export default function HeaderBar() {
 
         <img
           src={
-            user?.basicinfo?.profile_image
-              ? `${import.meta.env.VITE_IMAGES_BASE_URL}${user.basicinfo.profile_image}`
-              : "https://i.pravatar.cc/36"
+            user?.basicinfo?.profile_image_url
+              ? `${user.basicinfo.profile_image_url}`
+              : "/default.jpg"
           }
           alt="avatar"
           className="rounded-circle"

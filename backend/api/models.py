@@ -149,13 +149,18 @@ class SalaryRecord(models.Model):
 
 
 class BasicInfo(models.Model):
-    profile_image = models.ImageField(
-        upload_to="profile_images/", default="profile_images/default.jpg"
-    )
+    profile_image_url = models.CharField(max_length=1000, blank=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
     role = models.CharField(max_length=20)
     username = models.CharField(max_length=150, blank=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    temp_profile_image = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_profile_image:
+            self.profile_image_url = upload_to_supabase("profile-images", self.temp_profile_image, self.temp_profile_image.name)
+        super().save(*args, **kwargs)
 
 
 class HR(models.Model):

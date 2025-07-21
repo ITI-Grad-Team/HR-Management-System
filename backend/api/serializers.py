@@ -39,6 +39,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 import string, random
 from .models import CasualLeave, EmployeeLeavePolicy
+from .supabase_utils import upload_to_supabase
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -49,8 +50,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BasicInfoSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(
-        required=False, allow_null=True, max_length=None
+        required=False, allow_null=True, max_length=None, write_only=True,
     )
+    profile_image_url = serializers.CharField(read_only=True)
     username = serializers.CharField(required=False, allow_blank=True, max_length=150)
     phone = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, max_length=15
@@ -58,7 +60,7 @@ class BasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicInfo
-        fields = ["profile_image", "phone", "role", "username"]
+        fields = ["profile_image", "profile_image_url", "phone", "role", "username"]
         extra_kwargs = {
             "role": {
                 "read_only": True
@@ -84,13 +86,10 @@ class BasicInfoSerializer(serializers.ModelSerializer):
         profile_image = validated_data.pop("profile_image", None)
 
         # Delete old image if new one is provided or if null is explicitly set
-        if profile_image is not None:
-            if (
-                instance.profile_image
-                and instance.profile_image.name != "profile_images/default.jpg"
-            ):
-                instance.profile_image.delete(save=False)
-            instance.profile_image = profile_image
+        if profile_image:
+            # ارفع الصورة على Supabase
+            url = upload_to_supabase("profile-images", profile_image, profile_image.name)
+            instance.profile_image_url = url
 
         return super().update(instance, validated_data)
 
@@ -196,9 +195,9 @@ class InterviewQuestionSerializer(serializers.ModelSerializer):
 class EmployeeForTaskSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.basicinfo.username", read_only=True)
     phone = serializers.CharField(source="user.basicinfo.phone", read_only=True)
-    profile_image = serializers.ImageField(
-        source="user.basicinfo.profile_image", read_only=True
-    )
+    profile_image = serializers.CharField(
+    source="user.basicinfo.profile_image_url", read_only=True
+)
     email = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
@@ -243,21 +242,15 @@ class TaskSerializer(serializers.ModelSerializer):
     def _get_employee_data(self, employee):
         if not employee:
             return None
-        request = self.context.get("request")
-
-        profile_image = None
-        if employee.user.basicinfo.profile_image:
-            profile_image = request.build_absolute_uri(
-                employee.user.basicinfo.profile_image.url
-            )
 
         return {
             "id": employee.id,
             "username": employee.user.basicinfo.username,
             "phone": employee.user.basicinfo.phone,
-            "profile_image": profile_image,
+            "profile_image_url": employee.user.basicinfo.profile_image_url,  # Supabase URL directly
             "email": employee.user.username,
         }
+
 
 
 class FileSerializer(serializers.ModelSerializer):

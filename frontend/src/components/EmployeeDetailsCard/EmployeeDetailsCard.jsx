@@ -695,7 +695,7 @@ export default function CandidateDetailsCard({
             <div className="position-relative mb-3">
               <div className="position-relative mb-3">
                 <img
-                  src={basicinfo?.profile_image}
+                  src={basicinfo?.profile_image_url || "/default.jpg"}
                   alt="avatar"
                   className="rounded-circle shadow"
                   style={{

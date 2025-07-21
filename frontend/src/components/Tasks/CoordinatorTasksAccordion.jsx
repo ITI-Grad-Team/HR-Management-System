@@ -325,9 +325,9 @@ const CoordinatorTaskAccordion = () => {
         style={{ cursor: "pointer" }}
       >
         <div className="d-flex align-items-center gap-2">
-          {employee.profile_image ? (
+          {employee.profile_image_url ? (
             <img
-              src={employee.profile_image}
+              src={employee.profile_image_url}
               alt={employee.username}
               className="rounded-circle"
               style={{
