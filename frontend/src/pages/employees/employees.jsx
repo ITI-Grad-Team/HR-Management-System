@@ -7,8 +7,9 @@ import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Spinner, Modal } from "react-bootstrap";
 import { useAuth } from "../../hooks/useAuth.js";
+import { FaUserPlus } from "react-icons/fa";
 
 const Employees = () => {
   const { user } = useAuth();
@@ -31,6 +32,9 @@ const Employees = () => {
   const [hrs, setHrs] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [candidates, setCandidates] = useState([]);
+  const [showInviteHrModal, setShowInviteHrModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loadingInviteHr, setLoadingInviteHr] = useState(false);
 
   // Enhanced pagination states
   const [hrsPagination, setHrsPagination] = useState({
@@ -331,7 +335,33 @@ const Employees = () => {
     return null;
   };
 
+
+   const handleInviteHr = () => setShowInviteHrModal(true);
+
+  const handleInvitaionSubmit = async (e) => {
+    e.preventDefault();
+    setLoadingInviteHr(true);
+
+    if (!email.trim()) {
+  toast.error("Please enter an email address");
+  setLoadingInviteHr(false);
+  return;
+}
+
+    try{
+      await axiosInstance.post(`/admin/invite-hr/`, { email });
+      toast.success("HR Invited Successfully");
+      setShowInviteHrModal(false);
+      setEmail("");
+    } catch (err) {
+      toast.error(err.response.data.error);
+    } finally {
+      setLoadingInviteHr(false);
+    }  
+  };
+
   return (
+    <>
     <div className="employees-page">
       {/* Tabs for navigation between sections */}
       {(role === "admin" || role === "hr" || isCoordinator) && (
@@ -380,6 +410,12 @@ const Employees = () => {
 
       {/* HR Section (only for admin) */}
       {role === "admin" && activeTab === "hrs" && (
+        <>
+        <div className="d-flex justify-content-end mb-3">
+            <button className="btn btn-outline-primary d-flex align-items-center" onClick={handleInviteHr}>
+            <FaUserPlus className="me-2"/> Invite HR
+            </button>
+          </div>
         <SectionBlock>
           {loading ? (
             <EmployeesFallBack />
@@ -419,6 +455,7 @@ const Employees = () => {
             </>
           )}
         </SectionBlock>
+        </>
       )}
 
       {/* Employees Section */}
@@ -522,6 +559,41 @@ const Employees = () => {
         </SectionBlock>
       )}
     </div>
+
+    <Modal
+  show={showInviteHrModal}
+  onHide={() => setShowInviteHrModal(false)}
+  centered
+  backdrop="static"
+  keyboard={false}
+>
+  <Modal.Header closeButton>
+    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
+  </Modal.Header>
+
+  <Modal.Body>
+    <form onSubmit={handleInvitaionSubmit}>
+      <Form.Group controlId="email" className="mb-3">
+        <Form.Label className="fw-semibold">Email Address</Form.Label>
+        <Form.Control
+          type="email"
+          placeholder="Enter HR email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="py-2 px-3 rounded-3 shadow-sm border-1"
+        />
+      </Form.Group>
+
+      <div className="d-flex justify-content-end">
+        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
+          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
+          Send Invitation
+        </Button>
+      </div>
+    </form>
+  </Modal.Body>
+</Modal>
+    </>
   );
 };
 
