@@ -474,13 +474,14 @@ class PublicApplicantsViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
+        files = request.FILES
 
         email = data.get("email")
         phone = data.get("phone")
-        cv = data.get("cv")
+        cv_file = files.get("cv")
         distinction_name = data.get("distinction_name")
 
-        if not all([email, phone, cv, distinction_name]):
+        if not all([email, phone, cv_file, distinction_name]):
             return Response({"detail": "Missing required fields."}, status=400)
 
         # 1. Get ApplicationLink
@@ -498,6 +499,12 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         if application_link.number_remaining_applicants_to_limit <= 0:
             return Response({"detail": "Limit of applicants exceeded"}, status=400)
+        
+        filename = f"{email.replace('@', '_')}_cv.pdf"
+        try:
+            cv_url = upload_to_supabase("cvs", cv_file, filename)
+        except Exception as e:
+            return Response({"detail": f"Failed to upload CV: {e}"}, status=500)
 
         # 2. Extract info from CV
         all_skills = list(Skill.objects.values_list("name", flat=True))
@@ -512,7 +519,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         try:
             cv_info = processor.extract_info(
-                cv_file=cv,
+                cv_file=cv_file,
                 choices={
                     "skills": all_skills,
                     "degrees": degree_choices,
@@ -571,7 +578,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
             employee_data = {
                 "user": user,
-                "cv": cv,
+                "cv_url": cv_url,
                 "position": application_link.position,
                 "is_coordinator": is_coordinator,
                 "application_link": application_link,

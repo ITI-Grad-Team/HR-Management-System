@@ -71,7 +71,7 @@ export default function CandidateDetailsCard({
     region,
     highest_education_degree,
     highest_education_field,
-    cv,
+    cv_url,
     had_leadership_role,
     has_position_related_high_education,
     years_of_experience,
@@ -878,7 +878,7 @@ export default function CandidateDetailsCard({
               <Row className="g-4">
                 <Col md={3}>
                   <a
-                    href={cv}
+                    href={cv_url}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
                     target="_blank"
                     rel="noopener noreferrer"

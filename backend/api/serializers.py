@@ -125,10 +125,40 @@ class EmployeeSerializer(serializers.ModelSerializer):
     avg_lateness_hours = serializers.FloatField(read_only=True)
     avg_absent_days = serializers.FloatField(read_only=True)
 
+    cv = serializers.FileField(write_only=True, required=False, allow_null=True)
+    cv_url = serializers.CharField(read_only=True)
+
     class Meta:
         model = Employee
         fields = "__all__"
 
+    def create(self, validated_data):
+        cv_file = validated_data.pop("cv", None)
+
+        # إنشاء الـ instance
+        instance = Employee.objects.create(**validated_data)
+
+        # رفع الملف لو موجود
+        if cv_file:
+            instance.temp_cv = cv_file
+
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        cv_file = validated_data.pop("cv", None)
+        
+        # باقي البيانات
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # رفع الملف لو موجود
+        if cv_file:
+            instance.temp_cv = cv_file
+
+        instance.save()
+        return instance
+    
     def get_yearly_holidays(self, obj):
         return [{"month": h.month, "day": h.day} for h in obj.holidayyearday_set.all()]
 

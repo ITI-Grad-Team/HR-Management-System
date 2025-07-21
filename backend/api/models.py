@@ -407,7 +407,7 @@ class Region(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
-    cv = models.FileField(upload_to="cvs/", default="cvs/default.pdf")
+    cv_url = models.CharField(max_length=1000, blank=True, null=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.CASCADE)
@@ -466,6 +466,14 @@ class Employee(models.Model):
         default=0
     )  # summed to at task accept .. (some other place in the code)
     rank = models.IntegerField(null=True, blank=True)
+
+    temp_cv = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_cv:
+            # ارفع الملف على supabase
+            self.cv_url = upload_to_supabase("employee-cvs", self.temp_cv, self.temp_cv.name)
+        super().save(*args, **kwargs)
 
     @property
     def avg_task_ratings(self):
