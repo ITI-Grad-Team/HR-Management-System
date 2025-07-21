@@ -128,3 +128,18 @@ class OvertimeRequestPermission(BasePermission):
             return role in ["hr", "admin"]
 
         return False
+
+
+
+class IsHROrEmployee(BasePermission):
+    """
+    Allows access only to users with role='hr' or 'employee' in BasicInfo.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        return (
+            user.is_authenticated
+            and hasattr(user, "basicinfo")
+            and user.basicinfo.role in ["hr", "employee"]
+        )

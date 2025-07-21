@@ -54,7 +54,7 @@ from .serializers import (
     EducationFieldSerializer,RegionSerializer,EducationDegreeSerializer
 )
 
-from .permissions import IsHR, IsAdmin, IsHRorAdmin, IsEmployee, IsCoordinator
+from .permissions import IsHR, IsAdmin, IsHRorAdmin, IsEmployee, IsCoordinator,IsHROrEmployee
 
 from .cv_processing.LLM_utils import TogetherCVProcessor
 from rest_framework.response import Response
@@ -2074,3 +2074,31 @@ class FilterOptionsViewSet(ViewSet):
             'positions': positions,
             'application_links': application_links
         })
+    
+
+class BasicInfoViewSet(ViewSet):
+    permission_classes = [IsAuthenticated, IsHROrEmployee]
+    http_method_names = ['patch']
+    
+    def partial_update(self, request):
+        try:
+            # Get the BasicInfo for the current user
+            basic_info = BasicInfo.objects.get(user=request.user)
+            serializer = BasicInfoSerializer(
+                basic_info, 
+                data=request.data, 
+                partial=True,
+                context={'request': request}
+            )
+            
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+            serializer.save()
+            return Response(serializer.data)
+            
+        except BasicInfo.DoesNotExist:
+            return Response(
+                {"detail": "BasicInfo not found for this user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
