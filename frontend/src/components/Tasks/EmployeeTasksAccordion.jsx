@@ -302,9 +302,9 @@ const EmployeeTasksAccordion = () => {
     >
 
         <div className="d-flex align-items-center gap-2">
-          {employee.profile_image ? (
+          {employee.profile_image_url ? (
             <img
-              src={employee.profile_image}
+              src={employee.profile_image_url}
               alt={employee.username}
               className="rounded-circle"
               style={{
@@ -345,8 +345,8 @@ const EmployeeTasksAccordion = () => {
         <ul className="list-unstyled">
           {files.map((file) => (
             <li key={file.id}>
-              <a href={file.file} target="_blank" rel="noopener noreferrer">
-                {file.file.split("/").pop()}
+              <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                {file.file_url.split("/").pop()}
               </a>
             </li>
           ))}
@@ -396,7 +396,7 @@ const EmployeeTasksAccordion = () => {
                   <Row className="w-100 align-items-center">
                     <Col xs={7} className="d-flex align-items-center">
                       <FaFileAlt className="text-primary me-2" />
-                      <span className="fw-bold">{task.title}</span>
+                      <span className="fw-bold">{task?.title}</span>
                     </Col>
                     <Col xs={5} className="text-end">
                       <div className="d-flex justify-content-end">

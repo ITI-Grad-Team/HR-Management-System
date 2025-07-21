@@ -325,9 +325,9 @@ const CoordinatorTaskAccordion = () => {
         style={{ cursor: "pointer" }}
       >
         <div className="d-flex align-items-center gap-2">
-          {employee.profile_image ? (
+          {employee.profile_image_url ? (
             <img
-              src={employee.profile_image}
+              src={employee.profile_image_url}
               alt={employee.username}
               className="rounded-circle"
               style={{
@@ -369,8 +369,8 @@ const CoordinatorTaskAccordion = () => {
         <ul className="list-unstyled">
           {files.map((file) => (
             <li key={file.id}>
-              <a href={file.file} target="_blank" rel="noopener noreferrer">
-                {file.file.split("/").pop()}
+              <a href={file.file_url} target="_blank" rel="noopener noreferrer">
+                {file.file_url.split("/").pop()}
               </a>
             </li>
           ))}

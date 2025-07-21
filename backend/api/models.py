@@ -6,7 +6,7 @@ from django.db.models.functions import Cast
 from django.db.models import FloatField
 import pandas as pd
 from django.utils import timezone
-
+from .supabase_utils import upload_to_supabase
 
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
@@ -149,13 +149,18 @@ class SalaryRecord(models.Model):
 
 
 class BasicInfo(models.Model):
-    profile_image = models.ImageField(
-        upload_to="profile_images/", default="profile_images/default.jpg"
-    )
+    profile_image_url = models.CharField(max_length=1000, blank=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
     role = models.CharField(max_length=20)
     username = models.CharField(max_length=150, blank=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    temp_profile_image = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_profile_image:
+            self.profile_image_url = upload_to_supabase("profile-images", self.temp_profile_image, self.temp_profile_image.name)
+        super().save(*args, **kwargs)
 
 
 class HR(models.Model):
@@ -402,7 +407,7 @@ class Region(models.Model):
 class Employee(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
-    cv = models.FileField(upload_to="cvs/", default="cvs/default.pdf")
+    cv_url = models.CharField(max_length=1000, blank=True, null=True)
     position = models.ForeignKey(Position, on_delete=models.CASCADE)
     is_coordinator = models.BooleanField()
     application_link = models.ForeignKey(ApplicationLink, on_delete=models.CASCADE)
@@ -461,6 +466,14 @@ class Employee(models.Model):
         default=0
     )  # summed to at task accept .. (some other place in the code)
     rank = models.IntegerField(null=True, blank=True)
+
+    temp_cv = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_cv:
+            # ارفع الملف على supabase
+            self.cv_url = upload_to_supabase("employee-cvs", self.temp_cv, self.temp_cv.name)
+        super().save(*args, **kwargs)
 
     @property
     def avg_task_ratings(self):
@@ -541,8 +554,16 @@ class Task(models.Model):
 
 
 class File(models.Model):
-    file = models.FileField(upload_to="task_files/")
+    file_url = models.CharField(max_length=1000)
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
+
+    temp_file = None
+
+    def save(self, *args, **kwargs):
+        if self.temp_file:
+            url = upload_to_supabase("task-files", self.temp_file, self.temp_file.name)
+            self.file_url = url
+        super().save(*args, **kwargs)
 
 
 WEEKDAYS = [

@@ -25,6 +25,7 @@ from rest_framework.views import APIView
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_decode
+from .supabase_utils import upload_to_supabase
 
 User = get_user_model()
 
@@ -473,13 +474,14 @@ class PublicApplicantsViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
+        files = request.FILES
 
         email = data.get("email")
         phone = data.get("phone")
-        cv = data.get("cv")
+        cv_file = files.get("cv")
         distinction_name = data.get("distinction_name")
 
-        if not all([email, phone, cv, distinction_name]):
+        if not all([email, phone, cv_file, distinction_name]):
             return Response({"detail": "Missing required fields."}, status=400)
 
         # 1. Get ApplicationLink
@@ -497,6 +499,12 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         if application_link.number_remaining_applicants_to_limit <= 0:
             return Response({"detail": "Limit of applicants exceeded"}, status=400)
+        
+        filename = f"{email.replace('@', '_')}_cv.pdf"
+        try:
+            cv_url = upload_to_supabase("cvs", cv_file, filename)
+        except Exception as e:
+            return Response({"detail": f"Failed to upload CV: {e}"}, status=500)
 
         # 2. Extract info from CV
         all_skills = list(Skill.objects.values_list("name", flat=True))
@@ -511,7 +519,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         try:
             cv_info = processor.extract_info(
-                cv_file=cv,
+                cv_file=cv_file,
                 choices={
                     "skills": all_skills,
                     "degrees": degree_choices,
@@ -570,7 +578,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
             employee_data = {
                 "user": user,
-                "cv": cv,
+                "cv_url": cv_url,
                 "position": application_link.position,
                 "is_coordinator": is_coordinator,
                 "application_link": application_link,
@@ -1347,33 +1355,23 @@ class TaskViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Check 2: Task must not already be submitted
-        # if task.is_submitted:
-        #     return Response(
-        #         {"error": "Task is already submitted."},
-        #         status=status.HTTP_400_BAD_REQUEST,
-        #     )
-
-        if request.FILES:
-            for file in request.FILES.getlist("files"):
-                File.objects.create(file=file, task=task)
-        else:
+        # Check 2: Must include at least one file
+        if not request.FILES:
             return Response(
                 {"error": "At least one file is required for submission."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update task status
-        task.is_submitted = True
-        task.submission_time = timezone.now()
-        task.is_refused = False  # Reset refusal if resubmitted
-        task.save()
-
-        serializer = self.get_serializer(task, context={"request": request})
+        # Upload files to Supabase
+        uploaded_urls = []
+        for uploaded_file in request.FILES.getlist("files"):
+            url = upload_to_supabase("task-files", uploaded_file, uploaded_file.name)
+            File.objects.create(file_url=url, task=task)
+            uploaded_urls.append(url)
 
         return Response(
-            {"message": "Task submitted successfully.", "task": serializer.data},
-            status=status.HTTP_200_OK,
+            {"message": "Files uploaded successfully.", "files": uploaded_urls},
+            status=status.HTTP_201_CREATED,
         )
 
     # Accept Task (by creator/coordinator)

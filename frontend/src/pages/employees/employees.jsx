@@ -396,7 +396,7 @@ const Employees = () => {
                         name={hr.basic_info?.username}
                         email={hr.user?.username}
                         phone={hr.basic_info?.phone}
-                        avatar={hr.basic_info?.profile_image || "/default.jpg"}
+                        avatar={hr.basic_info?.profile_image_url || "/default.jpg"}
                         role={hr.basic_info?.role}
                       />
                     </Link>
@@ -439,7 +439,7 @@ const Employees = () => {
                           email={employee.user?.username}
                           phone={employee.basic_info?.phone}
                           avatar={
-                            employee.basic_info?.profile_image || "/default.jpg"
+                            employee.basic_info?.profile_image_url || "/default.jpg"
                           }
                           department={employee.position}
                           location={employee.region}
@@ -488,7 +488,7 @@ const Employees = () => {
                         email={candidate.user?.username}
                         phone={candidate.basic_info?.phone}
                         avatar={
-                          candidate.basic_info?.profile_image || "/default.jpg"
+                          candidate.basic_info?.profile_image_url || "/default.jpg"
                         }
                         department={candidate.position}
                         location={candidate.region}
