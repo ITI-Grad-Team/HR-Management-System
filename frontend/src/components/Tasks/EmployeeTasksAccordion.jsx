@@ -42,16 +42,26 @@ const EmployeeTasksAccordion = () => {
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState({});
+  const [pagination, setPagination] = useState({
+    next: null,
+    previous: null,
+    count: 0,
+  });
 
   useEffect(() => {
     fetchMyAssignedTasks();
   }, []);
 
-  const fetchMyAssignedTasks = async () => {
+  const fetchMyAssignedTasks = async (url = "/tasks/my_assigned_tasks/") => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/tasks/my_assigned_tasks/");
-      setTasks(response.data);
+      const response = await axiosInstance.get(url);
+      setTasks(response.data.results);
+      setPagination({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count,
+      });
     } catch (error) {
       toast.error(
         <div>
@@ -62,6 +72,90 @@ const EmployeeTasksAccordion = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const PaginationControls = ({ pagination, fetchMyAssignedTasks }) => {
+    if (!pagination) return null;
+
+    const { next, previous, count } = pagination;
+    const pageSize = 10;
+
+    // Helper to extract page number from URL
+    const getPageNumber = (url) => {
+      if (!url) return null;
+      try {
+        const params = new URL(url).searchParams;
+        return parseInt(params.get("page")) || null;
+      } catch {
+        return null;
+      }
+    };
+
+    // Calculate current page and total pages
+    const currentPage = next
+      ? getPageNumber(next) - 1
+      : previous
+      ? getPageNumber(previous) + 1
+      : 1;
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    // Generate URLs for first/last pages
+    const firstPageUrl = previous
+      ? previous.replace(/([?&])page=\d+/, "$1page=1")
+      : null;
+
+    const lastPageUrl = next
+      ? next.replace(/([?&])page=\d+/, `$1page=${totalPages}`)
+      : null;
+
+    return (
+      <div className="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-4">
+        {/* First Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(firstPageUrl)}
+          disabled={!previous || currentPage === 1}
+          aria-label="Go to first page"
+        >
+          First
+        </button>
+
+        {/* Previous Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(previous)}
+          disabled={!previous}
+          aria-label="Go to previous page"
+        >
+          Previous
+        </button>
+
+        {/* Page Info */}
+        <span className="fw-semibold mx-2">
+          Page {currentPage} of {totalPages}
+        </span>
+
+        {/* Next Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(next)}
+          disabled={!next}
+          aria-label="Go to next page"
+        >
+          Next
+        </button>
+
+        {/* Last Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyAssignedTasks(lastPageUrl)}
+          disabled={!next || currentPage === totalPages}
+          aria-label="Go to last page"
+        >
+          Last
+        </button>
+      </div>
+    );
   };
 
   const handleFileChange = (e) => {
@@ -87,11 +181,15 @@ const EmployeeTasksAccordion = () => {
         formData.append("files", file);
       });
 
-      await axiosInstance.post(`/tasks/${taskId}/submit/`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await axiosInstance.post(
+        `/tasks/${taskId}/submit/`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       toast.success(
         <div>
@@ -99,7 +197,12 @@ const EmployeeTasksAccordion = () => {
           Task submitted successfully
         </div>
       );
-      fetchMyAssignedTasks();
+
+      // Update the specific task in state instead of refetching
+      setTasks(
+        tasks.map((task) => (task.id === taskId ? response.data.task : task))
+      );
+
       setFiles([]);
     } catch (error) {
       toast.error(
@@ -112,7 +215,7 @@ const EmployeeTasksAccordion = () => {
       setSubmitting({ ...submitting, [taskId]: false });
     }
   };
-
+  
   // Reuse the same helper functions from CoordinatorTaskAccordion
   const getTaskStatus = (task) => {
     if (!task.is_submitted) {
@@ -197,11 +300,7 @@ const EmployeeTasksAccordion = () => {
         </Tooltip>
       }
     >
-      <Link
-        to={`/dashboard/employeeDetails/${employee.id}`}
-        className="text-decoration-none"
-        style={{ cursor: "pointer" }}
-      >
+
         <div className="d-flex align-items-center gap-2">
           {employee.profile_image ? (
             <img
@@ -231,7 +330,6 @@ const EmployeeTasksAccordion = () => {
           </div>
           <FaExternalLinkAlt className="text-muted" size={12} />
         </div>
-      </Link>
     </OverlayTrigger>
   );
 
@@ -447,6 +545,10 @@ const EmployeeTasksAccordion = () => {
           </Accordion>
         </Card.Body>
       </Card>
+      <PaginationControls
+        pagination={pagination}
+        fetchMyAssignedTasks={fetchMyAssignedTasks}
+      />
     </div>
   );
 };

@@ -1180,6 +1180,7 @@ class TaskViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = TenPerPagePagination
 
+
     # Create Task (by coordinator)
     def create(self, request, *args, **kwargs):
         # 1. Verify coordinator status with existence check
@@ -1279,8 +1280,14 @@ class TaskViewSet(ModelViewSet):
         task.is_refused = False  # Reset refusal if resubmitted
         task.save()
 
+        serializer = self.get_serializer(task, context={'request': request})
+        
         return Response(
-            {"message": "Task submitted successfully."}, status=status.HTTP_200_OK
+            {
+                "message": "Task submitted successfully.",
+                "task": serializer.data
+            },
+            status=status.HTTP_200_OK
         )
 
     # Accept Task (by creator/coordinator)
@@ -1332,6 +1339,7 @@ class TaskViewSet(ModelViewSet):
         # Update task
         task.is_accepted = True
         task.is_refused = False  # In case it was previously refused and the creator changed their mind
+        task.is_submitted = True
         task.rating = rating
         task.time_remaining_before_deadline_when_accepted = time_remaining
         task.save()
@@ -1345,12 +1353,13 @@ class TaskViewSet(ModelViewSet):
             "total_time_remaining_before_deadline",
             "number_of_accepted_tasks",
         ])
+        serializer = self.get_serializer(task, context={'request': request})
 
         return Response(
             {
                 "message": "Task accepted successfully.",
                 "time_remaining_hours": round(time_remaining, 2),
-                "rating": rating,
+                "rating": rating, "task": serializer.data
             },
             status=status.HTTP_200_OK,
         )
@@ -1406,9 +1415,9 @@ class TaskViewSet(ModelViewSet):
         task.is_refused = True
         task.refuse_reason = reason
         task.save()
-
+        serializer = self.get_serializer(task, context={'request': request})
         return Response(
-            {"message": "Task refused successfully.", "reason": reason},
+            {"message": "Task refused successfully.", "reason": reason,"task":serializer.data},
             status=status.HTTP_200_OK,
         )
 

@@ -41,16 +41,26 @@ const CoordinatorTaskAccordion = () => {
   const [loading, setLoading] = useState(true);
   const [ratingInputs, setRatingInputs] = useState({});
   const [refuseReasons, setRefuseReasons] = useState({});
+  const [pagination, setPagination] = useState({
+    next: null,
+    previous: null,
+    count: 0,
+  });
 
   useEffect(() => {
     fetchMyCreatedTasks();
   }, []);
 
-  const fetchMyCreatedTasks = async () => {
+  const fetchMyCreatedTasks = async (url = "/tasks/my_created_tasks/") => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/tasks/my_created_tasks/");
-      setTasks(response.data);
+      const response = await axiosInstance.get(url);
+      setTasks(response.data.results);
+      setPagination({
+        next: response.data.next,
+        previous: response.data.previous,
+        count: response.data.count,
+      });
     } catch (error) {
       toast.error(
         <div>
@@ -61,6 +71,94 @@ const CoordinatorTaskAccordion = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const PaginationControls = ({ pagination, fetchMyCreatedTasks }) => {
+    if (!pagination) return null;
+
+    const { next, previous, count } = pagination;
+    const pageSize = 10;
+
+    // Determine current page
+    const getPageNumber = (url) => {
+      if (!url) return null;
+      try {
+        const params = new URL(url, window.location.origin).searchParams;
+        return parseInt(params.get("page")) || 1;
+      } catch {
+        return 1;
+      }
+    };
+
+    const currentPage = next
+      ? getPageNumber(next) - 1
+      : previous
+      ? getPageNumber(previous) + 1
+      : 1;
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    // Generate first and last page URLs
+    const getFirstPageUrl = () => {
+      if (!previous) return "/tasks/my_created_tasks/";
+      const baseUrl = previous.split("?")[0];
+      return `${baseUrl}?page=1`;
+    };
+
+    const getLastPageUrl = () => {
+      if (!next) return `/tasks/my_created_tasks/?page=${totalPages}`;
+      const baseUrl = next.split("?")[0];
+      return `${baseUrl}?page=${totalPages}`;
+    };
+
+    return (
+      <div className="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-4">
+        {/* First Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyCreatedTasks(getFirstPageUrl())}
+          disabled={!previous || currentPage === 1}
+          aria-label="Go to first page"
+        >
+          First
+        </button>
+
+        {/* Previous Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyCreatedTasks(previous)}
+          disabled={!previous}
+          aria-label="Go to previous page"
+        >
+          Previous
+        </button>
+
+        {/* Page Info */}
+        <span className="fw-semibold mx-2">
+          Page {currentPage} of {totalPages}
+        </span>
+
+        {/* Next Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyCreatedTasks(next)}
+          disabled={!next}
+          aria-label="Go to next page"
+        >
+          Next
+        </button>
+
+        {/* Last Page Button */}
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => fetchMyCreatedTasks(getLastPageUrl())}
+          disabled={!next || currentPage === totalPages}
+          aria-label="Go to last page"
+        >
+          Last
+        </button>
+      </div>
+    );
   };
 
   const handleAcceptTask = async (taskId) => {
@@ -76,7 +174,9 @@ const CoordinatorTaskAccordion = () => {
     }
 
     try {
-      await axiosInstance.post(`/tasks/${taskId}/accept/`, { rating });
+      const response = await axiosInstance.post(`/tasks/${taskId}/accept/`, {
+        rating,
+      });
       toast.success(
         <div>
           <FaThumbsUp className="me-2" />
@@ -84,7 +184,11 @@ const CoordinatorTaskAccordion = () => {
         </div>,
         { className: "bg-primary text-white" }
       );
-      fetchMyCreatedTasks();
+
+      // Update the specific task in state instead of refetching
+      setTasks(
+        tasks.map((task) => (task.id === taskId ? response.data.task : task))
+      );
     } catch (error) {
       toast.error(
         <div>
@@ -108,14 +212,20 @@ const CoordinatorTaskAccordion = () => {
     }
 
     try {
-      await axiosInstance.post(`/tasks/${taskId}/refuse/`, { reason });
+      const response = await axiosInstance.post(`/tasks/${taskId}/refuse/`, {
+        reason,
+      });
       toast.success(
         <div>
           <FaThumbsDown className="me-2" />
           Task refused successfully
         </div>
       );
-      fetchMyCreatedTasks();
+
+      // Update the specific task in state instead of refetching
+      setTasks(
+        tasks.map((task) => (task.id === taskId ? response.data.task : task))
+      );
     } catch (error) {
       toast.error(
         <div>
@@ -536,6 +646,10 @@ const CoordinatorTaskAccordion = () => {
           </Accordion>
         </Card.Body>
       </Card>
+      <PaginationControls
+        pagination={pagination}
+        fetchMyCreatedTasks={fetchMyCreatedTasks}
+      />
     </div>
   );
 };
