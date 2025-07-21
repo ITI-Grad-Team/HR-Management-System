@@ -480,7 +480,7 @@ class PublicApplicantsViewSet(ModelViewSet):
         phone = data.get("phone")
         cv_file = files.get("cv")
         distinction_name = data.get("distinction_name")
-
+        print(cv_file)
         if not all([email, phone, cv_file, distinction_name]):
             return Response({"detail": "Missing required fields."}, status=400)
 
@@ -516,7 +516,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         llm_success = False
         cv_info = {}
-
+        cv_file.seek(0)
         try:
             cv_info = processor.extract_info(
                 cv_file=cv_file,
