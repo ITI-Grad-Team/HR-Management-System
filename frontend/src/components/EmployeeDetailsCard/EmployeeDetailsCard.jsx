@@ -45,6 +45,8 @@ import {
   FaStar,
   FaClock,
 } from "react-icons/fa";
+import { MdOutlineLockReset } from "react-icons/md";
+import "./EmployeeDetailsCard.css";
 import { Tooltip } from "react-bootstrap";
 import { OverlayTrigger } from "react-bootstrap";
 import Select from "react-select";
@@ -779,6 +781,15 @@ export default function CandidateDetailsCard({
                   </div>
                 </Col>
               </Row>
+              {isSelfView && (
+                <button
+                  onClick={() => navigate("/dashboard/change-password/")}
+                  className="btn btn-outline-dark mt-3 password-btn"
+                >
+                  <MdOutlineLockReset className="me-2" size={24} /> Change
+                  Password
+                </button>
+              )}
             </div>
 
             {/* Education */}
