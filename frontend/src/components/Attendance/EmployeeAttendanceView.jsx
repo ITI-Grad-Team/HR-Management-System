@@ -7,6 +7,8 @@ import {
     getCheckInStatus,
     createOvertimeRequest,
 } from '../../api/attendanceApi';
+import { getCurrentLocation } from '../../utils/geolocation';
+import { formatTime, formatHoursToTime } from '../../utils/formatters';
 import { toast } from 'react-toastify';
 import DailyOvertimeStatus from './DailyOvertimeStatus';
 import EmployeeAttendanceFallback from '../DashboardFallBack/EmployeeAttendanceFallback';
@@ -19,6 +21,7 @@ const EmployeeAttendanceView = () => {
     const [checkInStatus, setCheckInStatus] = useState({ can_check_in: false, reason: '' });
     const [showOvertimeModal, setShowOvertimeModal] = useState(false);
     const [overtimeDetails, setOvertimeDetails] = useState({ attendance_record_id: null, requested_hours: '' });
+    const [locationLoading, setLocationLoading] = useState(false);
 
     const fetchAllData = useCallback(async () => {
         try {
@@ -47,30 +50,67 @@ const EmployeeAttendanceView = () => {
     }, [fetchAllData]);
 
     const handleCheckIn = async () => {
+        setLocationLoading(true);
         try {
-            const res = await checkIn(null);
+            let latitude = null;
+            let longitude = null;
+
+            try {
+                const location = await getCurrentLocation();
+                latitude = location.latitude;
+                longitude = location.longitude;
+                toast.info(`Location acquired: ${location.accuracy}m accuracy`);
+            } catch (locationError) {
+                toast.warning(locationError.message);
+                // Continue without location - backend will handle validation
+            }
+
+            const res = await checkIn(null, latitude, longitude);
             toast.success('Checked in successfully!');
             if (res.data.status === 'late') {
                 toast.warning("You are marked as late.");
             }
+            if (res.data.location_message) {
+                toast.info(res.data.location_message);
+            }
             fetchAllData();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Check-in failed.');
+        } finally {
+            setLocationLoading(false);
         }
     };
 
     const handleCheckOut = async () => {
+        setLocationLoading(true);
         try {
-            const res = await checkOut();
+            let latitude = null;
+            let longitude = null;
+
+            try {
+                const location = await getCurrentLocation();
+                latitude = location.latitude;
+                longitude = location.longitude;
+            } catch (locationError) {
+                toast.warning(locationError.message);
+                // Continue without location - backend will handle validation
+            }
+
+            const res = await checkOut(latitude, longitude);
             if (res.status === 202) { // Overtime eligible
                 setOvertimeDetails({ ...overtimeDetails, attendance_record_id: res.data.attendance_record_id });
                 setShowOvertimeModal(true);
             } else {
                 toast.success('Checked out successfully!');
+                if (res.data.location_message) {
+                    toast.info(res.data.location_message);
+                }
                 fetchAllData();
             }
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Check-out failed.');
+        } finally {
+            setLocationLoading(false);
         }
     };
 
@@ -115,10 +155,10 @@ const EmployeeAttendanceView = () => {
                                     <Button
                                         variant="success"
                                         onClick={handleCheckIn}
-                                        disabled={!checkInStatus.can_check_in || !!todayRecord}
+                                        disabled={!checkInStatus.can_check_in || !!todayRecord || locationLoading}
                                         style={{ pointerEvents: !checkInStatus.can_check_in || !!todayRecord ? 'none' : 'auto' }}
                                     >
-                                        Check-In
+                                        {locationLoading ? <Spinner animation="border" size="sm" /> : 'Check-In'}
                                     </Button>
                                 </span>
                             </OverlayTrigger>
@@ -126,8 +166,13 @@ const EmployeeAttendanceView = () => {
                                 {!todayRecord ? "You must check in first." : (todayRecord.check_out_time ? "You have already checked out." : "Click to check out.")}
                             </Tooltip>}>
                                 <span>
-                                    <Button variant="danger" onClick={handleCheckOut} disabled={!todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time} style={{ pointerEvents: !todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time ? 'none' : 'auto' }}>
-                                        Check-Out
+                                    <Button
+                                        variant="danger"
+                                        onClick={handleCheckOut}
+                                        disabled={!todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time || locationLoading}
+                                        style={{ pointerEvents: !todayRecord || !todayRecord.check_in_time || !!todayRecord.check_out_time ? 'none' : 'auto' }}
+                                    >
+                                        {locationLoading ? <Spinner animation="border" size="sm" /> : 'Check-Out'}
                                     </Button>
                                 </span>
                             </OverlayTrigger>
@@ -148,12 +193,12 @@ const EmployeeAttendanceView = () => {
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Check-In</th>
-                                <th>Check-Out</th>
+                                <th>Check-In (HH:MM)</th>
+                                <th>Check-Out (HH:MM)</th>
                                 <th>Status</th>
                                 <th>Attendance Type</th>
-                                <th>Lateness (hrs)</th>
-                                <th>Overtime (hrs)</th>
+                                <th>Lateness (HH:MM)</th>
+                                <th>Overtime Approved (HH:MM)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -161,12 +206,12 @@ const EmployeeAttendanceView = () => {
                                 attendance.map(rec => (
                                     <tr key={rec.id}>
                                         <td>{rec.date}</td>
-                                        <td>{rec.check_in_time || 'N/A'}</td>
-                                        <td>{rec.check_out_time || 'N/A'}</td>
+                                        <td>{formatTime(rec.check_in_time)}</td>
+                                        <td>{formatTime(rec.check_out_time)}</td>
                                         <td>{renderStatus(rec.status)}</td>
                                         <td>{rec.attendance_type}</td>
-                                        <td>{rec.lateness_hours > 0 ? rec.lateness_hours.toFixed(2) : 'N/A'}</td>
-                                        <td>{rec.overtime_approved ? rec.overtime_hours.toFixed(2) : 'N/A'}</td>
+                                        <td>{formatHoursToTime(rec.lateness_hours)}</td>
+                                        <td>{rec.overtime_approved ? formatHoursToTime(rec.overtime_hours || 0) : '--'}</td>
                                     </tr>
                                 ))
                             ) : (

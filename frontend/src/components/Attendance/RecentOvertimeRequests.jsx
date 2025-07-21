@@ -3,6 +3,7 @@ import { Card, Table, Button, Spinner, Alert, Badge, OverlayTrigger, Tooltip } f
 import { getRecentOvertimeRequests, revertOvertimeRequest } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
 import { FaUndo, FaInfoCircle } from 'react-icons/fa';
+import { formatText } from '../../utils/formatters';
 
 const RecentOvertimeRequests = forwardRef((props, ref) => {
     const [requests, setRequests] = useState([]);
@@ -47,10 +48,10 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
     };
 
     const formatDateTime = (dateTime) => {
-        if (!dateTime) return 'N/A';
+        if (!dateTime) return formatText(null, 'Not available');
         return new Date(dateTime).toLocaleString();
     };
-    
+
     if (loading) return <Spinner animation="border" size="sm" />;
     if (error) return <Alert variant="danger">{error}</Alert>;
 
@@ -79,9 +80,9 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
                                         placement="left"
                                         overlay={
                                             <Tooltip id={`tooltip-${req.id}`}>
-                                                Requested: {req.requested_hours} hrs on {formatDateTime(req.requested_at)}<br/>
-                                                Reviewed by: {req.reviewed_by_username || 'N/A'}<br/>
-                                                Reviewed at: {formatDateTime(req.reviewed_at)}<br/>
+                                                Requested: {req.requested_hours} hrs on {formatDateTime(req.requested_at)}<br />
+                                                Reviewed by: {formatText(req.reviewed_by_username, 'System')}<br />
+                                                Reviewed at: {formatDateTime(req.reviewed_at)}<br />
                                                 Comment: {req.hr_comment || 'None'}
                                             </Tooltip>
                                         }

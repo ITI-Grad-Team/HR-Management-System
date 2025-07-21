@@ -13,6 +13,7 @@ from .models import (
     OvertimeRequest,
 )
 from .utils.queryset_utils import get_role_based_queryset
+from .utils.geolocation_utils import validate_attendance_location
 from .serializers import AttendanceRecordSerializer
 from .utils.overtime_utils import can_request_overtime
 from .permissions import AttendancePermission
@@ -45,7 +46,7 @@ class AttendanceRecordFilter(DjangoFilterBackend):
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
-    queryset = AttendanceRecord.objects.all().order_by('-date')
+    queryset = AttendanceRecord.objects.all().order_by("-date")
     serializer_class = AttendanceRecordSerializer
     permission_classes = [IsAuthenticated, AttendancePermission]
     pagination_class = EightPerPagePagination
@@ -205,7 +206,22 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         # Changed: Determine attendance type based on online day check
         attendance_type = "online" if is_online_day else "physical"
+
+        # Get geolocation data from request
+        employee_lat = request.data.get("latitude")
+        employee_lon = request.data.get("longitude")
+
+        # Validate geolocation for physical attendance
         if attendance_type == "physical":
+            location_valid, location_message = validate_attendance_location(
+                user, employee_lat, employee_lon
+            )
+            if not location_valid:
+                return Response(
+                    {"detail": location_message},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             mac_address_used = request.data.get("mac_address")
             # if not mac_address_used:
             #     return Response(
@@ -218,7 +234,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # Changed: Status determination based on employee's expected times
         if now < employee.expected_attend_time:
             return Response(
-                {"detail": f"You can check in after {employee.expected_attend_time.strftime('%I:%M %p')}. Try again later"},
+                {
+                    "detail": f"You can check in after {employee.expected_attend_time.strftime('%I:%M %p')}. Try again later"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if now <= grace_end:
@@ -231,7 +249,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Record creation (unchanged except using new values)
+        # Record creation with geolocation data
         record = AttendanceRecord.objects.create(
             user=user,
             date=today,
@@ -240,6 +258,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             attendance_type=attendance_type,
             status=status_val,
             mac_address=mac_address_used,
+            check_in_latitude=employee_lat,
+            check_in_longitude=employee_lon,
         )
 
         if record.status == "late" and record.lateness_hours > 0:
@@ -247,7 +267,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             employee.save(update_fields=["total_lateness_hours"])
 
         serializer = self.get_serializer(record)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response_data = serializer.data.copy()
+        if attendance_type == "physical" and location_valid:
+            response_data["location_message"] = location_message
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["patch"])
     def check_out(self, request):
@@ -268,23 +292,44 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Get geolocation data from request
+        employee_lat = request.data.get("latitude")
+        employee_lon = request.data.get("longitude")
+
+        # Validate geolocation for physical attendance
+        if record.attendance_type == "physical":
+            location_valid, location_message = validate_attendance_location(
+                request.user, employee_lat, employee_lon
+            )
+            if not location_valid:
+                return Response(
+                    {"detail": location_message},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         now_dt = timezone.localtime()
         record.check_out_time = now_dt.time()
+        record.check_out_latitude = employee_lat
+        record.check_out_longitude = employee_lon
         record.save()
 
         can_request, reason = can_request_overtime(request.user, record)
         if can_request:
-            return Response(
-                {
-                    "status": "overtime_eligible",
-                    "message": reason,
-                    "attendance_record_id": record.id,
-                },
-                status=status.HTTP_202_ACCEPTED,
-            )
+            response_data = {
+                "status": "overtime_eligible",
+                "message": reason,
+                "attendance_record_id": record.id,
+            }
+            if record.attendance_type == "physical" and location_valid:
+                response_data["location_message"] = location_message
+            return Response(response_data, status=status.HTTP_202_ACCEPTED)
 
         serializer = self.get_serializer(record)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response_data = serializer.data.copy()
+        if record.attendance_type == "physical" and location_valid:
+            response_data["location_message"] = location_message
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])
     def can_request_overtime(self, request):

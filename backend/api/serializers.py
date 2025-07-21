@@ -41,7 +41,6 @@ import string, random
 from .models import CasualLeave, EmployeeLeavePolicy
 
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -194,27 +193,30 @@ class InterviewQuestionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-
 class EmployeeForTaskSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.basicinfo.username', read_only=True)
-    phone = serializers.CharField(source='user.basicinfo.phone', read_only=True)
-    profile_image = serializers.ImageField(source='user.basicinfo.profile_image', read_only=True)
-    email = serializers.CharField(source='user.username', read_only=True)
+    username = serializers.CharField(source="user.basicinfo.username", read_only=True)
+    phone = serializers.CharField(source="user.basicinfo.phone", read_only=True)
+    profile_image = serializers.ImageField(
+        source="user.basicinfo.profile_image", read_only=True
+    )
+    email = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
         model = Employee
-        fields = ['id', 'username', 'phone', 'profile_image', 'email']
+        fields = ["id", "username", "phone", "profile_image", "email"]
+
 
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['id', 'file']
+        fields = ["id", "file"]
+
 
 class TaskSerializer(serializers.ModelSerializer):
     created_by = serializers.SerializerMethodField()
     assigned_to = serializers.SerializerMethodField()
-    files = FileSerializer(many=True, read_only=True, source='file_set')
-    
+    files = FileSerializer(many=True, read_only=True, source="file_set")
+
     class Meta:
         model = Task
         fields = "__all__"
@@ -222,25 +224,27 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_created_by(self, obj):
         return self._get_employee_data(obj.created_by)
-        
+
     def get_assigned_to(self, obj):
         return self._get_employee_data(obj.assigned_to)
-        
+
     def _get_employee_data(self, employee):
         if not employee:
             return None
-        request = self.context.get('request')
-        
+        request = self.context.get("request")
+
         profile_image = None
         if employee.user.basicinfo.profile_image:
-            profile_image = request.build_absolute_uri(employee.user.basicinfo.profile_image.url)
-        
+            profile_image = request.build_absolute_uri(
+                employee.user.basicinfo.profile_image.url
+            )
+
         return {
-            'id': employee.id,
-            'username': employee.user.basicinfo.username,
-            'phone': employee.user.basicinfo.phone,
-            'profile_image': profile_image,
-            'email': employee.user.username
+            "id": employee.id,
+            "username": employee.user.basicinfo.username,
+            "phone": employee.user.basicinfo.phone,
+            "profile_image": profile_image,
+            "email": employee.user.username,
         }
 
 
@@ -422,6 +426,10 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
             "overtime_approved",
             "overtime_request",
             "lateness_hours",
+            "check_in_latitude",
+            "check_in_longitude",
+            "check_out_latitude",
+            "check_out_longitude",
         ]
 
     def validate_overtime_hours(self, value):
@@ -499,6 +507,7 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
         model = OvertimeRequest
         fields = ["hr_comment"]
 
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.CharField(source="position.name", read_only=True)
     region = serializers.CharField(source="region.name", read_only=True)
@@ -552,7 +561,14 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ["id", "name", "distance_to_work"]
+        fields = [
+            "id",
+            "name",
+            "distance_to_work",
+            "latitude",
+            "longitude",
+            "allowed_radius_meters",
+        ]
 
 
 class EducationDegreeSerializer(serializers.ModelSerializer):
@@ -611,27 +627,29 @@ class EmployeeCVUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Years of experience cannot be negative")
         return value
 
+
 class CasualLeaveSerializer(serializers.ModelSerializer):
     employee = EmployeeListSerializer(read_only=True)
     duration = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CasualLeave
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
+        start_date = data.get("start_date")
+        end_date = data.get("end_date")
 
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError("Start date cannot be after end date.")
-        
+
         if start_date and start_date < timezone.now().date():
             raise serializers.ValidationError("Cannot request leave for a past date.")
 
         return data
 
+
 class EmployeeLeavePolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeLeavePolicy
-        fields = '__all__'
+        fields = "__all__"

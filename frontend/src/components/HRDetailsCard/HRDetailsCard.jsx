@@ -30,9 +30,12 @@ import { GiProgression } from "react-icons/gi";
 import { toast } from "react-toastify";
 import axiosInstance from "../../api/config";
 import "./HRDetailsCard.css";
+import { useNavigate } from "react-router-dom";
+
 const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
   const { basicinfo, user, id: candidateId, ...stats } = candidate;
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const handleBasicInfoUpdate = async () => {
     try {
       setLoading(true);
@@ -226,6 +229,15 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
               )}
             </div>
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
+             {isSelfView && (
+                              <button
+                                onClick={() => navigate("/dashboard/change-password/")}
+                                className="btn btn-outline-dark mt-3"
+                                
+                              >
+                                <FaEdit className="me-2"/> Change Password
+                              </button>
+                            )}
           </Col>
 
           <Col md={8}>
