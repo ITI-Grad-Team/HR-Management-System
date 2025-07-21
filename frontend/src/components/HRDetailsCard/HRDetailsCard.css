@@ -1,7 +1,3 @@
-.card h6 {
-  font-weight: 600;
-  color: #2c3e50;
-}
 .password-btn {
   width: 50px; /* Default compact width */
   transition: all 0.55s ease;

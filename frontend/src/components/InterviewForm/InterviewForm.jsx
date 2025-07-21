@@ -132,8 +132,12 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
         `/hr/employees/${candidateId}/submit-interview/`
       );
 
+      // Fetch the updated candidate data
+      const response = await axiosInstance.get(`/hr/employees/${candidateId}/`);
+
       setShowSubmitModal(false);
-      onSubmitted(); // This will trigger the parent component to reload
+      onSubmitted(response.data); // Pass the updated candidate data
+      console.log(response.data, "dgggdd");
     } catch (err) {
       setError("Failed to submit interview");
       setLoading(false);
@@ -242,7 +246,7 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
         <Button
           variant="success"
           onClick={prepareSubmitInterview}
-          disabled={loading || questions.length === 0}
+          disabled={loading}
         >
           Submit Interview
         </Button>

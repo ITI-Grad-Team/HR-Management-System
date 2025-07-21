@@ -45,6 +45,8 @@ import {
   FaStar,
   FaClock,
 } from "react-icons/fa";
+import { MdOutlineLockReset } from "react-icons/md";
+import "./EmployeeDetailsCard.css";
 import { Tooltip } from "react-bootstrap";
 import { OverlayTrigger } from "react-bootstrap";
 import Select from "react-select";
@@ -278,6 +280,7 @@ export default function CandidateDetailsCard({
       toast.success("Candidate accepted successfully");
       setShowAcceptModal(false);
       setLocalState("accepted");
+      onSchedule?.();
       // You might want to redirect or refresh data here
     } catch (err) {
       toast.error("Failed to accept candidate");
@@ -386,7 +389,7 @@ export default function CandidateDetailsCard({
 
   /* ---------------- Render Buttons ---------------- */
   const renderInterviewActions = () => {
-    if (localState === "done" && interviewer === loggedInHrId) {
+    if (candidate.interview_state === "done" && interviewer === loggedInHrId) {
       return (
         <div className="d-flex align-items-center gap-3">
           {/* Interview Rating Card */}
@@ -741,15 +744,6 @@ export default function CandidateDetailsCard({
                 </Badge>
               )}
             </div>
-            {isSelfView && (
-                  <button
-                    onClick={() => navigate("/dashboard/change-password/")}
-                    className="btn btn-dark mt-3"
-                    
-                  >
-                    <FaEdit /> Change Password
-                  </button>
-                )}
             {renderPromoteEmployeeButton()}
             {renderAssignTaskButton()}
           </Col>
@@ -787,6 +781,15 @@ export default function CandidateDetailsCard({
                   </div>
                 </Col>
               </Row>
+              {isSelfView && (
+                <button
+                  onClick={() => navigate("/dashboard/change-password/")}
+                  className="btn btn-outline-dark mt-3 password-btn"
+                >
+                  <MdOutlineLockReset className="me-2" size={24} /> Change
+                  Password
+                </button>
+              )}
             </div>
 
             {/* Education */}
@@ -943,35 +946,37 @@ export default function CandidateDetailsCard({
             </div>
 
             {/* Interview Actions */}
-            {candidate.interview_state !== "accepted" && role === "hr" && (
-              <div
-                className="p-3 rounded-3"
-                style={{ background: "rgba(248,249,250,0.8)" }}
-              >
-                <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
-                  <FaCalendarAlt className="me-2" />
-                  <span>Interview</span>
-                  {candidate.interview_datetime && (
-                    <span className="fw-semibold text-muted ms-auto">
-                      {new Date(candidate.interview_datetime).toLocaleString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </span>
-                  )}
-                </h6>
-                <div className="d-flex gap-3 flex-wrap mb-3">
-                  {renderInterviewActions()}
+            {candidate.interview_state !== "accepted" &&
+              localState !== "accepted" &&
+              role === "hr" && (
+                <div
+                  className="p-3 rounded-3"
+                  style={{ background: "rgba(248,249,250,0.8)" }}
+                >
+                  <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
+                    <FaCalendarAlt className="me-2" />
+                    <span>Interview</span>
+                    {candidate.interview_datetime && (
+                      <span className="fw-semibold text-muted ms-auto">
+                        {new Date(candidate.interview_datetime).toLocaleString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    )}
+                  </h6>
+                  <div className="d-flex gap-3 flex-wrap mb-3">
+                    {renderInterviewActions()}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {candidate.interview_state === "accepted" && (
+            {localState === "accepted" && (
               <div
                 className="mb-4 p-3 rounded-3"
                 style={{ background: "rgba(248,249,250,0.8)" }}
