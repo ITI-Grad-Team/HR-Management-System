@@ -19,6 +19,12 @@ from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from rest_framework.pagination import PageNumberPagination
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from rest_framework.views import APIView
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_decode
 
 User = get_user_model()
 
@@ -2314,3 +2320,79 @@ class BasicInfoViewSet(ViewSet):
                 {"detail": "BasicInfo not found for this user."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+import jwt
+from datetime import datetime, timedelta
+from django.conf import settings
+
+def generate_reset_token(user):
+    payload = {
+        'user_id': user.id,
+        'exp': datetime.utcnow() + timedelta(minutes=120),
+        'type': 'password_reset',
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(username=email)  # لو بتستخدم username=email
+
+            token = generate_reset_token(user)
+            reset_link = f"http://localhost:5173/reset-password?token={token}"
+
+            send_mail(
+                subject="Reset Your Password",
+                message=f"Click the link to reset your password:\n{reset_link}",
+                from_email="noreply@example.com",
+                recipient_list=[email],
+            )
+
+            return Response({"message": "Password reset link sent."})
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
+
+class ResetPasswordView(APIView):
+    def post(self, request):
+        token = request.data.get("token")
+        password = request.data.get("password")
+
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
+            if payload.get("type") != "password_reset":
+                return Response({"error": "Invalid token type."}, status=400)
+
+            user = User.objects.get(id=payload["user_id"])
+            user.set_password(password)
+            user.save()
+
+            return Response({"message": "Password reset successfully."})
+        except jwt.ExpiredSignatureError:
+            return Response({"error": "Token expired."}, status=400)
+        except jwt.InvalidTokenError:
+            return Response({"error": "Invalid token."}, status=400)
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        old_password = request.data.get("old_password")
+        new_password = request.data.get("new_password")
+
+        if not old_password or not new_password:
+            return Response({"detail": "Both old and new passwords are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.check_password(old_password):
+            return Response({"detail": "Incorrect current password."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+        return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
