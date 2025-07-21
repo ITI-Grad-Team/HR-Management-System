@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { act, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -59,6 +59,20 @@ const Employees = () => {
   });
 
   const [activeTab, setActiveTab] = useState("employees");
+
+
+  useEffect(() => {
+    if (activeTab === "employees") {
+      document.title = "Employees | HERA";
+    }
+    else if (activeTab === "hrs") {
+      document.title = "HRs | HERA";
+    }
+    else{
+      document.title = "Candidates | HERA";
+    }
+      
+    }, [activeTab]);
 
   // Fetch filter options
   const fetchFilterOptions = async () => {

@@ -90,6 +90,10 @@ const Payroll = () => {
   };
 
   useEffect(() => {
+      document.title = "Payroll | HERA";
+    }, []);
+
+  useEffect(() => {
     fetchRecords();
   }, []);
 

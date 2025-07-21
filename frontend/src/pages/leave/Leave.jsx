@@ -1,9 +1,14 @@
 import EmployeeLeaveView from '../../components/Leave/EmployeeLeaveView';
 import AdminLeaveView from '../../components/Leave/AdminLeaveView';
 import { useAuth } from '../../hooks/useAuth';
+import { useEffect } from 'react';
 
 const Leave = () => {
     const { user } = useAuth();
+
+    useEffect(() => {
+        document.title = "Casual Leave | HERA";
+      }, []);
 
     if (!user) {
         return <div>Loading...</div>;
