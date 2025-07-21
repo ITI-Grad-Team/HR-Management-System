@@ -7,7 +7,7 @@ import {
     rejectOvertimeRequest,
 } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
-import { formatTime, formatNumber } from '../../utils/formatters';
+import { formatTime, formatHoursToTime } from '../../utils/formatters';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
 import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
@@ -99,7 +99,7 @@ const AdminAttendanceView = () => {
             toast.error(err.response?.data?.detail || 'Approval failed.');
         }
     };
-    
+
     const handleReject = (request) => {
         setSelectedRequest(request);
         setShowRejectModal(true);
@@ -134,7 +134,7 @@ const AdminAttendanceView = () => {
         return <span className={`badge bg-${variants[status]}`}>{status}</span>;
     };
 
-    const totalPages = Math.ceil(attendance.count / 8); 
+    const totalPages = Math.ceil(attendance.count / 8);
 
     if (loading && !attendance.results.length) return <AdminAttendanceFallback />;
     if (error) return <Alert variant="danger">{error}</Alert>;
@@ -175,13 +175,13 @@ const AdminAttendanceView = () => {
                     </Card>
                 </Col>
                 <Col xl={5}>
-                    <RecentOvertimeRequests ref={recentRequestsRef} onRevert={handleRevert}/>
+                    <RecentOvertimeRequests ref={recentRequestsRef} onRevert={handleRevert} />
                 </Col>
             </Row>
 
 
             <Card className="attendance-card shadow-sm mt-4">
-                <Card.Header  className="bg-light"><h5 className="mb-0">All Attendance Records</h5></Card.Header>
+                <Card.Header className="bg-light"><h5 className="mb-0">All Attendance Records</h5></Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleFilterSubmit} className="mb-3">
                         <Row className="g-2">
@@ -206,12 +206,14 @@ const AdminAttendanceView = () => {
                                 <th>Check-Out</th>
                                 <th>Status</th>
                                 <th>Attendance Type</th>
-                                <th>Overtime (hrs)</th>
+                                <th>Lateness</th>
+                                 <th>Overtime (hrs)</th>
+                                <th>Overtime Approved</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading && attendance.results.length === 0 ? (
-                                <tr><td colSpan="7" className="text-center"><Spinner /></td></tr>
+                                <tr><td colSpan="8" className="text-center"><Spinner /></td></tr>
                             ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
@@ -220,13 +222,14 @@ const AdminAttendanceView = () => {
                                     <td>{formatTime(rec.check_out_time)}</td>
                                     <td>{renderStatus(rec.status)}</td>
                                     <td>{rec.attendance_type}</td>
-                                    <td>{rec.overtime_approved ? formatNumber(rec.overtime_hours, '0') + ' hrs' : '--'}</td>
+                                    <td>{rec.lateness_hours > 0 ? formatHoursToTime(rec.lateness_hours) : '--'}</td>
+                                    <td>{rec.overtime_approved ? formatHoursToTime(rec.overtime_hours || 0) : '--'}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </Table>
                     <div className="d-flex justify-content-center">
-                        <Pagination 
+                        <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
@@ -234,7 +237,7 @@ const AdminAttendanceView = () => {
                     </div>
                 </Card.Body>
             </Card>
-            
+
             <Modal show={showApproveModal} onHide={() => setShowApproveModal(false)}>
                 <Modal.Header closeButton>
                     <Modal.Title>Approve Overtime Request</Modal.Title>
@@ -244,10 +247,10 @@ const AdminAttendanceView = () => {
                         <p>Approving request for <strong>{selectedRequest?.user}</strong> on {selectedRequest?.date}.</p>
                         <Form.Group>
                             <Form.Label>Comment (optional)</Form.Label>
-                            <Form.Control 
-                                as="textarea" 
-                                rows={3} 
-                                value={hrComment} 
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                value={hrComment}
                                 onChange={(e) => setHrComment(e.target.value)}
                                 placeholder="Enter comment"
                             />
@@ -269,10 +272,10 @@ const AdminAttendanceView = () => {
                         <p>Rejecting request for <strong>{selectedRequest?.user}</strong> on {selectedRequest?.date}.</p>
                         <Form.Group>
                             <Form.Label>Reason (optional)</Form.Label>
-                            <Form.Control 
-                                as="textarea" 
-                                rows={3} 
-                                value={hrComment} 
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                value={hrComment}
                                 onChange={(e) => setHrComment(e.target.value)}
                                 placeholder="Enter rejection reason"
                             />

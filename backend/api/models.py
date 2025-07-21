@@ -56,8 +56,10 @@ class AttendanceRecord(models.Model):
             if expected_time:
                 check_in_dt = datetime.datetime.combine(self.date, self.check_in_time)
                 expected_dt = datetime.datetime.combine(self.date, expected_time)
-                grace_dt = expected_dt + datetime.timedelta(minutes=15)  # 15-minute grace period
-                
+                grace_dt = expected_dt + datetime.timedelta(
+                    minutes=15
+                )  # 15-minute grace period
+
                 # Only calculate lateness if check-in is after grace period
                 if check_in_dt > grace_dt:
                     lateness_seconds = (check_in_dt - grace_dt).total_seconds()

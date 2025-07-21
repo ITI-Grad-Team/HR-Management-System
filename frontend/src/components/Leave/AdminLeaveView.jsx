@@ -69,7 +69,7 @@ const AdminLeaveView = () => {
 
     const pendingRequests = requests.results?.filter(req => req.status === 'pending') || [];
     const otherRequests = requests.results?.filter(req => req.status !== 'pending') || [];
-    
+
 
     if (loading) return <Spinner animation="border" />;
     if (error) return <Alert variant="danger">{error}</Alert>;

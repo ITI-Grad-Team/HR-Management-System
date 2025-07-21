@@ -22,7 +22,7 @@ import SettingsFallback from "../DashboardFallBack/SettingsFallback";
 export default function HrSettings() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  
+
   /* ----------------------------- STATE -------------------------------- */
   const [positions, setPositions] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -172,21 +172,21 @@ export default function HrSettings() {
 
   const handleSaveLocation = async () => {
     if (!selectedRegion) return;
-    
+
     setLocationLoading(true);
     try {
       const updateFunction = isAdmin ? updateRegionLocationAdmin : updateRegionLocation;
       const response = await updateFunction(selectedRegion.id, locationSettings);
-      
+
       // Update the region in the local state
-      setRegions(prev => 
-        prev.map(region => 
-          region.id === selectedRegion.id 
+      setRegions(prev =>
+        prev.map(region =>
+          region.id === selectedRegion.id
             ? { ...region, ...response.data }
             : region
         )
       );
-      
+
       setShowLocationModal(false);
       showToast("Location settings updated successfully");
     } catch (error) {

@@ -63,19 +63,19 @@ const Payroll = () => {
     if (details.attendance_bonus > 0) {
       bonusItems.push(`Attendance Bonus: $${details.attendance_bonus.toFixed(2)}`);
     }
-    
-    return bonusItems.length > 0 
-      ? bonusItems.join('\n') 
+
+    return bonusItems.length > 0
+      ? bonusItems.join('\n')
       : 'No bonus components';
   };
 
   const getDeductionsTooltip = (details) => {
     const deductionItems = [];
-    if (details.lateness_penalty > 0) {
-      deductionItems.push(`Lateness Penalty: $${details.lateness_penalty.toFixed(2)}`);
+    if (details.total_late_penalty > 0) {
+      deductionItems.push(`Lateness Penalty: $${details.total_late_penalty.toFixed(2)}`);
     }
-    if (details.absence_penalty > 0) {
-      deductionItems.push(`Absence Penalty: $${details.absence_penalty.toFixed(2)}`);
+    if (details.total_absence_penalty > 0) {
+      deductionItems.push(`Absence Penalty: $${details.total_absence_penalty.toFixed(2)}`);
     }
     if (details.tax_deduction > 0) {
       deductionItems.push(`Tax: $${details.tax_deduction.toFixed(2)}`);
@@ -83,9 +83,9 @@ const Payroll = () => {
     if (details.insurance_deduction > 0) {
       deductionItems.push(`Insurance: $${details.insurance_deduction.toFixed(2)}`);
     }
-    
-    return deductionItems.length > 0 
-      ? deductionItems.join('\n') 
+
+    return deductionItems.length > 0
+      ? deductionItems.join('\n')
       : 'No deductions applied';
   };
 
