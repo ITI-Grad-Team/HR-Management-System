@@ -101,6 +101,7 @@ export default function CandidateDetails() {
             onPredictUpdate={handlePredictUpdate}
             loadingProp={loadingForm}
             onPromote={handlePromote}
+            isSelfView={isSelfView}
           />
         </Col>
 

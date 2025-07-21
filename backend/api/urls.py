@@ -21,7 +21,7 @@ from .views import (
     AdminViewApplicationLinksViewSet,
     AdminManageRegionsViewSet,
     AdminManageEducationDegreesViewSet,
-    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,
+    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,BasicInfoViewSet,
     HRManageRegionsViewSet,
     HRManageEducationDegreesViewSet,AdminViewTopViewSet,
     HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet,AdminRankViewSet
@@ -121,6 +121,10 @@ router.register(r'admin/top', AdminViewTopViewSet, basename='admin-top-employees
 # Employee
 router.register(r"tasks", TaskViewSet, basename="tasks")
 
+#Both
+router.register(r'basic-info', BasicInfoViewSet, basename='basic-info')
+
+
 # Attendance & Salary
 router.register(r"attendance", AttendanceViewSet, basename="attendance")
 router.register(
@@ -133,5 +137,6 @@ urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path('basic-info/', BasicInfoViewSet.as_view({'patch': 'partial_update'}), name='basic-info'),
 ]
 

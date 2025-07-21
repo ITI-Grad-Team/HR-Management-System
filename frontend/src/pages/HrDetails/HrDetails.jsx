@@ -72,6 +72,7 @@ export default function HRDetails() {
             loggedInHrId={user.hr?.id}
             onSchedule={fetchHR}
             loadingProp={loading}
+            isSelfView={user.hr?.id === parseInt(id)}
           />
         </Col>
       </Row>

@@ -62,6 +62,7 @@ export default function CandidateDetailsCard({
   loadingProp,
   onPredictUpdate,
   onPromote,
+  isSelfView,
 }) {
   const navigate = useNavigate();
   const {
@@ -124,25 +125,46 @@ export default function CandidateDetailsCard({
   const [allEducationFields, setAllEducationFields] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
 
+  const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
+  const [basicInfoFormData, setBasicInfoFormData] = useState({
+    profile_image: null,
+    username: "",
+    phone: "",
+  });
+
+  useEffect(() => {
+    if (showBasicInfoModal && basicinfo) {
+      setBasicInfoFormData({
+        profile_image: null, // Will handle file separately
+        username: basicinfo.username || "",
+        phone: basicinfo.phone || "",
+      });
+    }
+  }, [showBasicInfoModal, basicinfo]);
+
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
@@ -288,68 +310,69 @@ export default function CandidateDetailsCard({
   };
 
   const handleHolidayWeekdayToggle = (day) => {
-  setFormData((prev) => {
-    const newWeekdays = prev.holiday_weekdays.includes(day)
-      ? prev.holiday_weekdays.filter((d) => d !== day)
-      : [...prev.holiday_weekdays, day];
-    return { ...prev, holiday_weekdays: newWeekdays };
-  });
-};
+    setFormData((prev) => {
+      const newWeekdays = prev.holiday_weekdays.includes(day)
+        ? prev.holiday_weekdays.filter((d) => d !== day)
+        : [...prev.holiday_weekdays, day];
+      return { ...prev, holiday_weekdays: newWeekdays };
+    });
+  };
 
-const handleHolidayYeardayChange = (index, field, value) => {
-  setFormData((prev) => {
-    const newYeardays = [...prev.holiday_yeardays];
-    newYeardays[index] = { ...newYeardays[index], [field]: value };
-    return { ...prev, holiday_yeardays: newYeardays };
-  });
-};
+  const handleHolidayYeardayChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newYeardays = [...prev.holiday_yeardays];
+      newYeardays[index] = { ...newYeardays[index], [field]: value };
+      return { ...prev, holiday_yeardays: newYeardays };
+    });
+  };
 
-const addHolidayYearday = () => {
-  setFormData((prev) => ({
-    ...prev,
-    holiday_yeardays: [...prev.holiday_yeardays, { month: "", day: "" }],
-  }));
-};
+  const addHolidayYearday = () => {
+    setFormData((prev) => ({
+      ...prev,
+      holiday_yeardays: [...prev.holiday_yeardays, { month: "", day: "" }],
+    }));
+  };
 
-const removeHolidayYearday = (index) => {
-  setFormData((prev) => ({
-    ...prev,
-    holiday_yeardays: prev.holiday_yeardays.filter((_, i) => i !== index),
-  }));
-};
+  const removeHolidayYearday = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      holiday_yeardays: prev.holiday_yeardays.filter((_, i) => i !== index),
+    }));
+  };
 
+  const handleOnlineWeekdayToggle = (day) => {
+    setFormData((prev) => {
+      const newOnlineWeekdays = prev.online_weekdays.includes(day)
+        ? prev.online_weekdays.filter((d) => d !== day)
+        : [...prev.online_weekdays, day];
+      return { ...prev, online_weekdays: newOnlineWeekdays };
+    });
+  };
 
-const handleOnlineWeekdayToggle = (day) => {
-  setFormData((prev) => {
-    const newOnlineWeekdays = prev.online_weekdays.includes(day)
-      ? prev.online_weekdays.filter((d) => d !== day)
-      : [...prev.online_weekdays, day];
-    return { ...prev, online_weekdays: newOnlineWeekdays };
-  });
-};
+  const handleOnlineYeardayChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newOnlineYeardays = [...prev.online_yeardays];
+      newOnlineYeardays[index] = {
+        ...newOnlineYeardays[index],
+        [field]: value,
+      };
+      return { ...prev, online_yeardays: newOnlineYeardays };
+    });
+  };
 
-const handleOnlineYeardayChange = (index, field, value) => {
-  setFormData((prev) => {
-    const newOnlineYeardays = [...prev.online_yeardays];
-    newOnlineYeardays[index] = { ...newOnlineYeardays[index], [field]: value };
-    return { ...prev, online_yeardays: newOnlineYeardays };
-  });
-};
+  const addOnlineYearday = () => {
+    setFormData((prev) => ({
+      ...prev,
+      online_yeardays: [...prev.online_yeardays, { month: "", day: "" }],
+    }));
+  };
 
-const addOnlineYearday = () => {
-  setFormData((prev) => ({
-    ...prev,
-    online_yeardays: [...prev.online_yeardays, { month: "", day: "" }],
-  }));
-};
-
-const removeOnlineYearday = (index) => {
-  setFormData((prev) => ({
-    ...prev,
-    online_yeardays: prev.online_yeardays.filter((_, i) => i !== index),
-  }));
-};
-
+  const removeOnlineYearday = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      online_yeardays: prev.online_yeardays.filter((_, i) => i !== index),
+    }));
+  };
 
   const weekdays = [
     { label: "Sunday", value: "Sunday" },
@@ -456,6 +479,41 @@ const removeOnlineYearday = (index) => {
     );
   };
 
+  ///
+  const handleBasicInfoUpdate = async () => {
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      if (basicInfoFormData.profile_image) {
+        formData.append("profile_image", basicInfoFormData.profile_image);
+      }
+      if (basicInfoFormData.username !== basicinfo.username) {
+        formData.append("username", basicInfoFormData.username);
+      }
+      if (basicInfoFormData.phone !== basicinfo.phone) {
+        formData.append("phone", basicInfoFormData.phone);
+      }
+
+      const response = await axiosInstance.patch("/basic-info/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Profile updated successfully");
+      setShowBasicInfoModal(false);
+      onPredictUpdate?.();
+      // You'll need to refresh the user data here or update the parent state
+    } catch (error) {
+      toast.error(
+        error.response?.data?.username?.[0] || "Failed to update profile"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePromoteEmployee = async () => {
     try {
       setLoading(true);
@@ -519,7 +577,8 @@ const removeOnlineYearday = (index) => {
         setPredictError(err.response.data.error);
         if (err.response.data.missing_fields) {
           setPredictError(
-            `${err.response.data.error
+            `${
+              err.response.data.error
             }: ${err.response.data.missing_fields.join(", ")}`
           );
         }
@@ -558,7 +617,8 @@ const removeOnlineYearday = (index) => {
       };
 
       const response = await axiosInstance.patch(
-        `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        `/${
+          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
         }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
@@ -633,26 +693,33 @@ const removeOnlineYearday = (index) => {
             className="text-center d-flex flex-column align-items-center"
           >
             <div className="position-relative mb-3">
-              <img
-                src={basicinfo?.profile_image}
-                alt="avatar"
-                className="rounded-circle shadow"
-                style={{
-                  width: "200px",
-                  height: "200px",
-                  objectFit: "cover",
-                  border: "3px solid #fff",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                }}
-              />
-              {percentage_of_matching_skills > 70 && (
-                <div
-                  className="position-absolute top-0 end-0 bg-success rounded-circle p-1"
-                  style={{ transform: "translate(10%, -10%)" }}
-                >
-                  <FaCheck className="text-white" size={12} />
-                </div>
-              )}
+              <div className="position-relative mb-3">
+                <img
+                  src={basicinfo?.profile_image}
+                  alt="avatar"
+                  className="rounded-circle shadow"
+                  style={{
+                    width: "200px",
+                    height: "200px",
+                    objectFit: "cover",
+                    border: "3px solid #fff",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  }}
+                />
+                {isSelfView && (
+                  <button
+                    onClick={() => setShowBasicInfoModal(true)}
+                    className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 border-0"
+                    style={{
+                      transform: "translate(-10%, -10%)",
+                      width: "40px",
+                      height: "40px",
+                    }}
+                  >
+                    <FaEdit />
+                  </button>
+                )}
+              </div>
             </div>
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
             <p className="text-muted mb-2">{position}</p>
@@ -726,8 +793,8 @@ const removeOnlineYearday = (index) => {
                   {has_position_related_high_education
                     ? "✓"
                     : has_position_related_high_education === false
-                      ? "✗"
-                      : "❔"}
+                    ? "✗"
+                    : "❔"}
                 </span>
               </h6>
               <div>
@@ -1175,12 +1242,13 @@ const removeOnlineYearday = (index) => {
                               return (
                                 <div key={day} className="text-center">
                                   <div
-                                    className={`rounded-circle p-2 ${isHoliday
-                                      ? "bg-warning text-white"
-                                      : isOnline
+                                    className={`rounded-circle p-2 ${
+                                      isHoliday
+                                        ? "bg-warning text-white"
+                                        : isOnline
                                         ? "bg-info text-white"
                                         : "bg-light"
-                                      }`}
+                                    }`}
                                     style={{
                                       width: "32px",
                                       height: "32px",
@@ -1997,6 +2065,75 @@ const removeOnlineYearday = (index) => {
             ) : (
               "Assign Task"
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        show={showBasicInfoModal}
+        onHide={() => setShowBasicInfoModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Profile Information</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Profile Image</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    profile_image: e.target.files[0],
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                value={basicInfoFormData.username}
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    username: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Phone Number</Form.Label>
+              <Form.Control
+                type="tel"
+                value={basicInfoFormData.phone}
+                onChange={(e) =>
+                  setBasicInfoFormData({
+                    ...basicInfoFormData,
+                    phone: e.target.value,
+                  })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowBasicInfoModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleBasicInfoUpdate}
+            disabled={loading}
+          >
+            {loading ? <Spinner size="sm" /> : "Save Changes"}
           </Button>
         </Modal.Footer>
       </Modal>
