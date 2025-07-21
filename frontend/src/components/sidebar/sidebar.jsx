@@ -7,7 +7,7 @@ import {
   FaCalendarCheck,
   FaSuitcase,
   FaMoneyBillWave,
-  FaChartBar,
+  FaTasks,
   FaCog,
   FaUserCircle,
   FaSignOutAlt,
@@ -127,7 +127,7 @@ export default function Sidebar() {
               <FaSuitcase /> <span>Casual Leave</span>
             </Nav.Link>
             <Nav.Link as={Link} to="/dashboard/tasks" className={pathname.startsWith("/dashboard/tasks") ? "active" : ""}>
-              <FaCalendarCheck /> <span>Tasks</span>
+              <FaTasks /> <span>Tasks</span>
             </Nav.Link>
           </Nav>
           <div className="spacer" />

@@ -1426,7 +1426,7 @@ class TaskViewSet(ModelViewSet):
         tasks = Task.objects.filter(created_by=request.user.employee).select_related(
             'created_by__user__basicinfo',
             'assigned_to__user__basicinfo'
-        ).prefetch_related('file_set')
+        ).prefetch_related('file_set').order_by('deadline')
         return self.paginated_response(tasks)  # Use helper method
 
     @action(detail=False, methods=["get"])
@@ -1434,7 +1434,7 @@ class TaskViewSet(ModelViewSet):
         tasks = Task.objects.filter(assigned_to=request.user.employee).select_related(
             'created_by__user__basicinfo',
             'assigned_to__user__basicinfo'
-        ).prefetch_related('file_set')
+        ).prefetch_related('file_set').order_by('deadline')
         return self.paginated_response(tasks)  # Use helper method
 
     # Helper method to avoid duplication
