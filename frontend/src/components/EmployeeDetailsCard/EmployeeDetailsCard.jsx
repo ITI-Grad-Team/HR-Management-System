@@ -135,6 +135,10 @@ export default function CandidateDetailsCard({
   });
 
   useEffect(() => {
+    document.title = `${candidate.basicinfo.username} | HERA`;
+    })
+
+  useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
       setBasicInfoFormData({
         profile_image: null, // Will handle file separately

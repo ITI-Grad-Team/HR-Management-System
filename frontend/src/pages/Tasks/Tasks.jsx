@@ -3,11 +3,16 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
 import CoordinatorTasksAccordion from "../../components/Tasks/CoordinatorTasksAccordion";
 import EmployeeTasksAccordion from "../../components/Tasks/EmployeeTasksAccordion";
+import { useEffect } from "react";
 
 const Tasks = () => {
   const { user } = useAuth();
   const isEmployee = user?.role === "employee";
   const isCoordinator = isEmployee && user?.employee?.is_coordinator === true;
+
+  useEffect(() => {
+    document.title = "Tasks | HERA";
+  }, []);
 
   return (
     <Container className="py-4">

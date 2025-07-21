@@ -1,4 +1,4 @@
-import React, { act, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../api/config.js";
 import BioCard from "../../components/BioCard/BioCard.jsx";
@@ -7,9 +7,9 @@ import { toast } from "react-toastify";
 import EmployeesFallBack from "../../components/DashboardFallBack/EmployeesFallBack.jsx";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import "./employees.css";
-import { FaUserPlus } from "react-icons/fa";
-import { Button, Modal, Form, Spinner } from "react-bootstrap";
+import { Button, Form, Spinner, Modal } from "react-bootstrap";
 import { useAuth } from "../../hooks/useAuth.js";
+import { FaUserPlus } from "react-icons/fa";
 
 const Employees = () => {
   const { user } = useAuth();
@@ -32,6 +32,9 @@ const Employees = () => {
   const [hrs, setHrs] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [candidates, setCandidates] = useState([]);
+  const [showInviteHrModal, setShowInviteHrModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loadingInviteHr, setLoadingInviteHr] = useState(false);
 
   // Enhanced pagination states
   const [hrsPagination, setHrsPagination] = useState({
@@ -60,19 +63,15 @@ const Employees = () => {
 
   const [activeTab, setActiveTab] = useState("employees");
 
-
   useEffect(() => {
     if (activeTab === "employees") {
       document.title = "Employees | HERA";
-    }
-    else if (activeTab === "hrs") {
+    } else if (activeTab === "hrs") {
       document.title = "HRs | HERA";
-    }
-    else{
+    } else {
       document.title = "Candidates | HERA";
     }
-      
-    }, [activeTab]);
+  }, [activeTab]);
 
   // Fetch filter options
   const fetchFilterOptions = async () => {
@@ -143,8 +142,8 @@ const Employees = () => {
         role === "admin"
           ? `/admin/employees/?interview_state=accepted&page=${page}${queryString}`
           : role === "hr"
-            ? `/hr/employees/?interview_state=accepted&page=${page}${queryString}`
-            : `/coordinator/employees/?page=${page}`;
+          ? `/hr/employees/?interview_state=accepted&page=${page}${queryString}`
+          : `/coordinator/employees/?page=${page}`;
 
       console.log(endpoint);
 
@@ -201,14 +200,6 @@ const Employees = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const applyFilters = () => {
-    if (activeTab === "employees") {
-      fetchEmployees(1);
-    } else if (activeTab === "candidates") {
-      fetchCandidates(1);
-    }
   };
 
   const resetFilters = () => {
@@ -344,7 +335,33 @@ const Employees = () => {
     return null;
   };
 
+
+   const handleInviteHr = () => setShowInviteHrModal(true);
+
+  const handleInvitaionSubmit = async (e) => {
+    e.preventDefault();
+    setLoadingInviteHr(true);
+
+    if (!email.trim()) {
+  toast.error("Please enter an email address");
+  setLoadingInviteHr(false);
+  return;
+}
+
+    try{
+      await axiosInstance.post(`/admin/invite-hr/`, { email });
+      toast.success("HR Invited Successfully");
+      setShowInviteHrModal(false);
+      setEmail("");
+    } catch (err) {
+      toast.error(err.response.data.error);
+    } finally {
+      setLoadingInviteHr(false);
+    }  
+  };
+
   return (
+    <>
     <div className="employees-page">
       {/* Tabs for navigation between sections */}
       {(role === "admin" || role === "hr" || isCoordinator) && (
@@ -363,8 +380,9 @@ const Employees = () => {
             {(role === "admin" || role === "hr" || isCoordinator) && (
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "employees" ? "active" : ""
-                    }`}
+                  className={`nav-link ${
+                    activeTab === "employees" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("employees")}
                 >
                   Employees
@@ -374,8 +392,9 @@ const Employees = () => {
             {(role === "admin" || role === "hr") && (
               <li className="nav-item">
                 <button
-                  className={`nav-link ${activeTab === "candidates" ? "active" : ""
-                    }`}
+                  className={`nav-link ${
+                    activeTab === "candidates" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("candidates")}
                 >
                   Candidates
@@ -391,7 +410,13 @@ const Employees = () => {
 
       {/* HR Section (only for admin) */}
       {role === "admin" && activeTab === "hrs" && (
-        <SectionBlock title="HRs">
+        <>
+        <div className="d-flex justify-content-end mb-3">
+            <button className="btn btn-outline-primary d-flex align-items-center" onClick={handleInviteHr}>
+            <FaUserPlus className="me-2"/> Invite HR
+            </button>
+          </div>
+        <SectionBlock>
           {loading ? (
             <EmployeesFallBack />
           ) : hrs.length === 0 ? (
@@ -410,7 +435,9 @@ const Employees = () => {
                         name={hr.basic_info?.username}
                         email={hr.user?.username}
                         phone={hr.basic_info?.phone}
-                        avatar={hr.basic_info?.profile_image_url || "/default.jpg"}
+                        avatar={
+                          hr.basic_info?.profile_image_url || "/default.jpg"
+                        }
                         role={hr.basic_info?.role}
                       />
                     </Link>
@@ -428,6 +455,7 @@ const Employees = () => {
             </>
           )}
         </SectionBlock>
+        </>
       )}
 
       {/* Employees Section */}
@@ -453,7 +481,8 @@ const Employees = () => {
                           email={employee.user?.username}
                           phone={employee.basic_info?.phone}
                           avatar={
-                            employee.basic_info?.profile_image_url || "/default.jpg"
+                            employee.basic_info?.profile_image_url ||
+                            "/default.jpg"
                           }
                           department={employee.position}
                           location={employee.region}
@@ -502,7 +531,8 @@ const Employees = () => {
                         email={candidate.user?.username}
                         phone={candidate.basic_info?.phone}
                         avatar={
-                          candidate.basic_info?.profile_image_url || "/default.jpg"
+                          candidate.basic_info?.profile_image_url ||
+                          "/default.jpg"
                         }
                         department={candidate.position}
                         location={candidate.region}
@@ -529,6 +559,41 @@ const Employees = () => {
         </SectionBlock>
       )}
     </div>
+
+    <Modal
+  show={showInviteHrModal}
+  onHide={() => setShowInviteHrModal(false)}
+  centered
+  backdrop="static"
+  keyboard={false}
+>
+  <Modal.Header closeButton>
+    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
+  </Modal.Header>
+
+  <Modal.Body>
+    <form onSubmit={handleInvitaionSubmit}>
+      <Form.Group controlId="email" className="mb-3">
+        <Form.Label className="fw-semibold">Email Address</Form.Label>
+        <Form.Control
+          type="email"
+          placeholder="Enter HR email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="py-2 px-3 rounded-3 shadow-sm border-1"
+        />
+      </Form.Group>
+
+      <div className="d-flex justify-content-end">
+        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
+          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
+          Send Invitation
+        </Button>
+      </div>
+    </form>
+  </Modal.Body>
+</Modal>
+    </>
   );
 };
 

@@ -75,6 +75,10 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
     username: "",
     phone: "",
   });
+
+  useEffect(() => {
+    document.title = `${basicinfo?.username} | HERA`;
+  })
   useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
       setBasicInfoFormData({

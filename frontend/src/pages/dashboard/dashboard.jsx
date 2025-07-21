@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from "../../components/sidebar/sidebar.jsx";
 import HeaderBar from "../../components/headerBar/headerBar";
 import { Outlet } from "react-router-dom";
@@ -6,6 +6,7 @@ import { Outlet } from "react-router-dom";
 import { Container } from "react-bootstrap";
 
 export default function DashboardPage() {
+
   return (
     <div className="d-flex">
       <Sidebar />
