@@ -744,15 +744,6 @@ export default function CandidateDetailsCard({
                 </Badge>
               )}
             </div>
-            {isSelfView && (
-                  <button
-                    onClick={() => navigate("/dashboard/change-password/")}
-                    className="btn btn-dark mt-3"
-                    
-                  >
-                    <FaEdit /> Change Password
-                  </button>
-                )}
             {renderPromoteEmployeeButton()}
             {renderAssignTaskButton()}
           </Col>
