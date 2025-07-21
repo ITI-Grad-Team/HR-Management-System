@@ -104,8 +104,10 @@ export default function CandidateDetailsCard({
     absence_penalty: "",
     expected_attend_time: "09:00",
     expected_leave_time: "17:00",
-    weekdays: [],
-    yeardays: [{ month: "", day: "" }],
+    holiday_weekdays: [],
+    holiday_yeardays: [{ month: "", day: "" }],
+    online_weekdays: [],
+    online_yeardays: [{ month: "", day: "" }],
   });
   const [predictLoading, setPredictLoading] = useState(false);
   const [predictError, setPredictError] = useState(null);
@@ -285,36 +287,69 @@ export default function CandidateDetailsCard({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleWeekdayToggle = (day) => {
-    setFormData((prev) => {
-      const newWeekdays = prev.weekdays.includes(day)
-        ? prev.weekdays.filter((d) => d !== day)
-        : [...prev.weekdays, day];
-      return { ...prev, weekdays: newWeekdays };
-    });
-  };
+  const handleHolidayWeekdayToggle = (day) => {
+  setFormData((prev) => {
+    const newWeekdays = prev.holiday_weekdays.includes(day)
+      ? prev.holiday_weekdays.filter((d) => d !== day)
+      : [...prev.holiday_weekdays, day];
+    return { ...prev, holiday_weekdays: newWeekdays };
+  });
+};
 
-  const handleYeardayChange = (index, field, value) => {
-    setFormData((prev) => {
-      const newYeardays = [...prev.yeardays];
-      newYeardays[index] = { ...newYeardays[index], [field]: value };
-      return { ...prev, yeardays: newYeardays };
-    });
-  };
+const handleHolidayYeardayChange = (index, field, value) => {
+  setFormData((prev) => {
+    const newYeardays = [...prev.holiday_yeardays];
+    newYeardays[index] = { ...newYeardays[index], [field]: value };
+    return { ...prev, holiday_yeardays: newYeardays };
+  });
+};
 
-  const addYearday = () => {
-    setFormData((prev) => ({
-      ...prev,
-      yeardays: [...prev.yeardays, { month: "", day: "" }],
-    }));
-  };
+const addHolidayYearday = () => {
+  setFormData((prev) => ({
+    ...prev,
+    holiday_yeardays: [...prev.holiday_yeardays, { month: "", day: "" }],
+  }));
+};
 
-  const removeYearday = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      yeardays: prev.yeardays.filter((_, i) => i !== index),
-    }));
-  };
+const removeHolidayYearday = (index) => {
+  setFormData((prev) => ({
+    ...prev,
+    holiday_yeardays: prev.holiday_yeardays.filter((_, i) => i !== index),
+  }));
+};
+
+
+const handleOnlineWeekdayToggle = (day) => {
+  setFormData((prev) => {
+    const newOnlineWeekdays = prev.online_weekdays.includes(day)
+      ? prev.online_weekdays.filter((d) => d !== day)
+      : [...prev.online_weekdays, day];
+    return { ...prev, online_weekdays: newOnlineWeekdays };
+  });
+};
+
+const handleOnlineYeardayChange = (index, field, value) => {
+  setFormData((prev) => {
+    const newOnlineYeardays = [...prev.online_yeardays];
+    newOnlineYeardays[index] = { ...newOnlineYeardays[index], [field]: value };
+    return { ...prev, online_yeardays: newOnlineYeardays };
+  });
+};
+
+const addOnlineYearday = () => {
+  setFormData((prev) => ({
+    ...prev,
+    online_yeardays: [...prev.online_yeardays, { month: "", day: "" }],
+  }));
+};
+
+const removeOnlineYearday = (index) => {
+  setFormData((prev) => ({
+    ...prev,
+    online_yeardays: prev.online_yeardays.filter((_, i) => i !== index),
+  }));
+};
+
 
   const weekdays = [
     { label: "Sunday", value: "Sunday" },
@@ -1392,17 +1427,17 @@ export default function CandidateDetailsCard({
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Working Days</Form.Label>
+              <Form.Label>Days Off</Form.Label>
               <div className="d-flex flex-wrap gap-2">
                 {weekdays.map((day) => (
                   <Button
                     key={day.value}
                     variant={
-                      formData.weekdays.includes(day.value)
+                      formData.holiday_weekdays.includes(day.value)
                         ? "primary"
                         : "outline-secondary"
                     }
-                    onClick={() => handleWeekdayToggle(day.value)}
+                    onClick={() => handleHolidayWeekdayToggle(day.value)}
                     size="sm"
                   >
                     {day.label}
@@ -1413,7 +1448,7 @@ export default function CandidateDetailsCard({
 
             <Form.Group className="mb-3">
               <Form.Label>Year Days Off</Form.Label>
-              {formData.yeardays.map((yearday, index) => (
+              {formData.holiday_yeardays.map((yearday, index) => (
                 <div
                   key={index}
                   className="d-flex align-items-center gap-2 mb-2"
@@ -1425,7 +1460,7 @@ export default function CandidateDetailsCard({
                     max="12"
                     value={yearday.month}
                     onChange={(e) =>
-                      handleYeardayChange(index, "month", e.target.value)
+                      handleHolidayYeardayChange(index, "month", e.target.value)
                     }
                     style={{ width: "120px" }}
                   />
@@ -1436,15 +1471,15 @@ export default function CandidateDetailsCard({
                     max="31"
                     value={yearday.day}
                     onChange={(e) =>
-                      handleYeardayChange(index, "day", e.target.value)
+                      handleHolidayYeardayChange(index, "day", e.target.value)
                     }
                     style={{ width: "120px" }}
                   />
                   <Button
                     variant="outline-danger"
                     size="sm"
-                    onClick={() => removeYearday(index)}
-                    disabled={formData.yeardays.length <= 1}
+                    onClick={() => removeHolidayYearday(index)}
+                    disabled={formData.holiday_yeardays.length <= 1}
                   >
                     <FaTimes />
                   </Button>
@@ -1453,10 +1488,77 @@ export default function CandidateDetailsCard({
               <Button
                 variant="outline-primary"
                 size="sm"
-                onClick={addYearday}
+                onClick={addHolidayYearday}
                 className="mt-2"
               >
                 Add Year Day Off
+              </Button>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Days</Form.Label>
+              <div className="d-flex flex-wrap gap-2">
+                {weekdays.map((day) => (
+                  <Button
+                    key={day.value}
+                    variant={
+                      formData.online_weekdays.includes(day.value)
+                        ? "primary"
+                        : "outline-secondary"
+                    }
+                    onClick={() => handleOnlineWeekdayToggle(day.value)}
+                    size="sm"
+                  >
+                    {day.label}
+                  </Button>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Year Days</Form.Label>
+              {formData.online_yeardays.map((yearday, index) => (
+                <div
+                  key={index}
+                  className="d-flex align-items-center gap-2 mb-2"
+                >
+                  <Form.Control
+                    type="number"
+                    placeholder="Month (1-12)"
+                    min="1"
+                    max="12"
+                    value={yearday.month}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "month", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Form.Control
+                    type="number"
+                    placeholder="Day (1-31)"
+                    min="1"
+                    max="31"
+                    value={yearday.day}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "day", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => removeOnlineYearday(index)}
+                    disabled={formData.online_yeardays.length <= 1}
+                  >
+                    <FaTimes />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={addOnlineYearday}
+                className="mt-2"
+              >
+                Add Online Year Day
               </Button>
             </Form.Group>
           </Form>
