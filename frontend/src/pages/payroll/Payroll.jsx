@@ -13,6 +13,8 @@ import {
   Card,
   Dropdown,
   Modal,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +50,44 @@ const Payroll = () => {
   const navigate = useNavigate();
   const recordsPerPage = 10;
   const currentYear = new Date().getFullYear();
+
+  // Helper functions for tooltips
+  const getBonusTooltip = (details) => {
+    const bonusItems = [];
+    if (details.total_overtime_salary > 0) {
+      bonusItems.push(`Overtime: $${details.total_overtime_salary.toFixed(2)}`);
+    }
+    if (details.bonus_amount > 0) {
+      bonusItems.push(`Performance Bonus: $${details.bonus_amount.toFixed(2)}`);
+    }
+    if (details.attendance_bonus > 0) {
+      bonusItems.push(`Attendance Bonus: $${details.attendance_bonus.toFixed(2)}`);
+    }
+
+    return bonusItems.length > 0
+      ? bonusItems.join('\n')
+      : 'No bonus components';
+  };
+
+  const getDeductionsTooltip = (details) => {
+    const deductionItems = [];
+    if (details.total_late_penalty > 0) {
+      deductionItems.push(`Lateness Penalty: $${details.total_late_penalty.toFixed(2)}`);
+    }
+    if (details.total_absence_penalty > 0) {
+      deductionItems.push(`Absence Penalty: $${details.total_absence_penalty.toFixed(2)}`);
+    }
+    if (details.tax_deduction > 0) {
+      deductionItems.push(`Tax: $${details.tax_deduction.toFixed(2)}`);
+    }
+    if (details.insurance_deduction > 0) {
+      deductionItems.push(`Insurance: $${details.insurance_deduction.toFixed(2)}`);
+    }
+
+    return deductionItems.length > 0
+      ? deductionItems.join('\n')
+      : 'No deductions applied';
+  };
 
   useEffect(() => {
     fetchRecords();
@@ -348,15 +388,37 @@ const Payroll = () => {
                       <td className="text-end">
                         ${record.base_salary.toFixed(2)}
                       </td>
-                      <td className="text-end text-success">
-                        + $
-                        {(record.details.total_overtime_salary || 0).toFixed(
-                          2
-                        )}
-                      </td>
-                      <td className="text-end text-danger">
-                        - ${(record.details.total_deductions || 0).toFixed(2)}
-                      </td>
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={
+                          <Tooltip>
+                            <div style={{ whiteSpace: 'pre-line' }}>
+                              {getBonusTooltip(record.details)}
+                            </div>
+                          </Tooltip>
+                        }
+                      >
+                        <td className="text-end text-success" style={{ cursor: 'help' }}>
+                          + $
+                          {(record.details.total_overtime_salary || 0).toFixed(
+                            2
+                          )}
+                        </td>
+                      </OverlayTrigger>
+                      <OverlayTrigger
+                        placement="top"
+                        overlay={
+                          <Tooltip>
+                            <div style={{ whiteSpace: 'pre-line' }}>
+                              {getDeductionsTooltip(record.details)}
+                            </div>
+                          </Tooltip>
+                        }
+                      >
+                        <td className="text-end text-danger" style={{ cursor: 'help' }}>
+                          - ${(record.details.total_deductions || 0).toFixed(2)}
+                        </td>
+                      </OverlayTrigger>
                       <td className="text-end fw-bold">
                         ${record.final_salary.toFixed(2)}
                       </td>

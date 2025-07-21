@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, Badge } from 'react-bootstrap';
+import { formatText } from '../../utils/formatters';
 
 const DailyOvertimeStatus = ({ overtimeRequest }) => {
     if (!overtimeRequest) {
@@ -25,7 +26,7 @@ const DailyOvertimeStatus = ({ overtimeRequest }) => {
                 <p><strong>Requested Hours:</strong> {overtimeRequest.requested_hours}</p>
                 {overtimeRequest.status !== 'pending' && (
                     <>
-                        <p><strong>Reviewed By:</strong> {overtimeRequest.reviewed_by_username || 'N/A'}</p>
+                        <p><strong>Reviewed By:</strong> {formatText(overtimeRequest.reviewed_by_username, 'System')}</p>
                         <p><strong>HR Comment:</strong> {overtimeRequest.hr_comment || 'No comment'}</p>
                     </>
                 )}

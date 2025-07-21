@@ -10,6 +10,9 @@ import DashboardFallback from "./components/DashboardFallBack/DashboardFallBack"
 import ApplicationPage from "./pages/public_application/ApplicationPage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ForgotPassword from "./pages/PasswordReset/forgotPassword.jsx";
+import ResetPassword from "./pages/PasswordReset/resetPassword.jsx";
+import ChangePassword from "./pages/PasswordReset/ChangePassword.jsx";
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
@@ -37,6 +40,8 @@ function App() {
     <Suspense fallback={<DashboardFallback />}>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/apply/:distinction_name/" element={<ApplicationPage />} />
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<DashboardPage />}>
@@ -52,6 +57,7 @@ function App() {
             <Route path="hrDetails/:id" element={<HrDetails />} />
             <Route path="search-results" element={<SearchResultsPage />} />
             <Route path="tasks" element={<Tasks />} />
+            <Route path="change-password" element={<ChangePassword />} />
           </Route>
         </Route>
       </Routes>

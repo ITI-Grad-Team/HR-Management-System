@@ -29,6 +29,19 @@ class AttendanceRecord(models.Model):
     lateness_hours = models.FloatField(default=0)
     overtime_hours = models.FloatField(default=0)
     overtime_approved = models.BooleanField(default=False)
+    # Geolocation fields for attendance validation
+    check_in_latitude = models.FloatField(
+        null=True, blank=True, help_text="Employee's latitude during check-in"
+    )
+    check_in_longitude = models.FloatField(
+        null=True, blank=True, help_text="Employee's longitude during check-in"
+    )
+    check_out_latitude = models.FloatField(
+        null=True, blank=True, help_text="Employee's latitude during check-out"
+    )
+    check_out_longitude = models.FloatField(
+        null=True, blank=True, help_text="Employee's longitude during check-out"
+    )
 
     class Meta:
         unique_together = ("user", "date")
@@ -43,8 +56,16 @@ class AttendanceRecord(models.Model):
             if expected_time:
                 check_in_dt = datetime.datetime.combine(self.date, self.check_in_time)
                 expected_dt = datetime.datetime.combine(self.date, expected_time)
-                lateness = (check_in_dt - expected_dt).total_seconds() / 3600
-                self.lateness_hours = max(round(lateness, 2), 0.0)
+                grace_dt = expected_dt + datetime.timedelta(
+                    minutes=15
+                )  # 15-minute grace period
+
+                # Only calculate lateness if check-in is after grace period
+                if check_in_dt > grace_dt:
+                    lateness_seconds = (check_in_dt - grace_dt).total_seconds()
+                    self.lateness_hours = round(lateness_seconds / 3600, 2)
+                else:
+                    self.lateness_hours = 0.0
 
         super().save(*args, **kwargs)
 
@@ -363,6 +384,16 @@ class EducationDegree(models.Model):
 class Region(models.Model):
     name = models.CharField(max_length=100, unique=True)
     distance_to_work = models.IntegerField()
+    # Geolocation fields for attendance validation
+    latitude = models.FloatField(
+        null=True, blank=True, help_text="Building latitude for attendance validation"
+    )
+    longitude = models.FloatField(
+        null=True, blank=True, help_text="Building longitude for attendance validation"
+    )
+    allowed_radius_meters = models.IntegerField(
+        default=100, help_text="Allowed radius in meters for attendance check-in"
+    )
 
     def __str__(self):
         return self.name
