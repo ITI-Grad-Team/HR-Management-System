@@ -63,7 +63,6 @@ from django.core.mail import send_mail
 import random
 import string
 
-
 def recalculate_interview_avg_grade(employee):
     avg = InterviewQuestion.objects.filter(employee=employee).aggregate(Avg("grade"))[
         "grade__avg"
