@@ -520,7 +520,7 @@ const CoordinatorTaskAccordion = () => {
                         <div className="d-flex align-items-center">
                           <FaTimesCircle className="me-2" size={20} />
                           <div>
-                            <strong>Refused</strong> - Reason:{" "}
+                            <strong>Refused</strong> - c{" "}
                             {task.refuse_reason}
                           </div>
                         </div>

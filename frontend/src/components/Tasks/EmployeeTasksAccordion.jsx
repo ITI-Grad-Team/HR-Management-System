@@ -476,7 +476,7 @@ const EmployeeTasksAccordion = () => {
                       </div>
                     )}
 
-                    {task.is_submitted && task.is_refused && (
+                    {task.is_refused && (
                       <div className="alert alert-danger">
                         <div className="d-flex align-items-center">
                           <FaTimesCircle className="me-2" size={20} />
