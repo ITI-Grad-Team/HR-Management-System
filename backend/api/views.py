@@ -145,6 +145,10 @@ class EightPerPagePagination(PageNumberPagination):
     page_size = 8
     max_page_size = 100
 
+class TenPerPagePagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 100
+
 
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
@@ -1168,9 +1172,13 @@ class HRRejectEmployeeViewSet(ModelViewSet):
 
 class TaskViewSet(ModelViewSet):
 
-    queryset = Task.objects.all()
+    queryset = Task.objects.all().select_related(
+        'created_by__user__basicinfo',
+        'assigned_to__user__basicinfo'
+    ).prefetch_related('file_set')
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = TenPerPagePagination
 
     # Create Task (by coordinator)
     def create(self, request, *args, **kwargs):
@@ -1406,16 +1414,28 @@ class TaskViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def my_created_tasks(self, request):
-        tasks = Task.objects.filter(created_by=request.user.employee)
-        serializer = self.get_serializer(tasks, many=True)
-        return Response(serializer.data)
+        tasks = Task.objects.filter(created_by=request.user.employee).select_related(
+            'created_by__user__basicinfo',
+            'assigned_to__user__basicinfo'
+        ).prefetch_related('file_set')
+        return self.paginated_response(tasks)  # Use helper method
 
     @action(detail=False, methods=["get"])
     def my_assigned_tasks(self, request):
-        tasks = Task.objects.filter(assigned_to=request.user.employee)
-        serializer = self.get_serializer(tasks, many=True)
-        return Response(serializer.data)
+        tasks = Task.objects.filter(assigned_to=request.user.employee).select_related(
+            'created_by__user__basicinfo',
+            'assigned_to__user__basicinfo'
+        ).prefetch_related('file_set')
+        return self.paginated_response(tasks)  # Use helper method
 
+    # Helper method to avoid duplication
+    def paginated_response(self, queryset):
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class AdminPromoteEmployeeViewSet(ModelViewSet):
     queryset = Employee.objects.all()

@@ -203,18 +203,7 @@ class EmployeeForTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ['id','username', 'phone', 'profile_image','email']
-    
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Simplify the structure as requested
-        return {
-            'id': representation['id'],
-            'username': representation['username'],
-            'phone': representation['phone'],
-            'profile_image': representation['profile_image'], 
-            'email':representation['email'], 
-        }
+        fields = ['id', 'username', 'phone', 'profile_image', 'email']
 
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -222,39 +211,37 @@ class FileSerializer(serializers.ModelSerializer):
         fields = ['id', 'file']
 
 class TaskSerializer(serializers.ModelSerializer):
-    created_by = EmployeeForTaskSerializer(read_only=True)
-    assigned_to = EmployeeForTaskSerializer(read_only=True)
+    created_by = serializers.SerializerMethodField()
+    assigned_to = serializers.SerializerMethodField()
     files = FileSerializer(many=True, read_only=True, source='file_set')
     
     class Meta:
         model = Task
         fields = "__all__"
-        read_only_fields = (
-            "created_by",
-            "is_submitted",
-            "is_accepted",
-            "is_refused",
-        )
+        read_only_fields = ("created_by", "is_submitted", "is_accepted", "is_refused")
 
-    def validate(self, data):
-        if "deadline" in data and data["deadline"] < timezone.now():
-            raise serializers.ValidationError("Deadline must be in the future")
-        return data
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        # Simplify the created_by and assigned_to structure
-        for field in ['created_by', 'assigned_to']:
-            if field in representation:
-                employee_data = representation[field]
-                representation[field] = {
-                    'id': employee_data.get('id'),
-                    'username': employee_data.get('username'),
-                    'phone': employee_data.get('phone'),
-                    'profile_image': employee_data.get('profile_image'),
-                    'email':employee_data.get('email'),
-                }
-        return representation
+    def get_created_by(self, obj):
+        return self._get_employee_data(obj.created_by)
+        
+    def get_assigned_to(self, obj):
+        return self._get_employee_data(obj.assigned_to)
+        
+    def _get_employee_data(self, employee):
+        if not employee:
+            return None
+        request = self.context.get('request')
+        
+        profile_image = None
+        if employee.user.basicinfo.profile_image:
+            profile_image = request.build_absolute_uri(employee.user.basicinfo.profile_image.url)
+        
+        return {
+            'id': employee.id,
+            'username': employee.user.basicinfo.username,
+            'phone': employee.user.basicinfo.phone,
+            'profile_image': profile_image,
+            'email': employee.user.username
+        }
 
 
 class FileSerializer(serializers.ModelSerializer):
