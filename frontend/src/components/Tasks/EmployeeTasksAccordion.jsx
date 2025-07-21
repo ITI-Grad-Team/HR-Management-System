@@ -50,11 +50,14 @@ const EmployeeTasksAccordion = () => {
 
   useEffect(() => {
     fetchMyAssignedTasks();
-  }, [tasks]);
+  }, []);
 
   const fetchMyAssignedTasks = async (url = "/tasks/my_assigned_tasks/") => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get(url);
+      console.log("API Response:", response.data); // Debug
+
       setTasks(response.data.results);
       setPagination({
         next: response.data.next,
@@ -201,6 +204,7 @@ const EmployeeTasksAccordion = () => {
       setTasks(
         tasks.map((task) => (task.id === taskId ? response.data.task : task))
       );
+      console.log(tasks);
 
       setFiles([]);
     } catch (error) {
@@ -214,11 +218,12 @@ const EmployeeTasksAccordion = () => {
       setSubmitting({ ...submitting, [taskId]: false });
     }
   };
-  
+
   // Reuse the same helper functions from CoordinatorTaskAccordion
   const getTaskStatus = (task) => {
-    if (!task?.is_submitted) {
-      if (task?.is_refused) {
+    // console.log(task, "task passed to get status");
+    if (!task.is_submitted) {
+      if (task.is_refused) {
         return (
           <Badge className={`${styles["status-badge"]} ${styles["refused"]}`}>
             <FaTimesCircle className="me-1" />
@@ -235,7 +240,7 @@ const EmployeeTasksAccordion = () => {
         </Badge>
       );
     }
-    if (task?.is_accepted) {
+    if (task.is_accepted) {
       return (
         <Badge className={`${styles["status-badge"]} ${styles["accepted"]}`}>
           <FaCheckCircle className="me-1" />
@@ -243,7 +248,7 @@ const EmployeeTasksAccordion = () => {
         </Badge>
       );
     }
-    if (task?.is_refused) {
+    if (task.is_refused) {
       return (
         <Badge className={`${styles["status-badge"]} ${styles["refused"]}`}>
           <FaTimesCircle className="me-1" />
@@ -281,54 +286,53 @@ const EmployeeTasksAccordion = () => {
           <div className="text-start">
             <div className="d-flex align-items-center mb-1">
               <FaUserTie className="me-2" style={{ color: "#fff" }} />
-              <strong style={{ color: "#fff" }}>{employee?.username}</strong>
+              <strong style={{ color: "#fff" }}>{employee.username}</strong>
             </div>
             <div className="d-flex align-items-center mb-1">
               <FaPhone className="me-2" style={{ color: "#fff" }} />
               <small style={{ color: "#eee" }}>
-                {employee?.phone || "Not provided"}
+                {employee.phone || "Not provided"}
               </small>
             </div>
             <div className="d-flex align-items-center">
               <FaEnvelope className="me-2" style={{ color: "#fff" }} />
               <small style={{ color: "#eee" }}>
-                {employee?.email || "No email"}
+                {employee.email || "No email"}
               </small>
             </div>
           </div>
         </Tooltip>
       }
     >
-
-        <div className="d-flex align-items-center gap-2">
-          {employee?.profile_image_url ? (
-            <img
-              src={employee?.profile_image_url}
-              alt={employee?.username}
-              className="rounded-circle"
-              style={{
-                width: "28px",
-                height: "28px",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              className="bg-light rounded-circle d-flex align-items-center justify-content-center"
-              style={{
-                width: "28px",
-                height: "28px",
-                backgroundColor: "#e9ecef",
-              }}
-            >
-              <FaUser className="text-secondary" size={14} />
-            </div>
-          )}
-          <div className="text-truncate" style={{ maxWidth: "150px" }}>
-            <span className="fw-bold">{employee?.username}</span>
+      <div className="d-flex align-items-center gap-2">
+        {employee.profile_image_url ? (
+          <img
+            src={employee.profile_image_url}
+            alt={employee.username}
+            className="rounded-circle"
+            style={{
+              width: "28px",
+              height: "28px",
+              objectFit: "cover",
+            }}
+          />
+        ) : (
+          <div
+            className="bg-light rounded-circle d-flex align-items-center justify-content-center"
+            style={{
+              width: "28px",
+              height: "28px",
+              backgroundColor: "#e9ecef",
+            }}
+          >
+            <FaUser className="text-secondary" size={14} />
           </div>
-          <FaExternalLinkAlt className="text-muted" size={12} />
+        )}
+        <div className="text-truncate" style={{ maxWidth: "150px" }}>
+          <span className="fw-bold">{employee.username}</span>
         </div>
+        <FaExternalLinkAlt className="text-muted" size={12} />
+      </div>
     </OverlayTrigger>
   );
 
@@ -390,7 +394,7 @@ const EmployeeTasksAccordion = () => {
         <Card.Body>
           <Accordion flush>
             {tasks.map((task, index) => (
-              <Accordion.Item eventKey={index.toString()} key={task?.id}>
+              <Accordion.Item eventKey={index.toString()} key={task.id}>
                 <Accordion.Header>
                   <Row className="w-100 align-items-center">
                     <Col xs={7} className="d-flex align-items-center">
@@ -412,7 +416,7 @@ const EmployeeTasksAccordion = () => {
                           <FaInfoCircle className="text-primary me-2" />
                           Description
                         </h6>
-                        <p>{task?.description}</p>
+                        <p>{task.description}</p>
                       </div>
 
                       <div className="mb-3">
@@ -421,7 +425,7 @@ const EmployeeTasksAccordion = () => {
                           Assigned By
                         </h6>
                         <div className={styles.assignedEmployeeContainer}>
-                          {renderAssignedTo(task?.created_by)}
+                          {renderAssignedTo(task.created_by)}
                         </div>
                       </div>
                     </Col>
@@ -434,22 +438,22 @@ const EmployeeTasksAccordion = () => {
                         </h6>
                         <p>
                           <strong>Deadline:</strong>{" "}
-                          {formatDateTime(task?.deadline)}
+                          {formatDateTime(task.deadline)}
                         </p>
-                        {task?.submission_time && (
+                        {task.submission_time && (
                           <p>
                             <strong>Submitted:</strong>{" "}
-                            {formatDateTime(task?.submission_time)}
+                            {formatDateTime(task.submission_time)}
                           </p>
                         )}
                       </div>
 
-                      {task?.is_submitted &&
-                        task?.time_remaining_before_deadline_when_accepted && (
+                      {task.is_submitted &&
+                        task.time_remaining_before_deadline_when_accepted && (
                           <div className="mb-3">
                             <p>
                               <strong>Time Saved:</strong>{" "}
-                              {task?.time_remaining_before_deadline_when_accepted.toFixed(
+                              {task.time_remaining_before_deadline_when_accepted.toFixed(
                                 2
                               )}
                               hours
@@ -459,39 +463,39 @@ const EmployeeTasksAccordion = () => {
                     </Col>
                   </Row>
 
-                  {renderFiles(task?.files)}
+                  {renderFiles(task.files)}
 
                   {/* Task Status and Actions */}
                   <div className="mt-4">
-                    {task?.is_submitted && task?.is_accepted && (
+                    {task.is_submitted && task.is_accepted && (
                       <div className="alert alert-primary">
                         <div className="d-flex align-items-center">
                           <FaCheckCircle className="me-2" size={20} />
                           <div>
-                            <strong>Accepted</strong> - rating: {task?.rating}
+                            <strong>Accepted</strong> - rating: {task.rating}
                             /100
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {task?.is_refused && (
+                    {task.is_refused && (
                       <div className="alert alert-danger">
                         <div className="d-flex align-items-center">
                           <FaTimesCircle className="me-2" size={20} />
                           <div>
                             <strong>Refused</strong> - Reason:{" "}
-                            {task?.refuse_reason}
+                            {task.refuse_reason}
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {!task?.is_accepted && (
+                    {!task.is_accepted && (
                       <Card className="border-primary mt-3">
                         <Card.Header className="bg-primary text-white py-2">
                           <FaUpload className="me-2" />
-                          {task?.is_refused ? "Resubmit Task" : "Submit Task"}
+                          {task.is_refused ? "Resubmit Task" : "Submit Task"}
                         </Card.Header>
                         <Card.Body>
                           <Form.Group className="mb-3">
@@ -509,10 +513,10 @@ const EmployeeTasksAccordion = () => {
                           <Button
                             variant="primary"
                             className="w-100"
-                            onClick={() => handleSubmitTask(task?.id)}
-                            disabled={submitting[task?.id]}
+                            onClick={() => handleSubmitTask(task.id)}
+                            disabled={submitting[task.id]}
                           >
-                            {submitting[task?.id] ? (
+                            {submitting[task.id] ? (
                               <>
                                 <Spinner
                                   as="span"
@@ -527,10 +531,10 @@ const EmployeeTasksAccordion = () => {
                             ) : (
                               <>
                                 <FaUpload className="me-2" />
-                                {task?.is_refused
+                                {task.is_refused
                                   ? "Resubmit"
                                   : "Submit"} Task{" "}
-                                {task?.is_submitted ? "(Append)" : ""}
+                                {task.is_submitted ? "(Append)" : ""}
                               </>
                             )}
                           </Button>

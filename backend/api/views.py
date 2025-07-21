@@ -1369,9 +1369,20 @@ class TaskViewSet(ModelViewSet):
             File.objects.create(file_url=url, task=task)
             uploaded_urls.append(url)
 
+        # Update task status - THIS IS WHAT WAS MISSING
+        task.is_submitted = True
+        task.submission_time = timezone.now()
+        task.is_refused = False  # Reset refusal if resubmitted
+        task.save()
+
+        serializer = self.get_serializer(task, context={'request': request})
+        
         return Response(
-            {"message": "Files uploaded successfully.", "files": uploaded_urls},
-            status=status.HTTP_201_CREATED,
+            {
+                "message": "Task submitted successfully.",
+                "task": serializer.data, # Keep the files info if needed
+            },
+            status=status.HTTP_200_OK
         )
 
     # Accept Task (by creator/coordinator)
@@ -1484,17 +1495,7 @@ class TaskViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            # Use file_set instead of files (Django's default reverse relation)
-            for file in task.file_set.all():
-                # Delete the physical file from storage
-                if file.file:
-                    if os.path.isfile(file.file.path):
-                        os.remove(file.file.path)
-                # Delete the file record
-                file.delete()
-        except Exception as e:
-            print(f"Error deleting task files: {str(e)}")
+        task.file_set.all().delete()
 
         # Update task
         task.is_submitted = False  # Reset submission
