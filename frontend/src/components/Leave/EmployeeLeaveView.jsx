@@ -17,12 +17,24 @@ const EmployeeLeaveView = () => {
     const fetchData = useCallback(async (page = 1) => {
         try {
             setLoading(true);
-            const [reqRes, balRes] = await Promise.all([
-                getMyLeaveRequests(page, pageSize),
-                getMyLeaveBalance(),
-            ]);
-            setRequests(reqRes.data);
-            setBalance(balRes.data);
+
+            // OPTIMIZED: Fetch requests and balance in parallel, but only balance once
+            const requests = getMyLeaveRequests(page, pageSize);
+
+            // Only fetch balance if we don't have it or if it's page 1 (fresh load)
+            if (!balance || page === 1) {
+                const [reqRes, balRes] = await Promise.all([
+                    requests,
+                    getMyLeaveBalance(),
+                ]);
+                setRequests(reqRes.data);
+                setBalance(balRes.data);
+            } else {
+                // Just fetch requests for pagination
+                const reqRes = await requests;
+                setRequests(reqRes.data);
+            }
+
             setCurrentPage(page);
         } catch {
             setError('Failed to fetch leave data.');
@@ -30,7 +42,7 @@ const EmployeeLeaveView = () => {
         } finally {
             setLoading(false);
         }
-    }, [pageSize]);
+    }, [pageSize, balance]);
 
     useEffect(() => {
         fetchData();
@@ -50,6 +62,8 @@ const EmployeeLeaveView = () => {
             toast.success('Leave request submitted successfully!');
             setShowModal(false);
             setFormData({ start_date: '', end_date: '', reason: '' });
+
+            // OPTIMIZED: Refresh both requests and balance after submission
             fetchData(currentPage);
         } catch (err) {
             const errorMsg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || 'Failed to submit request.';

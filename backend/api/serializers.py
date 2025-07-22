@@ -297,6 +297,7 @@ class PositionSerializer(serializers.ModelSerializer):
         model = Position
         fields = "__all__"
 
+
 class EmployeeAcceptingSerializer(serializers.ModelSerializer):
     holiday_weekdays = serializers.ListField(
         child=serializers.CharField(),
@@ -350,7 +351,9 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
 
         if instance.interview_state == "done":
             # Only do acceptance workflow if not already accepted
-            password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+            password = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
             user = instance.user
             user.set_password(password)
             user.save()
@@ -387,7 +390,9 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
                 month = yearday.get("month")
                 day = yearday.get("day")
                 if month and day:
-                    day_obj, _ = HolidayYearday.objects.get_or_create(month=month, day=day)
+                    day_obj, _ = HolidayYearday.objects.get_or_create(
+                        month=month, day=day
+                    )
                     day_obj.employees.add(instance)
 
         # Process online weekdays if provided
@@ -404,7 +409,9 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
                 month = yearday.get("month")
                 day = yearday.get("day")
                 if month and day:
-                    day_obj, _ = OnlineDayYearday.objects.get_or_create(month=month, day=day)
+                    day_obj, _ = OnlineDayYearday.objects.get_or_create(
+                        month=month, day=day
+                    )
                     day_obj.employees.add(instance)
 
         return instance
@@ -745,6 +752,39 @@ class CasualLeaveSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Duration will be auto-calculated in the model's save method
         return super().update(instance, validated_data)
+
+
+class CasualLeaveListSerializer(serializers.ModelSerializer):
+    """
+    OPTIMIZED: Lightweight serializer for list views with minimal data
+    """
+
+    employee_name = serializers.CharField(
+        source="employee.user.basicinfo.username", read_only=True
+    )
+    employee_position = serializers.CharField(
+        source="employee.position.name", read_only=True
+    )
+    reviewed_by_name = serializers.CharField(
+        source="reviewed_by.username", read_only=True
+    )
+    duration = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = CasualLeave
+        fields = [
+            "id",
+            "start_date",
+            "end_date",
+            "duration",
+            "status",
+            "created_at",
+            "reason",
+            "rejection_reason",
+            "employee_name",
+            "employee_position",
+            "reviewed_by_name",
+        ]
 
 
 class EmployeeLeavePolicySerializer(serializers.ModelSerializer):
