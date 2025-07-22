@@ -43,6 +43,7 @@ export default function ChatWidget() {
     <div className="chat-widget-container">
       <div className={`chat-widget ${expanded ? "expanded" : ""}`}>
         <div className="chat-header" onClick={() => setExpanded(!expanded)}>
+          {expanded ? "HERA Chat Bot" : ""}
           <span></span>
           {expanded ? <FaChevronDown /> : <FaCommentDots />}
         </div>
