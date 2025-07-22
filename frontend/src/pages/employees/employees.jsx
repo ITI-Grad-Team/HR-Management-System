@@ -35,6 +35,28 @@ const Employees = () => {
   const [showInviteHrModal, setShowInviteHrModal] = useState(false);
   const [email, setEmail] = useState("");
   const [loadingInviteHr, setLoadingInviteHr] = useState(false);
+  const [myScheduled, setMyScheduled] = useState([]);
+  const [myTaken, setMyTaken] = useState([]);
+  const [tempFilters, setTempFilters] = useState({
+    region: "",
+    position: "",
+    is_coordinator: "",
+    application_link: "",
+  });
+  const [myScheduledPagination, setMyScheduledPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
+  });
+  const [myTakenPagination, setMyTakenPagination] = useState({
+    count: 0,
+    previous: null,
+    next: null,
+    currentPage: 1,
+    totalPages: 1,
+  });
 
   // Enhanced pagination states
   const [hrsPagination, setHrsPagination] = useState({
@@ -63,15 +85,19 @@ const Employees = () => {
 
   const [activeTab, setActiveTab] = useState("employees");
 
-  useEffect(() => {
-    if (activeTab === "employees") {
-      document.title = "Employees | HERA";
-    } else if (activeTab === "hrs") {
-      document.title = "HRs | HERA";
-    } else {
-      document.title = "Candidates | HERA";
-    }
-  }, [activeTab]);
+  // useEffect(() => {
+  //   if (activeTab === "employees") {
+  //     document.title = "Employees | HERA";
+  //   } else if (activeTab === "hrs") {
+  //     document.title = "HRs | HERA";
+  //   } else if (activeTab === "candidates") {
+  //     document.title = "Candidates | HERA";
+  //   } else if (activeTab === "my-scheduled") {
+  //     document.title = "My Scheduled | HERA";
+  //   } else if (activeTab === "my-taken") {
+  //     document.title = "My Taken | HERA";
+  //   }
+  // }, [activeTab]);
 
   // Fetch filter options
   const fetchFilterOptions = async () => {
@@ -194,21 +220,80 @@ const Employees = () => {
     }
   };
 
+  const fetchMyScheduled = async (page = 1) => {
+    if (role !== "hr") return;
+
+    try {
+      setLoading(true);
+      let queryString = buildQueryString(filters);
+      if (queryString) queryString = `&${queryString}`;
+
+      const response = await axiosInstance.get(
+        `/hr/employees/my-scheduled/?page=${page}${queryString}`
+      );
+      setMyScheduled(response.data.results);
+      setMyScheduledPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch scheduled employees");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMyTaken = async (page = 1) => {
+    if (role !== "hr") return;
+
+    try {
+      setLoading(true);
+      let queryString = buildQueryString(filters);
+      if (queryString) queryString = `&${queryString}`;
+
+      const response = await axiosInstance.get(
+        `/hr/employees/my-taken/?page=${page}${queryString}`
+      );
+      setMyTaken(response.data.results);
+      setMyTakenPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch taken employees");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({
+    setTempFilters((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  const applyFilters = () => {
+    setFilters({ ...tempFilters }); // Spread to create new object
+  };
   const resetFilters = () => {
-    setFilters({
+    const emptyFilters = {
       region: "",
       position: "",
       is_coordinator: "",
       application_link: "",
-    });
+    };
+    setTempFilters(emptyFilters);
+    setFilters(emptyFilters);
   };
 
   useEffect(() => {
@@ -223,6 +308,8 @@ const Employees = () => {
     } else if (role === "hr") {
       fetchEmployees();
       fetchCandidates();
+      fetchMyScheduled();
+      fetchMyTaken();
     } else if (isCoordinator) {
       fetchEmployees();
     }
@@ -230,7 +317,13 @@ const Employees = () => {
 
   // Reset page and refetch when filters change
   useEffect(() => {
-    if (activeTab === "employees") {
+    console.log("Filters changed:", filters);
+
+    if (activeTab === "my-scheduled") {
+      fetchMyScheduled(1);
+    } else if (activeTab === "my-taken") {
+      fetchMyTaken(1);
+    } else if (activeTab === "employees") {
       fetchEmployees(1);
     } else if (activeTab === "candidates") {
       fetchCandidates(1);
@@ -244,13 +337,20 @@ const Employees = () => {
       fetchEmployees(page);
     } else if (section === "candidates") {
       fetchCandidates(page);
+    } else if (section === "my-scheduled") {
+      fetchMyScheduled(page);
+    } else if (section === "my-taken") {
+      fetchMyTaken(page);
     }
   };
 
   const renderFilters = () => {
     if (
       (role === "admin" || role === "hr") &&
-      (activeTab === "employees" || activeTab === "candidates")
+      (activeTab === "employees" ||
+        activeTab === "candidates" ||
+        activeTab === "my-scheduled" ||
+        activeTab === "my-taken")
     ) {
       return (
         <div className="card mb-4">
@@ -262,7 +362,7 @@ const Employees = () => {
                   <Form.Label>Region</Form.Label>
                   <Form.Select
                     name="region"
-                    value={filters.region}
+                    value={tempFilters.region}
                     onChange={handleFilterChange}
                   >
                     <option value="">All Regions</option>
@@ -279,7 +379,7 @@ const Employees = () => {
                   <Form.Label>Position</Form.Label>
                   <Form.Select
                     name="position"
-                    value={filters.position}
+                    value={tempFilters.position}
                     onChange={handleFilterChange}
                   >
                     <option value="">All Positions</option>
@@ -296,7 +396,7 @@ const Employees = () => {
                   <Form.Label>Coordinator</Form.Label>
                   <Form.Select
                     name="is_coordinator"
-                    value={filters.is_coordinator}
+                    value={tempFilters.is_coordinator}
                     onChange={handleFilterChange}
                   >
                     <option value="">All</option>
@@ -310,7 +410,7 @@ const Employees = () => {
                   <Form.Label>Application Link</Form.Label>
                   <Form.Select
                     name="application_link"
-                    value={filters.application_link}
+                    value={tempFilters.application_link}
                     onChange={handleFilterChange}
                   >
                     <option value="">All Applications</option>
@@ -323,9 +423,16 @@ const Employees = () => {
                 </Form.Group>
               </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 d-flex justify-content-between">
               <Button variant="outline-secondary" onClick={resetFilters}>
                 Reset Filters
+              </Button>
+              <Button
+                variant="primary"
+                onClick={applyFilters}
+                // Remove the disabled condition to always keep it enabled
+              >
+                Apply Filters
               </Button>
             </div>
           </div>
@@ -335,20 +442,19 @@ const Employees = () => {
     return null;
   };
 
-
-   const handleInviteHr = () => setShowInviteHrModal(true);
+  const handleInviteHr = () => setShowInviteHrModal(true);
 
   const handleInvitaionSubmit = async (e) => {
     e.preventDefault();
     setLoadingInviteHr(true);
 
     if (!email.trim()) {
-  toast.error("Please enter an email address");
-  setLoadingInviteHr(false);
-  return;
-}
+      toast.error("Please enter an email address");
+      setLoadingInviteHr(false);
+      return;
+    }
 
-    try{
+    try {
       await axiosInstance.post(`/admin/invite-hr/`, { email });
       toast.success("HR Invited Successfully");
       setShowInviteHrModal(false);
@@ -357,242 +463,382 @@ const Employees = () => {
       toast.error(err.response.data.error);
     } finally {
       setLoadingInviteHr(false);
-    }  
+    }
   };
 
   return (
     <>
-    <div className="employees-page">
-      {/* Tabs for navigation between sections */}
-      {(role === "admin" || role === "hr" || isCoordinator) && (
-        <div className="mb-4">
-          <ul className="nav nav-tabs">
-            {role === "admin" && (
-              <li className="nav-item">
-                <button
-                  className={`nav-link ${activeTab === "hrs" ? "active" : ""}`}
-                  onClick={() => setActiveTab("hrs")}
-                >
-                  HRs
-                </button>
-              </li>
-            )}
-            {(role === "admin" || role === "hr" || isCoordinator) && (
-              <li className="nav-item">
-                <button
-                  className={`nav-link ${
-                    activeTab === "employees" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("employees")}
-                >
-                  Employees
-                </button>
-              </li>
-            )}
-            {(role === "admin" || role === "hr") && (
-              <li className="nav-item">
-                <button
-                  className={`nav-link ${
-                    activeTab === "candidates" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("candidates")}
-                >
-                  Candidates
-                </button>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-
-      {/* Render filters if applicable */}
-      {renderFilters()}
-
-      {/* HR Section (only for admin) */}
-      {role === "admin" && activeTab === "hrs" && (
-        <>
-        <div className="d-flex justify-content-end mb-3">
-            <button className="btn btn-outline-primary d-flex align-items-center" onClick={handleInviteHr}>
-            <FaUserPlus className="me-2"/> Invite HR
-            </button>
-          </div>
-        <SectionBlock>
-          {loading ? (
-            <EmployeesFallBack />
-          ) : hrs.length === 0 ? (
-            <p>No HRs found</p>
-          ) : (
-            <>
-              <div className="row">
-                {hrs.map((hr) => (
-                  <div key={hr.id} className="col-md-6 col-lg-3 mb-4">
-                    <Link
-                      to={`/dashboard/hrDetails/${hr.id}`}
-                      className="text-decoration-none"
-                      style={{ cursor: "pointer" }}
+      <div className="employees-page">
+        {/* Tabs for navigation between sections */}
+        {(role === "admin" || role === "hr" || isCoordinator) && (
+          <div className="mb-4">
+            <ul className="nav nav-tabs">
+              {role === "admin" && (
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${
+                      activeTab === "hrs" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("hrs")}
+                  >
+                    HRs
+                  </button>
+                </li>
+              )}
+              {role === "hr" && (
+                <>
+                  <li className="nav-item">
+                    <button
+                      className={`nav-link ${
+                        activeTab === "my-scheduled" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("my-scheduled")}
                     >
-                      <BioCard
-                        name={hr.basic_info?.username}
-                        email={hr.user?.username}
-                        phone={hr.basic_info?.phone}
-                        avatar={
-                          hr.basic_info?.profile_image_url || "/default.jpg"
-                        }
-                        role={hr.basic_info?.role}
-                      />
-                    </Link>
-                  </div>
-                ))}
-              </div>
-              <Pagination
-                count={hrsPagination.count}
-                next={hrsPagination.next}
-                previous={hrsPagination.previous}
-                currentPage={hrsPagination.currentPage}
-                totalPages={hrsPagination.totalPages}
-                onPageChange={(page) => handlePageChange(page, "hrs")}
-              />
-            </>
-          )}
-        </SectionBlock>
-        </>
-      )}
+                      My Scheduled
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button
+                      className={`nav-link ${
+                        activeTab === "my-taken" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("my-taken")}
+                    >
+                      My Taken
+                    </button>
+                  </li>
+                </>
+              )}
+              {(role === "admin" || role === "hr" || isCoordinator) && (
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${
+                      activeTab === "employees" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("employees")}
+                  >
+                    Employees
+                  </button>
+                </li>
+              )}
+              {(role === "admin" || role === "hr") && (
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${
+                      activeTab === "candidates" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("candidates")}
+                  >
+                    Candidates
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
 
-      {/* Employees Section */}
-      {(role === "admin" || role === "hr" || isCoordinator) &&
-        activeTab === "employees" && (
-          <SectionBlock title="Employees">
+        {/* Render filters if applicable */}
+        {renderFilters()}
+
+        {/* HR Section (only for admin) */}
+        {role === "admin" && activeTab === "hrs" && (
+          <>
+            <div className="d-flex justify-content-end mb-3">
+              <button
+                className="btn btn-outline-primary d-flex align-items-center"
+                onClick={handleInviteHr}
+              >
+                <FaUserPlus className="me-2" /> Invite HR
+              </button>
+            </div>
+            <SectionBlock>
+              {loading ? (
+                <EmployeesFallBack />
+              ) : hrs.length === 0 ? (
+                <p>No HRs found</p>
+              ) : (
+                <>
+                  <div className="row">
+                    {hrs.map((hr) => (
+                      <div key={hr.id} className="col-md-6 col-lg-3 mb-4">
+                        <Link
+                          to={`/dashboard/hrDetails/${hr.id}`}
+                          className="text-decoration-none"
+                          style={{ cursor: "pointer" }}
+                        >
+                          <BioCard
+                            name={hr.basic_info?.username}
+                            email={hr.user?.username}
+                            phone={hr.basic_info?.phone}
+                            avatar={
+                              hr.basic_info?.profile_image_url || "/default.jpg"
+                            }
+                            role={hr.basic_info?.role}
+                          />
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                  <Pagination
+                    count={hrsPagination.count}
+                    next={hrsPagination.next}
+                    previous={hrsPagination.previous}
+                    currentPage={hrsPagination.currentPage}
+                    totalPages={hrsPagination.totalPages}
+                    onPageChange={(page) => handlePageChange(page, "hrs")}
+                  />
+                </>
+              )}
+            </SectionBlock>
+          </>
+        )}
+
+        {/* Employees Section */}
+        {(role === "admin" || role === "hr" || isCoordinator) &&
+          activeTab === "employees" && (
+            <SectionBlock title="Employees">
+              {loading ? (
+                <EmployeesFallBack />
+              ) : employees.length === 0 ? (
+                <p>No employees found</p>
+              ) : (
+                <>
+                  <div className="row">
+                    {employees.map((employee) => (
+                      <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
+                        <Link
+                          to={`/dashboard/employeeDetails/${employee.id}`}
+                          className="text-decoration-none"
+                          style={{ cursor: "pointer" }}
+                        >
+                          <BioCard
+                            name={employee.basic_info?.username}
+                            email={employee.user?.username}
+                            phone={employee.basic_info?.phone}
+                            avatar={
+                              employee.basic_info?.profile_image_url ||
+                              "/default.jpg"
+                            }
+                            department={employee.position}
+                            location={employee.region}
+                            education={employee.highest_education_field}
+                            isCoordinator={employee.is_coordinator}
+                            experience={employee.years_of_experience}
+                            role={employee.basic_info?.role}
+                            status={employee.interview_state}
+                          />
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                  <Pagination
+                    count={employeesPagination.count}
+                    next={employeesPagination.next}
+                    previous={employeesPagination.previous}
+                    currentPage={employeesPagination.currentPage}
+                    totalPages={employeesPagination.totalPages}
+                    onPageChange={(page) => handlePageChange(page, "employees")}
+                  />
+                </>
+              )}
+            </SectionBlock>
+          )}
+
+        {/* Candidates Section */}
+        {(role === "admin" || role === "hr") && activeTab === "candidates" && (
+          <SectionBlock title="Candidates">
             {loading ? (
               <EmployeesFallBack />
-            ) : employees.length === 0 ? (
-              <p>No employees found</p>
+            ) : candidates.length === 0 ? (
+              <p>No candidates found</p>
             ) : (
               <>
                 <div className="row">
-                  {employees.map((employee) => (
-                    <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
+                  {candidates.map((candidate) => (
+                    <div key={candidate.id} className="col-md-6 col-lg-3 mb-4">
                       <Link
-                        to={`/dashboard/employeeDetails/${employee.id}`}
+                        to={`/dashboard/employeeDetails/${candidate.id}`}
                         className="text-decoration-none"
                         style={{ cursor: "pointer" }}
                       >
                         <BioCard
-                          name={employee.basic_info?.username}
-                          email={employee.user?.username}
-                          phone={employee.basic_info?.phone}
+                          name={candidate.basic_info?.username}
+                          email={candidate.user?.username}
+                          phone={candidate.basic_info?.phone}
                           avatar={
-                            employee.basic_info?.profile_image_url ||
+                            candidate.basic_info?.profile_image_url ||
                             "/default.jpg"
                           }
-                          department={employee.position}
-                          location={employee.region}
-                          education={employee.highest_education_field}
-                          isCoordinator={employee.is_coordinator}
-                          experience={employee.years_of_experience}
-                          role={employee.basic_info?.role}
-                          status={employee.interview_state}
+                          department={candidate.position}
+                          location={candidate.region}
+                          education={candidate.highest_education_field}
+                          isCoordinator={candidate.is_coordinator}
+                          experience={candidate.years_of_experience}
+                          role={candidate.basic_info?.role}
+                          status={candidate.interview_state}
                         />
                       </Link>
                     </div>
                   ))}
                 </div>
                 <Pagination
-                  count={employeesPagination.count}
-                  next={employeesPagination.next}
-                  previous={employeesPagination.previous}
-                  currentPage={employeesPagination.currentPage}
-                  totalPages={employeesPagination.totalPages}
-                  onPageChange={(page) => handlePageChange(page, "employees")}
+                  count={candidatesPagination.count}
+                  next={candidatesPagination.next}
+                  previous={candidatesPagination.previous}
+                  currentPage={candidatesPagination.currentPage}
+                  totalPages={candidatesPagination.totalPages}
+                  onPageChange={(page) => handlePageChange(page, "candidates")}
                 />
               </>
             )}
           </SectionBlock>
         )}
+      </div>
 
-      {/* Candidates Section */}
-      {(role === "admin" || role === "hr") && activeTab === "candidates" && (
-        <SectionBlock title="Candidates">
+      {role === "hr" && activeTab === "my-scheduled" && (
+        <SectionBlock title="My Scheduled Interviews">
           {loading ? (
             <EmployeesFallBack />
-          ) : candidates.length === 0 ? (
-            <p>No candidates found</p>
+          ) : myScheduled?.length === 0 ? (
+            <p>No scheduled interviews found</p>
           ) : (
             <>
               <div className="row">
-                {candidates.map((candidate) => (
-                  <div key={candidate.id} className="col-md-6 col-lg-3 mb-4">
+                {myScheduled.map((employee) => (
+                  <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
                     <Link
-                      to={`/dashboard/employeeDetails/${candidate.id}`}
+                      to={`/dashboard/employeeDetails/${employee.id}`}
                       className="text-decoration-none"
                       style={{ cursor: "pointer" }}
                     >
                       <BioCard
-                        name={candidate.basic_info?.username}
-                        email={candidate.user?.username}
-                        phone={candidate.basic_info?.phone}
+                        name={employee.basic_info?.username}
+                        email={employee.user?.username}
+                        phone={employee.basic_info?.phone}
                         avatar={
-                          candidate.basic_info?.profile_image_url ||
+                          employee.basic_info?.profile_image_url ||
                           "/default.jpg"
                         }
-                        department={candidate.position}
-                        location={candidate.region}
-                        education={candidate.highest_education_field}
-                        isCoordinator={candidate.is_coordinator}
-                        experience={candidate.years_of_experience}
-                        role={candidate.basic_info?.role}
-                        status={candidate.interview_state}
+                        department={employee.position}
+                        location={employee.region}
+                        education={employee.highest_education_field}
+                        isCoordinator={employee.is_coordinator}
+                        experience={employee.years_of_experience}
+                        role={employee.basic_info?.role}
+                        status={employee.interview_state}
+                        interview_datetime={employee.interview_datetime}
+                        time_until_interview={employee.time_until_interview}
                       />
                     </Link>
                   </div>
                 ))}
               </div>
               <Pagination
-                count={candidatesPagination.count}
-                next={candidatesPagination.next}
-                previous={candidatesPagination.previous}
-                currentPage={candidatesPagination.currentPage}
-                totalPages={candidatesPagination.totalPages}
-                onPageChange={(page) => handlePageChange(page, "candidates")}
+                count={myScheduledPagination.count}
+                next={myScheduledPagination.next}
+                previous={myScheduledPagination.previous}
+                currentPage={myScheduledPagination.currentPage}
+                totalPages={myScheduledPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "my-scheduled")}
               />
             </>
           )}
         </SectionBlock>
       )}
-    </div>
 
-    <Modal
-  show={showInviteHrModal}
-  onHide={() => setShowInviteHrModal(false)}
-  centered
-  backdrop="static"
-  keyboard={false}
->
-  <Modal.Header closeButton>
-    <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
-  </Modal.Header>
+      {role === "hr" && activeTab === "my-taken" && (
+        <SectionBlock title="My Taken Employees">
+          {loading ? (
+            <EmployeesFallBack />
+          ) : myTaken.length === 0 ? (
+            <p>No taken employees found</p>
+          ) : (
+            <>
+              <div className="row">
+                {myTaken.map((employee) => (
+                  <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
+                    <Link
+                      to={`/dashboard/employeeDetails/${employee.id}`}
+                      className="text-decoration-none"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <BioCard
+                        name={employee.basic_info?.username}
+                        email={employee.user?.username}
+                        phone={employee.basic_info?.phone}
+                        avatar={
+                          employee.basic_info?.profile_image_url ||
+                          "/default.jpg"
+                        }
+                        department={employee.position}
+                        location={employee.region}
+                        education={employee.highest_education_field}
+                        isCoordinator={employee.is_coordinator}
+                        experience={employee.years_of_experience}
+                        role={employee.basic_info?.role}
+                        status={employee.interview_state}
+                      />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+              <Pagination
+                count={myTakenPagination.count}
+                next={myTakenPagination.next}
+                previous={myTakenPagination.previous}
+                currentPage={myTakenPagination.currentPage}
+                totalPages={myTakenPagination.totalPages}
+                onPageChange={(page) => handlePageChange(page, "my-taken")}
+              />
+            </>
+          )}
+        </SectionBlock>
+      )}
 
-  <Modal.Body>
-    <form onSubmit={handleInvitaionSubmit}>
-      <Form.Group controlId="email" className="mb-3">
-        <Form.Label className="fw-semibold">Email Address</Form.Label>
-        <Form.Control
-          type="email"
-          placeholder="Enter HR email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="py-2 px-3 rounded-3 shadow-sm border-1"
-        />
-      </Form.Group>
+      <Modal
+        show={showInviteHrModal}
+        onHide={() => setShowInviteHrModal(false)}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="w-100 text-center">Invite HR</Modal.Title>
+        </Modal.Header>
 
-      <div className="d-flex justify-content-end">
-        <Button variant="primary" type="submit" disabled={loadingInviteHr}>
-          {loadingInviteHr ? <Spinner as="span" size="sm" animation="border" className="me-2" /> : null}
-          Send Invitation
-        </Button>
-      </div>
-    </form>
-  </Modal.Body>
-</Modal>
+        <Modal.Body>
+          <form onSubmit={handleInvitaionSubmit}>
+            <Form.Group controlId="email" className="mb-3">
+              <Form.Label className="fw-semibold">Email Address</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Enter HR email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="py-2 px-3 rounded-3 shadow-sm border-1"
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end">
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={loadingInviteHr}
+              >
+                {loadingInviteHr ? (
+                  <Spinner
+                    as="span"
+                    size="sm"
+                    animation="border"
+                    className="me-2"
+                  />
+                ) : null}
+                Send Invitation
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
     </>
   );
 };

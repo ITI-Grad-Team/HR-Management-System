@@ -7,7 +7,50 @@ import {
   FaGraduationCap,
   FaBriefcase,
   FaUsers,
+  FaClock,
 } from "react-icons/fa";
+// Add these utilities (or use date-fns/luxon)
+function formatInterviewTiming(timeUntilStr) {
+  const isPast = timeUntilStr.startsWith("-");
+
+  if (!isPast) {
+    // Future time: return as-is but clean up
+    return (
+      timeUntilStr
+        .replace(" days, ", "d ")
+        .replace(" day, ", "d ")
+        .replace(/:\d+\.\d+$/, "") // Remove seconds and microseconds
+        .replace(":", "h ") + "m"
+    ); // Convert first : to h and add m
+  } else {
+    // Past time: calculate absolute time
+    const [, daysStr, timeStr] = timeUntilStr.match(
+      /-(\d+) days?, (\d+:\d+):\d+/
+    );
+    let days = Math.abs(parseInt(daysStr));
+    let [hours, mins] = timeStr.split(":").map(Number);
+
+    // Subtract time components from days
+    if (hours >= 24) {
+      days -= Math.floor(hours / 24);
+      hours = hours % 24;
+    }
+    days = Math.max(0, days - 1); // Subtract full day
+
+    // Calculate remaining hours (24 - hours)
+    const remainingHours = 24 - hours - 1;
+    const remainingMins = 60 - mins;
+
+    // Build components
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (remainingHours > 0) parts.push(`${remainingHours}h`);
+    if (remainingMins > 0) parts.push(`${remainingMins}m`);
+
+    return parts.join(" ") + " ago";
+  }
+}
+
 
 export default function BioCard({
   name,
@@ -21,6 +64,8 @@ export default function BioCard({
   isCoordinator,
   role,
   status, // Added status in case you want to show candidate status
+  interview_datetime, // Optional
+  time_until_interview, // Optional
 }) {
   const isEmployee = role === "employee";
 
@@ -100,6 +145,36 @@ export default function BioCard({
           </div>
         )}
       </div>
+      {interview_datetime && time_until_interview && (
+        <div className="interview-timing">
+          <div className="interview-datetime">
+            {new Date(interview_datetime).toLocaleString([], {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+          <div
+            className={`time-remaining ${
+              time_until_interview.startsWith("-") ? "past" : "upcoming"
+            }`}
+          >
+            {time_until_interview.startsWith("-") ? (
+              <>
+                <FaClock /> Time passed{" "}
+                {formatInterviewTiming(time_until_interview)}
+              </>
+            ) : (
+              <>
+                <FaClock /> Time comes in{" "}
+                {formatInterviewTiming(time_until_interview)}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

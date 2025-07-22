@@ -406,6 +406,8 @@ class EmployeeRejectingSerializer(serializers.ModelSerializer):
         fields = []
 
 
+
+
 # --- Salary & Attendance System Serializers ---
 
 
@@ -592,7 +594,24 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "generated_at",
         ]
 
+class EmployeeInterviewListSerializer(EmployeeListSerializer):
+    time_until_interview = serializers.SerializerMethodField()
+    interview_datetime = serializers.DateTimeField()
 
+    class Meta(EmployeeListSerializer.Meta):
+        fields = EmployeeListSerializer.Meta.fields + [
+            'interview_datetime',
+            'time_until_interview'
+        ]
+
+    def get_time_until_interview(self, obj):
+        # Access the annotated field if available
+        if hasattr(obj, 'time_until_interview'):
+            return str(obj.time_until_interview)
+        if obj.interview_datetime:
+            return str(obj.interview_datetime - timezone.now())
+        return None
+    
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region

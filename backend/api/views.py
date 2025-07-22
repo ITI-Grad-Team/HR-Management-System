@@ -9,6 +9,9 @@ from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
 import joblib
 import os
+
+from django.db.models import Case, When, Value, F, DurationField, ExpressionWrapper, F, ExpressionWrapper, DurationField,IntegerField
+from django.db.models.functions import Now,Extract
 import numpy as np
 from rest_framework.viewsets import ModelViewSet, ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
@@ -58,7 +61,7 @@ from .serializers import (
     SkillSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
-    HRListSerializer,
+    HRListSerializer,EmployeeInterviewListSerializer,
     EmployeeCVUpdateSerializer,
     PositionSerializer,
     EducationFieldSerializer,
@@ -781,6 +784,24 @@ class HRViewEmployeesViewSet(ModelViewSet):
         except Exception as e:
             return Response({"detail": str(e)}, status=400)
 
+    def get_base_queryset(self):
+        """Shared queryset optimization used by all actions"""
+        return Employee.objects.select_related(
+            "user",
+            "user__basicinfo",
+            "region",
+            "position",
+            "highest_education_field",
+            "application_link",
+        ).prefetch_related(
+            "skills",
+            "holidayyearday_set",
+            "holidayweekday_set",
+            "onlinedayyearday_set",
+            "onlinedayweekday_set",
+        )
+
+
     @action(detail=False, methods=["get"], url_path="my-scheduled")
     def my_scheduled_employees(self, request):
         try:
@@ -788,9 +809,30 @@ class HRViewEmployeesViewSet(ModelViewSet):
         except HR.DoesNotExist:
             return Response({"detail": "Only HRs can view this."}, status=403)
 
-        queryset = Employee.objects.filter(scheduling_interviewer=hr)
-        serializer = EmployeeListSerializer(queryset, many=True)
-        return Response(serializer.data)
+        queryset = self.get_base_queryset().filter(
+            scheduling_interviewer=hr,
+            interview_datetime__isnull=False
+        )
+        
+        # Apply filtering
+        queryset = self.filter_queryset(queryset)
+        
+        # Apply annotations and ordering
+        queryset = queryset.annotate(
+            time_diff=Case(
+                When(interview_datetime__gte=Now(), 
+                    then=ExpressionWrapper(F('interview_datetime') - Now(), 
+                    output_field=DurationField())),
+                When(interview_datetime__lt=Now(),
+                    then=ExpressionWrapper(Now() - F('interview_datetime'),
+                    output_field=DurationField())),
+            )
+        ).order_by('time_diff')
+        
+        # Force pagination even for empty results
+        page = self.paginate_queryset(queryset)
+        serializer = EmployeeInterviewListSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="my-taken")
     def my_taken_employees(self, request):
@@ -799,9 +841,13 @@ class HRViewEmployeesViewSet(ModelViewSet):
         except HR.DoesNotExist:
             return Response({"detail": "Only HRs can view this."}, status=403)
 
-        queryset = Employee.objects.filter(interviewer=hr)
-        serializer = EmployeeListSerializer(queryset, many=True)
-        return Response(serializer.data)
+        queryset = self.get_base_queryset().filter(interviewer=hr)
+        queryset = self.filter_queryset(queryset)
+        
+        # Force pagination even for empty results
+        page = self.paginate_queryset(queryset)
+        serializer = EmployeeListSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"], url_path="my-interview-questions")
     def my_interview_questions(self, request, pk=None):
