@@ -5,8 +5,6 @@ import {
   Row,
   Col,
   InputGroup,
-  Toast,
-  ToastContainer,
   Spinner,
   Card,
 } from "react-bootstrap";
@@ -14,6 +12,7 @@ import { FaCopy, FaLink } from "react-icons/fa";
 import Select from "react-select";
 import axiosInstance from "../../api/config";
 import ApplicationBoxFallback from "../DashboardFallBack/ApplicationBoxFallback";
+import { toast } from "react-toastify";
 
 export default function ApplicationLinkBox() {
   const [form, setForm] = useState({
@@ -29,11 +28,6 @@ export default function ApplicationLinkBox() {
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
   const [loadingOptions, setLoadingOptions] = useState(true);
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    variant: "success",
-  });
 
   /* ────────────────────────────────────────────────────────────────────────── */
   /* Fetch dropdown data                                                       */
@@ -62,7 +56,7 @@ export default function ApplicationLinkBox() {
         );
       } catch (err) {
         console.error(err);
-        triggerToast("Error loading dropdown options", "danger");
+        toast.error("Error loading dropdown options");
       } finally {
         setLoadingOptions(false);
       }
@@ -111,10 +105,10 @@ export default function ApplicationLinkBox() {
         payload
       );
       setGeneratedLink(generatedUrl); // Show the auto-generated URL
-      triggerToast("Link generated successfully!", "success");
+      toast.success("Link generated successfully!", "success");
     } catch (err) {
       console.error(err);
-      triggerToast("Failed to generate link", "danger");
+      toast.error("Failed to generate link");
     } finally {
       setLoading(false);
     }
@@ -122,12 +116,7 @@ export default function ApplicationLinkBox() {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedLink);
-    triggerToast("Link copied to clipboard!", "info");
-  };
-
-  const triggerToast = (message, variant = "success") => {
-    setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ show: false, message: "", variant }), 2500);
+    toast.success("Link copied to clipboard!");
   };
 
   if (loadingOptions) {
@@ -249,17 +238,6 @@ export default function ApplicationLinkBox() {
           </div>
         )}
       </Card.Body>
-
-      {/* Toast */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          show={toast.show}
-          bg={toast.variant}
-          onClose={() => setToast({ ...toast, show: false })}
-        >
-          <Toast.Body className="text-white small">{toast.message}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </Card>
   );
 }
