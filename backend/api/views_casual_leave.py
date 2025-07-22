@@ -27,7 +27,13 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["status", "employee__user__username"]
     search_fields = ["employee__user__username", "employee__user__email", "reason"]
-    ordering_fields = ["created_at", "start_date", "end_date", "status"]
+    ordering_fields = [
+        "created_at",
+        "start_date",
+        "end_date",
+        "status",
+        "duration",
+    ]  # Added duration
     ordering = ["-created_at"]  # Default ordering
 
     def get_permissions(self):
@@ -51,7 +57,7 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
             "reviewed_by",
         ).prefetch_related("employee__user__basicinfo")
 
-        if user.basicinfo.role == "employee":
+        if hasattr(user, "basicinfo") and user.basicinfo.role == "employee":
             return base_queryset.filter(employee__user=user)
 
         return base_queryset
@@ -74,13 +80,13 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
                 f"Request exceeds the maximum of {policy.max_days_per_request} days per request."
             )
 
-        approved_leaves = CasualLeave.objects.filter(
-            employee=employee, status="approved"
+        # OPTIMIZED: Use Sum on duration field instead of loop
+        approved_days = (
+            CasualLeave.objects.filter(employee=employee, status="approved").aggregate(
+                total_days=Sum("duration")
+            )["total_days"]
+            or 0
         )
-
-        approved_days = 0
-        for leave in approved_leaves:
-            approved_days += leave.duration
 
         if (approved_days + duration) > policy.yearly_quota:
             raise serializers.ValidationError(
@@ -92,6 +98,12 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["patch"])
     def approve(self, request, pk=None):
         leave = self.get_object()
+        if leave.status == "approved":
+            return Response(
+                {"detail": "Leave is already approved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         leave.status = "approved"
         leave.reviewed_by = request.user
         leave.save()
@@ -101,9 +113,16 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     def reject(self, request, pk=None):
         leave = self.get_object()
         rejection_reason = request.data.get("rejection_reason")
+
         if not rejection_reason:
             return Response(
                 {"detail": "Rejection reason is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if leave.status == "rejected":
+            return Response(
+                {"detail": "Leave is already rejected."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -118,7 +137,15 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
         """
         Get current user's leave requests with optimized query
         """
-        leaves = self.get_queryset().filter(employee__user=request.user)
+        try:
+            employee = request.user.employee
+        except Employee.DoesNotExist:
+            return Response(
+                {"error": "Employee record not found for this user"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        leaves = self.get_queryset().filter(employee=employee)
         page = self.paginate_queryset(leaves)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -130,7 +157,7 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="my-leave-balance")
     def my_leave_balance(self, request):
         """
-        Get current user's leave balance with optimized calculation using database expressions
+        OPTIMIZED: Get current user's leave balance using duration field
         """
         try:
             employee = request.user.employee
@@ -142,14 +169,16 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
 
         policy, _ = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
 
-        # Calculate duration in the database using expressions
+        # OPTIMIZED: Use Sum on duration field - MUCH FASTER!
         approved_days = (
             CasualLeave.objects.filter(employee=employee, status="approved").aggregate(
-                total_days=Sum(Extract(F("end_date") - F("start_date"), "days") + 1)
+                total_days=Sum("duration")
             )["total_days"]
             or 0
         )
-        remaining_days = policy.yearly_quota - approved_days
+
+        remaining_days = max(0, policy.yearly_quota - approved_days)
+
         return Response(
             {
                 "yearly_quota": policy.yearly_quota,
