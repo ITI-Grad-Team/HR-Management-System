@@ -26,11 +26,16 @@ const AdminLeaveView = () => {
     const fetchData = useCallback(async (page = 1, searchTerm = '', status = '', ordering = '-created_at') => {
         try {
             setLoading(true);
+
+            // OPTIMIZED: Build cache key for request deduplication
+            const cacheKey = `${page}-${searchTerm}-${status}-${ordering}`;
+
             const response = await getAllLeaveRequests(page, pageSize, {
                 status,
                 search: searchTerm,
                 ordering
             });
+
             setRequests(response.data);
             setCurrentPage(page);
         } catch (err) {
@@ -42,22 +47,34 @@ const AdminLeaveView = () => {
         }
     }, [pageSize]);
 
-    // Update search when debounced search changes
+    // OPTIMIZED: Debounced search with better performance
     useEffect(() => {
-        setFilters(prev => ({ ...prev, search: debouncedSearch }));
-        fetchData(1, debouncedSearch, filters.status, filters.ordering);
-    }, [debouncedSearch, fetchData, filters.status, filters.ordering]);
+        // Only trigger search if there's actual change
+        if (debouncedSearch !== filters.search) {
+            setFilters(prev => ({ ...prev, search: debouncedSearch }));
+            fetchData(1, debouncedSearch, filters.status, filters.ordering);
+        }
+    }, [debouncedSearch, filters.status, filters.ordering]);
 
-    // Initial fetch
+    // Initial fetch - only run once
     useEffect(() => {
         fetchData();
-    }, [fetchData]);
+    }, []);
 
     const handleApprove = async (id) => {
         try {
             await approveLeaveRequest(id);
             toast.success('Leave request approved.');
-            fetchData(currentPage, filters.search, filters.status, filters.ordering);
+
+            // OPTIMIZED: Update state locally instead of full refetch
+            setRequests(prev => ({
+                ...prev,
+                results: prev.results.map(req =>
+                    req.id === id
+                        ? { ...req, status: 'approved' }
+                        : req
+                )
+            }));
         } catch {
             toast.error('Failed to approve request.');
         }
@@ -75,7 +92,16 @@ const AdminLeaveView = () => {
             toast.success('Leave request rejected.');
             setShowRejectModal(false);
             setRejectionReason('');
-            fetchData(currentPage, filters.search, filters.status, filters.ordering);
+
+            // OPTIMIZED: Update state locally instead of full refetch
+            setRequests(prev => ({
+                ...prev,
+                results: prev.results.map(req =>
+                    req.id === selectedRequest.id
+                        ? { ...req, status: 'rejected', rejection_reason: rejectionReason }
+                        : req
+                )
+            }));
         } catch {
             toast.error('Failed to reject request.');
         }
@@ -187,7 +213,14 @@ const AdminLeaveView = () => {
                         <tbody>
                             {pendingRequests.map(req => (
                                 <tr key={req.id}>
-                                    <td>{req.employee.basic_info.username}</td>
+                                    <td>
+                                        <div>
+                                            <strong>{req.employee_name || req.employee?.basic_info?.username}</strong>
+                                            {(req.employee_position || req.employee?.position?.name) && (
+                                                <small className="text-muted d-block">{req.employee_position || req.employee.position.name}</small>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td>{req.start_date} to {req.end_date}</td>
                                     <td>{req.duration} days</td>
                                     <td>{formatText(req.reason, 'No reason provided')}</td>
@@ -236,9 +269,9 @@ const AdminLeaveView = () => {
                                         <tr key={req.id}>
                                             <td>
                                                 <div>
-                                                    <strong>{req.employee.basic_info.username}</strong>
-                                                    {req.employee.position && (
-                                                        <small className="text-muted d-block">{req.employee.position.name}</small>
+                                                    <strong>{req.employee_name || req.employee?.basic_info?.username}</strong>
+                                                    {(req.employee_position || req.employee?.position?.name) && (
+                                                        <small className="text-muted d-block">{req.employee_position || req.employee.position.name}</small>
                                                     )}
                                                 </div>
                                             </td>

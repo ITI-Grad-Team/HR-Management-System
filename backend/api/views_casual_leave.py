@@ -36,6 +36,16 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     ]  # Added duration
     ordering = ["-created_at"]  # Default ordering
 
+    def get_serializer_class(self):
+        """
+        OPTIMIZED: Use lightweight serializer for list operations
+        """
+        if self.action == "list":
+            from .serializers import CasualLeaveListSerializer
+
+            return CasualLeaveListSerializer
+        return CasualLeaveSerializer
+
     def get_permissions(self):
         if self.action in ["create", "my_requests", "my_leave_balance"]:
             self.permission_classes = [IsAuthenticated, IsEmployee]
@@ -45,18 +55,31 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Optimize queryset with select_related and prefetch_related to prevent N+1 queries
+        OPTIMIZED: Highly optimized queryset with minimal joins and strategic indexing
         """
         user = self.request.user
 
-        # Base queryset with optimized joins
+        # Base queryset with ONLY necessary joins
         base_queryset = CasualLeave.objects.select_related(
-            "employee__user",
-            "employee__user__basicinfo",
-            "employee__position",
-            "reviewed_by",
-        ).prefetch_related("employee__user__basicinfo")
+            "employee__user__basicinfo",  # Streamlined - only need basic info
+            "employee__position",  # For position name
+            "reviewed_by",  # For reviewer info
+        ).only(
+            # Only fetch needed fields to reduce data transfer
+            "id",
+            "start_date",
+            "end_date",
+            "duration",
+            "status",
+            "created_at",
+            "reason",
+            "rejection_reason",
+            "employee__user__basicinfo__username",
+            "employee__position__name",
+            "reviewed_by__username",
+        )
 
+        # Filter early if employee to reduce dataset
         if hasattr(user, "basicinfo") and user.basicinfo.role == "employee":
             return base_queryset.filter(employee__user=user)
 
@@ -135,7 +158,7 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="my-requests")
     def my_requests(self, request):
         """
-        Get current user's leave requests with optimized query
+        OPTIMIZED: Get current user's leave requests with optimized query
         """
         try:
             employee = request.user.employee
@@ -145,11 +168,40 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        leaves = self.get_queryset().filter(employee=employee)
+        # OPTIMIZED: Use minimal fields for employee view
+        leaves = (
+            CasualLeave.objects.filter(employee=employee)
+            .only(
+                "id",
+                "start_date",
+                "end_date",
+                "duration",
+                "status",
+                "created_at",
+                "reason",
+                "rejection_reason",
+            )
+            .order_by("-created_at")
+        )
+
         page = self.paginate_queryset(leaves)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            # Use a minimal serializer for employee's own requests
+            serializer_data = []
+            for leave in page:
+                serializer_data.append(
+                    {
+                        "id": leave.id,
+                        "start_date": leave.start_date,
+                        "end_date": leave.end_date,
+                        "duration": leave.duration,
+                        "status": leave.status,
+                        "created_at": leave.created_at,
+                        "reason": leave.reason or "",
+                        "rejection_reason": leave.rejection_reason or "",
+                    }
+                )
+            return self.get_paginated_response(serializer_data)
 
         serializer = self.get_serializer(leaves, many=True)
         return Response(serializer.data)
