@@ -2475,3 +2475,69 @@ class ChangePasswordView(APIView):
         return Response(
             {"message": "Password changed successfully."}, status=status.HTTP_200_OK
         )
+
+
+from openai import OpenAI
+from django.conf import settings
+
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+
+class RAGViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def _get_role_suffix(self, user):
+        """Returns role-specific suffix message"""
+        if IsHR().has_permission(self.request, self):
+            return "\n\n[Responding to HR representative]"
+        elif IsAdmin().has_permission(self.request, self):
+            return "\n\n[Responding to system administrator]"
+        elif IsCoordinator().has_permission(self.request, self):
+            return "\n\n[Responding to coordinator employee]"
+        else:
+            return "\n\n[Responding to regular employee]"
+
+    @action(detail=False, methods=["post"], url_path="query")
+    def handle_query(self, request):
+        question = request.data.get("question", "").strip()
+        username = (
+            request.user.basicinfo.username
+            if hasattr(request.user, "basicinfo")
+            else "a user"
+        )
+
+        # Load context
+        context = ""
+        data_path = os.path.join(settings.BASE_DIR, "data.txt")
+        if os.path.exists(data_path):
+            with open(data_path, "r", encoding="utf-8") as f:
+                context = f.read()
+
+        # Prepare system message with role context
+        role_suffix = self._get_role_suffix(request.user)
+        system_message = (
+            f"Answer questions for user named ({username}) based on this context:\n{context}"
+            f"{role_suffix}\n"
+            "Keep responses professional and tailored to the user's role."
+        )
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": question},
+                ],
+                temperature=0.7,
+            )
+
+            return Response(
+                {
+                    "answer": response.choices[0].message.content,
+                    "responded_as": role_suffix.strip("[]\n"),
+                    "username": username,
+                }
+            )
+
+        except Exception as e:
+            return Response({"error": str(e), "username": username}, status=500)

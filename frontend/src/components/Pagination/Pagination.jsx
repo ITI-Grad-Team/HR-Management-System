@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pagination as BootstrapPagination } from 'react-bootstrap';
+import "./pagination.css";
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     const getPageItems = () => {

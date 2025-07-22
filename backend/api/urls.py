@@ -17,7 +17,7 @@ from .views import (
     CoordinatorViewEmployeesViewSet,
     AdminViewEmployeesViewSet,ViewProfileViewSet,
     AdminManageSkillsViewSet,FilterOptionsViewSet,
-    AdminManagePositionsViewSet,
+    AdminManagePositionsViewSet,RAGViewSet,
     AdminViewApplicationLinksViewSet,
     AdminManageRegionsViewSet,
     AdminManageEducationDegreesViewSet,
@@ -40,6 +40,7 @@ router = DefaultRouter()
 
 # Public
 router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
+router.register(r'rag', RAGViewSet, basename='rag')
 
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
@@ -133,6 +134,7 @@ router.register(
 router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
 router.register(r"casual-leave", CasualLeaveViewSet, basename="casual-leave")
 
+
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
@@ -142,4 +144,5 @@ urlpatterns = [
     path("auth/reset-password/", ResetPasswordView.as_view()),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
 ]
+
 
