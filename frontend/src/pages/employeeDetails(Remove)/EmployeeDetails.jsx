@@ -2,51 +2,29 @@ import { useEffect, useState } from "react";
 import "./EmployeeDetails.css";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/config";
-import {
-  Card,
-  Button,
-  Badge,
-  Row,
-  Col,
-  Modal,
-  Form,
-  Spinner,
-} from "react-bootstrap";
+import { Card, Badge, Row, Col } from "react-bootstrap";
 import { useAuth } from "../../hooks/useAuth";
 import {
   FaPhone,
-  FaDownload,
   FaBriefcase,
   FaMapMarkerAlt,
   FaUserGraduate,
   FaUser,
   FaCode,
-  FaFileAlt,
-  FaCalendarAlt,
   FaCheck,
-  FaTimes,
   FaUsers,
   FaEnvelope,
-  FaExclamationTriangle,
-  FaRegChartBar,
-  FaRobot,
   FaInfo,
   FaMoneyBill,
   FaCalendar,
-  FaMinus,
-  FaRemoveFormat,
-  FaMoneyCheck,
   FaCalendarPlus,
   FaTimesCircle,
   FaLaptopHouse,
-  FaHourglass,
   FaCalendarMinus,
-  FaStarHalf,
   FaClock,
   FaStar,
 } from "react-icons/fa";
-import CandidatesFallback from "../../components/DashboardFallBack/CandidatesFallback"
-
+import CandidatesFallback from "../../components/DashboardFallBack/CandidatesFallback";
 
 const EmployeeDetails = () => {
   const { role } = useAuth();
@@ -54,25 +32,24 @@ const EmployeeDetails = () => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
     role === "admin"
       ? axiosInstance.get(`/admin/employees/${id}/`).then((response) => {
-        setEmployee(response.data);
-        setLoading(false);
-        console.log(employee);
-      })
-      : role === "hr"
-        ? axiosInstance.get(`/hr/employees/${id}/`).then((response) => {
           setEmployee(response.data);
           setLoading(false);
           console.log(employee);
         })
-        : "";
+      : role === "hr"
+      ? axiosInstance.get(`/hr/employees/${id}/`).then((response) => {
+          setEmployee(response.data);
+          setLoading(false);
+          console.log(employee);
+        })
+      : "";
   });
 
   if (loading) {
-    return <CandidatesFallback />
+    return <CandidatesFallback />;
   }
 
   return (
@@ -108,7 +85,9 @@ const EmployeeDetails = () => {
               </div>
             )}
           </div>
-          <h5 className="mb-0 fw-bold text-dark">{employee?.basicinfo?.username}</h5>
+          <h5 className="mb-0 fw-bold text-dark">
+            {employee?.basicinfo?.username}
+          </h5>
           <p className="text-muted mb-2">{employee?.position}</p>
           <div className="d-flex gap-2">
             {employee?.region && (
@@ -118,8 +97,8 @@ const EmployeeDetails = () => {
             )}
             {employee?.years_of_experience !== null && (
               <Badge pill bg="light" text="dark" className="border">
-                <FaBriefcase className="text-primary" /> {employee?.years_of_experience}{" "}
-                yrs
+                <FaBriefcase className="text-primary" />{" "}
+                {employee?.years_of_experience} yrs
               </Badge>
             )}
             {employee?.is_coordinator && (
@@ -145,7 +124,9 @@ const EmployeeDetails = () => {
                   <FaPhone className="me-2 text-muted" />
                   <div>
                     <small className="text-muted d-block">Phone</small>
-                    <span className="fw-semibold">{employee?.phone || "N/A"}</span>
+                    <span className="fw-semibold">
+                      {employee?.phone || "N/A"}
+                    </span>
                   </div>
                 </div>
               </Col>
@@ -176,8 +157,8 @@ const EmployeeDetails = () => {
                 {employee?.has_position_related_high_education
                   ? "✓"
                   : employee?.has_position_related_high_education === false
-                    ? "✗"
-                    : "❔"}
+                  ? "✗"
+                  : "❔"}
               </span>
             </h6>
             <div>
@@ -281,7 +262,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaTimesCircle className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Short Time Penalty</small>
+                    <small className="text-muted d-block">
+                      Short Time Penalty
+                    </small>
                     <span className="fw-semibold">
                       $ {employee?.shorttime_hour_penalty || "N/A"}
                     </span>
@@ -290,7 +273,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaTimesCircle className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Absence Penalty</small>
+                    <small className="text-muted d-block">
+                      Absence Penalty
+                    </small>
                     <span className="fw-semibold">
                       $ {employee?.absence_penalty || "N/A"}
                     </span>
@@ -301,7 +286,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center">
                   <FaCalendar className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Attendance Time</small>
+                    <small className="text-muted d-block">
+                      Attendance Time
+                    </small>
                     <span className="fw-semibold">
                       {employee?.expected_attend_time || "N/A"}
                     </span>
@@ -337,7 +324,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaStar className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Total Task rating</small>
+                    <small className="text-muted d-block">
+                      Total Task rating
+                    </small>
                     <span className="fw-semibold">
                       {employee?.total_task_ratings || 0} hrs
                     </span>
@@ -348,7 +337,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center">
                   <FaClock className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Total Lateness Hrs</small>
+                    <small className="text-muted d-block">
+                      Total Lateness Hrs
+                    </small>
                     <span className="fw-semibold">
                       {employee?.total_lateness_hours || 0} hrs
                     </span>
@@ -357,7 +348,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaClock className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Total Time To DeadLine</small>
+                    <small className="text-muted d-block">
+                      Total Time To DeadLine
+                    </small>
                     <span className="fw-semibold">
                       {employee?.total_time_remaining_before_deadline || 0} hrs
                     </span>
@@ -366,7 +359,9 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaClock className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Total Over Time Hrs</small>
+                    <small className="text-muted d-block">
+                      Total Over Time Hrs
+                    </small>
                     <span className="fw-semibold">
                       {employee?.total_overtime_hours || 0} hrs
                     </span>
@@ -375,13 +370,14 @@ const EmployeeDetails = () => {
                 <div className="d-flex align-items-center mt-2">
                   <FaCalendarMinus className="me-2 text-muted" />
                   <div>
-                    <small className="text-muted d-block">Total Absence Days</small>
+                    <small className="text-muted d-block">
+                      Total Absence Days
+                    </small>
                     <span className="fw-semibold">
                       {employee?.total_absent_days || 0} hrs
                     </span>
                   </div>
                 </div>
-
               </Col>
             </Row>
           </div>
