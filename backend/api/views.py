@@ -263,7 +263,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    pagination_class = TwentyPerPagePagination
+    pagination_class = EightPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -670,7 +670,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
-    pagination_class = TwentyPerPagePagination
+    pagination_class = EightPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
