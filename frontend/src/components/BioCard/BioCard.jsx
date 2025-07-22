@@ -6,7 +6,9 @@ import {
   FaMapMarkerAlt,
   FaGraduationCap,
   FaBriefcase,
-  FaUsers,
+  FaCheckCircle,
+  FaQuestionCircle,
+  FaUsers,FaRegClock ,
   FaClock,
 } from "react-icons/fa";
 // Add these utilities (or use date-fns/luxon)
@@ -50,7 +52,6 @@ function formatInterviewTiming(timeUntilStr) {
     return parts.join(" ") + " ago";
   }
 }
-
 
 export default function BioCard({
   name,
@@ -98,10 +99,6 @@ export default function BioCard({
             <p className="bio-card-role">
               {department || "Position Not Specified"}
             </p>
-          )}
-          {/* Optionally show status for candidates */}
-          {!isEmployee && status && (
-            <p className="bio-card-status">Status: {status}</p>
           )}
         </div>
       </div>
@@ -171,6 +168,31 @@ export default function BioCard({
                 <FaClock /> Time comes in{" "}
                 {formatInterviewTiming(time_until_interview)}
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {status && (
+        <div className="interview-timing">
+          <div className="interview-status">
+            {status === "accepted" ? (
+              <span className="status-badge joined">
+                <FaCheckCircle className="status-icon" /> Joined
+              </span>
+            ) : status === "pending" || status === "scheduled" ? (
+              <span className="status-badge awaiting">
+                <FaRegClock className="status-icon" /> Awaiting
+                {status === "scheduled" && (
+                  <span className="scheduled-badge">
+                    <FaClock /> Scheduled
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="status-badge decision-pending">
+                <FaQuestionCircle className="status-icon" /> Awaiting decision
+              </span>
             )}
           </div>
         </div>

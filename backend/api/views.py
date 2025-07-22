@@ -66,7 +66,7 @@ from .serializers import (
     HRSerializer,
     EmployeeSerializer,
     EmployeeListSerializer,
-    EmployeeRejectingSerializer,
+    EmployeeRejectingSerializer,EmployeeTakenListSerializer,
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
@@ -263,7 +263,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    pagination_class = TwentyPerPagePagination
+    pagination_class = EightPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -670,7 +670,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
-    pagination_class = TwentyPerPagePagination
+    pagination_class = EightPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -866,11 +866,24 @@ class HRViewEmployeesViewSet(ModelViewSet):
             return Response({"detail": "Only HRs can view this."}, status=403)
 
         queryset = self.get_base_queryset().filter(interviewer=hr)
+        
+        # Custom ordering based on interview_state priority
+        queryset = queryset.annotate(
+            state_order=Case(
+                When(interview_state='done', then=Value(1)),
+                When(interview_state='scheduled', then=Value(2)),
+                When(interview_state='pending', then=Value(3)),
+                When(interview_state='accepted', then=Value(4)),
+                default=Value(5),
+                output_field=IntegerField(),
+            )
+        ).order_by('state_order') 
+        
         queryset = self.filter_queryset(queryset)
 
         # Force pagination even for empty results
         page = self.paginate_queryset(queryset)
-        serializer = EmployeeListSerializer(page, many=True)
+        serializer = EmployeeTakenListSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"], url_path="my-interview-questions")

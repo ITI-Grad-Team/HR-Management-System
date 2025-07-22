@@ -553,6 +553,32 @@ class OvertimeRequestApprovalSerializer(serializers.ModelSerializer):
         fields = ["hr_comment"]
 
 
+class EmployeeTakenListSerializer(serializers.ModelSerializer):
+    position = serializers.CharField(source="position.name", read_only=True)
+    region = serializers.CharField(source="region.name", read_only=True)
+    user = UserSerializer(read_only=True)
+    basic_info = BasicInfoSerializer(source="user.basicinfo", read_only=True)
+    highest_education_field = serializers.CharField(
+        source="highest_education_field.name", read_only=True
+    )
+    application_link = serializers.CharField(
+        source="application_link.distinction_name", read_only=True
+    )
+
+    class Meta:
+        model = Employee
+        fields = [
+            "id",
+            "position",
+            "region",
+            "is_coordinator",
+            "user",
+            "basic_info",
+            "highest_education_field",
+            "years_of_experience",
+            "application_link",'interview_state'
+        ]
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.CharField(source="position.name", read_only=True)
     region = serializers.CharField(source="region.name", read_only=True)

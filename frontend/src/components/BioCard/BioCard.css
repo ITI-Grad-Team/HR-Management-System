@@ -179,3 +179,51 @@
 .upcoming-icon {
   color: #ff9800;
 }
+
+.interview-timing {
+  text-align: center;
+  margin: 16px 0 8px;
+  padding-top: 12px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.joined {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.awaiting {
+  background: #fff8e1;
+  color: #ebb400;
+}
+
+.decision-pending {
+  background: #ff4b872c;
+  color: #da0054;
+}
+
+.scheduled-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #60aa0034;
+  color: #817900;
+  font-size: 12px;
+}
+
+.status-icon {
+  font-size: 14px;
+}

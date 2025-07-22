@@ -625,7 +625,6 @@ const Employees = () => {
                             isCoordinator={employee.is_coordinator}
                             experience={employee.years_of_experience}
                             role={employee.basic_info?.role}
-                            status={employee.interview_state}
                           />
                         </Link>
                       </div>
@@ -675,7 +674,6 @@ const Employees = () => {
                           isCoordinator={candidate.is_coordinator}
                           experience={candidate.years_of_experience}
                           role={candidate.basic_info?.role}
-                          status={candidate.interview_state}
                         />
                       </Link>
                     </div>
@@ -725,7 +723,6 @@ const Employees = () => {
                         isCoordinator={employee.is_coordinator}
                         experience={employee.years_of_experience}
                         role={employee.basic_info?.role}
-                        status={employee.interview_state}
                         interview_datetime={employee.interview_datetime}
                         time_until_interview={employee.time_until_interview}
                       />

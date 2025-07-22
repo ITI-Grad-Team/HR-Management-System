@@ -2,7 +2,6 @@ from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from sqlalchemy import Cast
 from .models import CasualLeave, EmployeeLeavePolicy, Employee
 from .serializers import CasualLeaveSerializer, EmployeeLeavePolicySerializer
 from .permissions import IsEmployee, IsHRorAdmin
