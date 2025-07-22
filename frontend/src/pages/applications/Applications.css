@@ -1,0 +1,19 @@
+
+
+#applications-tabs-tab-generate.nav-link.active{
+    background-color: #222831 !important;
+    color: #ebdcc4 !important;
+}
+
+#applications-tabs-tab-generate.nav-link{
+    color: #222831 !important;
+}
+
+#applications-tabs-tab-all.nav-link.active{
+    background-color: #222831 !important;
+    color: #ebdcc4 !important;
+}
+
+#applications-tabs-tab-all.nav-link{
+    color: #222831 !important;
+}

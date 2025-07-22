@@ -5,6 +5,7 @@ import { Container, Tabs, Tab } from 'react-bootstrap';
 import { FaAngellist, FaLink, FaList, FaListAlt, FaPage4, FaPagelines, FaPager } from 'react-icons/fa';
 import ViewAllApplicationLinks from '../../components/ViewAllApplicationLinks/ViewAllApplicationLinks';
 import { useAuth } from '../../hooks/useAuth';
+import './Applications.css';
 
 
 const Applications = () => {
@@ -27,10 +28,10 @@ const Applications = () => {
             justify
             variant="pills"
           >
-            <Tab eventKey="generate" title={<span className="fw-semibold dark"><FaLink /> Generate New Link</span>}>
+            <Tab className='tab' eventKey="generate" title={<span className="fw-semibold dark tab"><FaLink /> Generate New Link</span>}>
               <ApplicationLinkBox />
             </Tab>
-            <Tab eventKey="all" title={<span className="fw-semibold">All Application Links</span>}>
+            <Tab className='tab' eventKey="all" title={<span className="fw-semibold">All Application Links</span>}>
               <div className="p-4 bg-white rounded shadow text-center">
                 <ViewAllApplicationLinks />
               </div>
