@@ -4,14 +4,18 @@ import { useAuth } from '../../hooks/useAuth';
 import { useEffect } from 'react';
 
 const Leave = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
 
     useEffect(() => {
         document.title = "Casual Leave | HERA";
-      }, []);
+    }, []);
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
     if (!user) {
-        return <div>Loading...</div>;
+        return <div>Authentication required</div>;
     }
 
     const renderView = () => {
