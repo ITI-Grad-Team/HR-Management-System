@@ -105,3 +105,13 @@
   display: flex;
   justify-content: center;
 }
+
+
+.nav-link{
+    color: #222831 !important;
+}
+
+.nav-link:hover{
+    color: #948979 !important;
+}
+
