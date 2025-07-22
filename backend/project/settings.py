@@ -178,6 +178,8 @@ FRONTEND_BASE_URL = "http://localhost:3000"
 
 # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # For test
 
+ # Load environment variables
+
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
@@ -187,6 +189,7 @@ EMAIL_HOST_USER = "tempohr44@gmail.com"
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = "noreply@HRTempo.com"
 TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY")
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 SPECTACULAR_SETTINGS = {
     "TITLE": "HR Management API",
     "DESCRIPTION": "API documentation for HR Management System",

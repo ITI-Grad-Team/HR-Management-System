@@ -1,0 +1,101 @@
+Admin Role CAN:
+View HR personnel
+
+View all employees (with filtering by: Applicants, Coordinators, Regular Employees)
+
+Invite HR to the system (adds email and sends)
+
+Modify system settings:
+Add Skills/Positions/Educations/Education Degrees (many to one customizations)
+
+Request employee performance prediction: (Average attendance, Average delay, Task completion speed..)
+
+Promote regular employees to Coordinator
+
+HR Role CAN:
+View all employees (with filtering by: Applicants, Coordinators, Regular Employees)
+
+Modify system settings:
+
+Add Skills/Positions/Educations/Education Degrees (many to one customizations)
+
+Request employee performance prediction 
+
+Generate application links (in Settings):
+(Assign distinct name, Specify role: Coordinator or Regular Employee, Set maximum hires & required skills)
+
+Schedule interview of an applicant (email notifications sent)
+
+Take interview responsibility of an applicant
+
+Add interview questions/general evaluation (exclusive right to the responsible)
+
+Submit final decision (Accept/Reject) (exclusive right to the responsible)
+
+On applicant acceptance:
+Set salary, overtime rate, short-time rate
+Define attendance days, online days, leave days
+Configure clock-in/clock-out times
+
+Edit employee data extracted from CVs (error correction)
+
+Approve/Reject overtime requests from employees
+
+Generate monthly reports:
+Attendance/Absence
+Payroll
+
+Unauthenticated User CAN:
+
+Apply via published application links:
+Upload CV + email + phone number
+
+CV processing:
+ATS filters CVs
+AI parses passing CVs ? extracts data ? creates incomplete employee record
+
+Coordinator Role CAN:
+View Regular Employees in their same position
+
+Assign tasks to employees with deadlines
+
+Display tasks + download response files
+
+Reject tasks (with comments)
+
+Approve tasks (with evaluation + time-to-deadline display)
+
+Record attendance:
+Clock-in/Clock-out (system tracks Delay at clock-in
+Overtime/short-time at clock-out)
+Request overtime if leaving late
+
+
+
+
+Regular Employee Role CAN:
+View assigned tasks
+
+Upload files (submit tasks)
+
+Record attendance:
+Clock-in/Clock-out
+Request overtime if leaving late
+
+
+System Automation (Daily at 12 AM) CAN:
+Model training:
+Input: CV-extracted data
+Output: Predictions for avg task speed, avg lateness.. etc
+
+
+Absence detection:
+Flag employees absent on non-leave days
+
+Force clock-out:
+Auto-logout employees who clocked in but didn’t clock out
+and auto-generate overtime requests for them (system-tagged)
+
+Endpoint lockdown:
+Block relative endpoints during processing to prevent tampering
+
