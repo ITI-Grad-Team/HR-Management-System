@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from sqlalchemy import Cast
 from .models import CasualLeave, EmployeeLeavePolicy, Employee
 from .serializers import CasualLeaveSerializer, EmployeeLeavePolicySerializer
 from .permissions import IsEmployee, IsHRorAdmin
@@ -10,6 +11,8 @@ from django.utils import timezone
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django.db.models import Sum, F
+from django.db.models.functions import Extract
 
 
 class CasualLeavePagination(PageNumberPagination):
@@ -127,7 +130,7 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="my-leave-balance")
     def my_leave_balance(self, request):
         """
-        Get current user's leave balance with optimized calculation
+        Get current user's leave balance with optimized calculation using database expressions
         """
         try:
             employee = request.user.employee
@@ -137,16 +140,15 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        policy, created = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
+        policy, _ = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
 
-        # Use database aggregation for better performance
+        # Calculate duration in the database using expressions
         approved_days = (
             CasualLeave.objects.filter(employee=employee, status="approved").aggregate(
-                total_days=Sum("duration")
+                total_days=Sum(Extract(F("end_date") - F("start_date"), "days") + 1)
             )["total_days"]
             or 0
         )
-
         remaining_days = policy.yearly_quota - approved_days
         return Response(
             {
