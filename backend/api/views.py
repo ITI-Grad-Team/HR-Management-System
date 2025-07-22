@@ -1253,7 +1253,7 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if employee.interview_state != "done":
+        if employee.interview_state != "done" and employee.interview_state != "accepted":
             return Response(
                 {
                     "detail": f"Cannot accept employee with current interview status: '{employee.interview_state}'."

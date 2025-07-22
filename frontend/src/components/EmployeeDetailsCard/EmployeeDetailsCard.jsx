@@ -89,6 +89,7 @@ export default function CandidateDetailsCard({
   const [localState, setLocalState] = useState(interview_state);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
@@ -108,9 +109,9 @@ export default function CandidateDetailsCard({
     expected_attend_time: "09:00",
     expected_leave_time: "17:00",
     holiday_weekdays: [],
-    holiday_yeardays: [{ month: "", day: "" }],
+    holiday_yeardays: [],
     online_weekdays: [],
-    online_yeardays: [{ month: "", day: "" }],
+    online_yeardays: [],
   });
   const [predictLoading, setPredictLoading] = useState(false);
   const [predictError, setPredictError] = useState(null);
@@ -136,7 +137,7 @@ export default function CandidateDetailsCard({
 
   useEffect(() => {
     document.title = `${candidate.basicinfo.username} | HERA`;
-    })
+  });
 
   useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
@@ -275,6 +276,7 @@ export default function CandidateDetailsCard({
   /* ---------------- Accept Employee ---------------- */
   const handleAcceptSubmit = async () => {
     try {
+      console.log(formData);
       setLoading(true);
       await axiosInstance.patch(`/hr/accept-employee/${candidateId}/`, {
         ...formData,
@@ -283,6 +285,7 @@ export default function CandidateDetailsCard({
       });
       toast.success("Candidate accepted successfully");
       setShowAcceptModal(false);
+      setShowUpdateModal(false);
       setLocalState("accepted");
       onSchedule?.();
       // You might want to redirect or refresh data here
@@ -908,7 +911,7 @@ export default function CandidateDetailsCard({
                       className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowCvEditModal(true)}
                     >
-                      <FaInfoCircle /> Update CV Extracted Info.
+                      <FaEdit /> Update CV Extracted Info.
                     </button>
                   </Col>
                 ) : (
@@ -991,6 +994,20 @@ export default function CandidateDetailsCard({
 
                 {/* First Row - 2 columns */}
                 <Row className="g-4 mb-4">
+                  <Row className="g-4 mb-0 mt-0">
+                    <Col md={8}>
+                      {interviewer === loggedInHrId && (
+                        <Button
+                          variant="info"
+                          onClick={() => setShowUpdateModal(true)}
+                          className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                        >
+                          <FaEdit className="fs-6 align-baseline" />
+                          Update Compensation And Work Schedule
+                        </Button>
+                      )}
+                    </Col>
+                  </Row>
                   {/* Column 1 - Compensation */}
                   <Col md={4}>
                     <Card className="h-100 border-0 shadow-sm">
@@ -1043,7 +1060,6 @@ export default function CandidateDetailsCard({
                       </Card.Body>
                     </Card>
                   </Col>
-
                   {/* Column 2 - Task Performance */}
                   <Col md={4}>
                     <Card className="h-100 border-0 shadow-sm">
@@ -1565,7 +1581,6 @@ export default function CandidateDetailsCard({
                     variant="outline-danger"
                     size="sm"
                     onClick={() => removeHolidayYearday(index)}
-                    disabled={formData.holiday_yeardays.length <= 1}
                   >
                     <FaTimes />
                   </Button>
@@ -1632,7 +1647,6 @@ export default function CandidateDetailsCard({
                     variant="outline-danger"
                     size="sm"
                     onClick={() => removeOnlineYearday(index)}
-                    disabled={formData.online_yeardays.length <= 1}
                   >
                     <FaTimes />
                   </Button>
@@ -1659,12 +1673,273 @@ export default function CandidateDetailsCard({
           <Button
             variant="success"
             onClick={handleAcceptSubmit}
-            disabled={loading}
+            disabled={
+              loading ||
+              !formData.basic_salary ||
+              !formData.overtime_hour_salary ||
+              !formData.shorttime_hour_penalty ||
+              !formData.absence_penalty
+            }
           >
             {loading ? (
               <Spinner size="sm" animation="border" />
             ) : (
               "Confirm Acceptance"
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit Compensation and working days Modal */}
+      <Modal
+        show={showUpdateModal}
+        onHide={() => setShowUpdateModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">
+            <FaCheck className="me-2 text-success" /> Update Employee
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          <Form>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Basic Salary</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="basic_salary"
+                    value={formData.basic_salary}
+                    onChange={handleInputChange}
+                    placeholder="Enter basic salary"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Overtime Hour Salary</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="overtime_hour_salary"
+                    value={formData.overtime_hour_salary}
+                    onChange={handleInputChange}
+                    placeholder="Enter overtime rate"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Shorttime Hour Penalty</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="shorttime_hour_penalty"
+                    value={formData.shorttime_hour_penalty}
+                    onChange={handleInputChange}
+                    placeholder="Enter shorttime penalty"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Absence Penalty</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="absence_penalty"
+                    value={formData.absence_penalty}
+                    onChange={handleInputChange}
+                    placeholder="Enter absence penalty"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Expected Attend Time</Form.Label>
+                  <Form.Control
+                    type="time"
+                    name="expected_attend_time"
+                    value={formData.expected_attend_time}
+                    onChange={handleInputChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Expected Leave Time</Form.Label>
+                  <Form.Control
+                    type="time"
+                    name="expected_leave_time"
+                    value={formData.expected_leave_time}
+                    onChange={handleInputChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Days Off</Form.Label>
+              <div className="d-flex flex-wrap gap-2">
+                {weekdays.map((day) => (
+                  <Button
+                    key={day.value}
+                    variant={
+                      formData.holiday_weekdays.includes(day.value)
+                        ? "primary"
+                        : "outline-secondary"
+                    }
+                    onClick={() => handleHolidayWeekdayToggle(day.value)}
+                    size="sm"
+                  >
+                    {day.label}
+                  </Button>
+                ))}
+              </div>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Year Days Off</Form.Label>
+              {formData.holiday_yeardays.map((yearday, index) => (
+                <div
+                  key={index}
+                  className="d-flex align-items-center gap-2 mb-2"
+                >
+                  <Form.Control
+                    type="number"
+                    placeholder="Month (1-12)"
+                    min="1"
+                    max="12"
+                    value={yearday.month}
+                    onChange={(e) =>
+                      handleHolidayYeardayChange(index, "month", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Form.Control
+                    type="number"
+                    placeholder="Day (1-31)"
+                    min="1"
+                    max="31"
+                    value={yearday.day}
+                    onChange={(e) =>
+                      handleHolidayYeardayChange(index, "day", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => removeHolidayYearday(index)}
+                  >
+                    <FaTimes />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={addHolidayYearday}
+                className="mt-2"
+              >
+                Add Year Day Off
+              </Button>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Days</Form.Label>
+              <div className="d-flex flex-wrap gap-2">
+                {weekdays.map((day) => (
+                  <Button
+                    key={day.value}
+                    variant={
+                      formData.online_weekdays.includes(day.value)
+                        ? "primary"
+                        : "outline-secondary"
+                    }
+                    onClick={() => handleOnlineWeekdayToggle(day.value)}
+                    size="sm"
+                  >
+                    {day.label}
+                  </Button>
+                ))}
+              </div>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Online Year Days</Form.Label>
+              {formData.online_yeardays.map((yearday, index) => (
+                <div
+                  key={index}
+                  className="d-flex align-items-center gap-2 mb-2"
+                >
+                  <Form.Control
+                    type="number"
+                    placeholder="Month (1-12)"
+                    min="1"
+                    max="12"
+                    value={yearday.month}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "month", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Form.Control
+                    type="number"
+                    placeholder="Day (1-31)"
+                    min="1"
+                    max="31"
+                    value={yearday.day}
+                    onChange={(e) =>
+                      handleOnlineYeardayChange(index, "day", e.target.value)
+                    }
+                    style={{ width: "120px" }}
+                  />
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => removeOnlineYearday(index)}
+                  >
+                    <FaTimes />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={addOnlineYearday}
+                className="mt-2"
+              >
+                Add Online Year Day
+              </Button>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowUpdateModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleAcceptSubmit}
+            disabled={
+              loading ||
+              !formData.basic_salary ||
+              !formData.overtime_hour_salary ||
+              !formData.shorttime_hour_penalty ||
+              !formData.absence_penalty
+            }
+          >
+            {loading ? (
+              <Spinner size="sm" animation="border" />
+            ) : (
+              "Confirm Update"
             )}
           </Button>
         </Modal.Footer>

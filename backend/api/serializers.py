@@ -294,7 +294,6 @@ class PositionSerializer(serializers.ModelSerializer):
         model = Position
         fields = "__all__"
 
-
 class EmployeeAcceptingSerializer(serializers.ModelSerializer):
     holiday_weekdays = serializers.ListField(
         child=serializers.CharField(),
@@ -339,63 +338,71 @@ class EmployeeAcceptingSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # Handle holiday days
-        holiday_weekdays = validated_data.pop("holiday_weekdays", [])
-        holiday_yeardays = validated_data.pop("holiday_yeardays", [])
+        holiday_weekdays = validated_data.pop("holiday_weekdays", None)
+        holiday_yeardays = validated_data.pop("holiday_yeardays", None)
 
         # Handle online days
-        online_weekdays = validated_data.pop("online_weekdays", [])
-        online_yeardays = validated_data.pop("online_yeardays", [])
+        online_weekdays = validated_data.pop("online_weekdays", None)
+        online_yeardays = validated_data.pop("online_yeardays", None)
 
-        # Set password and save user (unchanged)
-        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
-        user = instance.user
-        user.set_password(password)
-        user.save()
+        if instance.interview_state == "done":
+            # Only do acceptance workflow if not already accepted
+            password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+            user = instance.user
+            user.set_password(password)
+            user.save()
+
+            instance.interview_state = "accepted"
+            instance.join_date = timezone.now()
+
+            # Send welcome email only for new acceptance
+            send_mail(
+                subject="Welcome to HR",
+                message=f"Your account has been created.\nUsername: {user.username}\nPassword: {password}",
+                from_email="tempohr44@gmail.com",
+                recipient_list=[user.username],
+                fail_silently=False,
+            )
 
         # Update basic fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        instance.interview_state = "accepted"
-        instance.join_date = timezone.now()
         instance.save()
 
-        # Send welcome email (unchanged)
-        send_mail(
-            subject="Welcome to HR",
-            message=f"Your account has been created.\nUsername: {user.username}\nPassword: {password}",
-            from_email="tempohr44@gmail.com",
-            recipient_list=[user.username],
-            fail_silently=False,
-        )
-
-        # Process holiday weekdays (using new HolidayWeekday model)
-        for weekday in holiday_weekdays:
-            day_obj, _ = HolidayWeekday.objects.get_or_create(weekday=weekday)
-            day_obj.employees.add(instance)
-
-        # Process holiday yeardays (using new HolidayYearday model)
-        for yearday in holiday_yeardays:
-            month = yearday.get("month")
-            day = yearday.get("day")
-            if month and day:
-                day_obj, _ = HolidayYearday.objects.get_or_create(month=month, day=day)
+        # Process holiday weekdays if provided
+        if holiday_weekdays is not None:
+            instance.holidayweekday_set.clear()
+            for weekday in holiday_weekdays:
+                day_obj, _ = HolidayWeekday.objects.get_or_create(weekday=weekday)
                 day_obj.employees.add(instance)
 
-        # Process online weekdays (using new OnlineDayWeekday model)
-        for weekday in online_weekdays:
-            day_obj, _ = OnlineDayWeekday.objects.get_or_create(weekday=weekday)
-            day_obj.employees.add(instance)
+        # Process holiday yeardays if provided
+        if holiday_yeardays is not None:
+            instance.holidayyearday_set.clear()
+            for yearday in holiday_yeardays:
+                month = yearday.get("month")
+                day = yearday.get("day")
+                if month and day:
+                    day_obj, _ = HolidayYearday.objects.get_or_create(month=month, day=day)
+                    day_obj.employees.add(instance)
 
-        # Process online yeardays (using new OnlineDayYearday model)
-        for yearday in online_yeardays:
-            month = yearday.get("month")
-            day = yearday.get("day")
-            if month and day:
-                day_obj, _ = OnlineDayYearday.objects.get_or_create(
-                    month=month, day=day
-                )
+        # Process online weekdays if provided
+        if online_weekdays is not None:
+            instance.onlinedayweekday_set.clear()
+            for weekday in online_weekdays:
+                day_obj, _ = OnlineDayWeekday.objects.get_or_create(weekday=weekday)
                 day_obj.employees.add(instance)
+
+        # Process online yeardays if provided
+        if online_yeardays is not None:
+            instance.onlinedayyearday_set.clear()
+            for yearday in online_yeardays:
+                month = yearday.get("month")
+                day = yearday.get("day")
+                if month and day:
+                    day_obj, _ = OnlineDayYearday.objects.get_or_create(month=month, day=day)
+                    day_obj.employees.add(instance)
 
         return instance
 
