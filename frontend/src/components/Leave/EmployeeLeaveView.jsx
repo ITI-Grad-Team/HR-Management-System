@@ -1,33 +1,36 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge } from 'react-bootstrap';
+import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge, Pagination } from 'react-bootstrap';
 import { getMyLeaveRequests, getMyLeaveBalance, createLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
 
 const EmployeeLeaveView = () => {
-    const [requests, setRequests] = useState([]);
+    const [requests, setRequests] = useState({ results: [], count: 0 });
     const [balance, setBalance] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ start_date: '', end_date: '', reason: '' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (page = 1) => {
         try {
             setLoading(true);
             const [reqRes, balRes] = await Promise.all([
-                getMyLeaveRequests(),
+                getMyLeaveRequests(page, pageSize),
                 getMyLeaveBalance(),
             ]);
             setRequests(reqRes.data);
             setBalance(balRes.data);
+            setCurrentPage(page);
         } catch {
             setError('Failed to fetch leave data.');
             toast.error('Failed to fetch leave data.');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [pageSize]);
 
     useEffect(() => {
         fetchData();
@@ -47,11 +50,15 @@ const EmployeeLeaveView = () => {
             toast.success('Leave request submitted successfully!');
             setShowModal(false);
             setFormData({ start_date: '', end_date: '', reason: '' });
-            fetchData();
+            fetchData(currentPage);
         } catch (err) {
             const errorMsg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || 'Failed to submit request.';
             toast.error(errorMsg);
         }
+    };
+
+    const handlePageChange = (page) => {
+        fetchData(page);
     };
 
     const getStatusVariant = (status) => {
@@ -65,6 +72,8 @@ const EmployeeLeaveView = () => {
 
     if (loading) return <Spinner animation="border" />;
     if (error) return <Alert variant="danger">{error}</Alert>;
+
+    const totalPages = Math.ceil(requests.count / pageSize);
 
     return (
         <>
@@ -105,7 +114,7 @@ const EmployeeLeaveView = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {requests.map(req => (
+                            {requests.results?.map(req => (
                                 <tr key={req.id}>
                                     <td>{req.start_date}</td>
                                     <td>{req.end_date}</td>
@@ -113,9 +122,49 @@ const EmployeeLeaveView = () => {
                                     <td>{formatText(req.reason, 'No reason provided')}</td>
                                     <td><Badge bg={getStatusVariant(req.status)}>{req.status}</Badge></td>
                                 </tr>
-                            ))}
+                            )) || []}
+                            {requests.results?.length === 0 && (
+                                <tr>
+                                    <td colSpan="5" className="text-center text-muted p-3">
+                                        No leave requests found
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </Table>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="d-flex justify-content-center mt-3">
+                            <Pagination>
+                                <Pagination.Prev
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                />
+
+                                {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                                    const pageNumber = Math.max(1, currentPage - 2) + index;
+                                    if (pageNumber <= totalPages) {
+                                        return (
+                                            <Pagination.Item
+                                                key={pageNumber}
+                                                active={pageNumber === currentPage}
+                                                onClick={() => handlePageChange(pageNumber)}
+                                            >
+                                                {pageNumber}
+                                            </Pagination.Item>
+                                        );
+                                    }
+                                    return null;
+                                })}
+
+                                <Pagination.Next
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                />
+                            </Pagination>
+                        </div>
+                    )}
                 </Card.Body>
             </Card>
 

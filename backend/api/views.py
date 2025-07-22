@@ -10,8 +10,19 @@ from django.utils.dateparse import parse_datetime
 import joblib
 import os
 
-from django.db.models import Case, When, Value, F, DurationField, ExpressionWrapper, F, ExpressionWrapper, DurationField,IntegerField
-from django.db.models.functions import Now,Extract
+from django.db.models import (
+    Case,
+    When,
+    Value,
+    F,
+    DurationField,
+    ExpressionWrapper,
+    F,
+    ExpressionWrapper,
+    DurationField,
+    IntegerField,
+)
+from django.db.models.functions import Now, Extract
 import numpy as np
 from rest_framework.viewsets import ModelViewSet, ViewSet, ReadOnlyModelViewSet
 from rest_framework.decorators import action
@@ -61,7 +72,8 @@ from .serializers import (
     SkillSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
-    HRListSerializer,EmployeeInterviewListSerializer,
+    HRListSerializer,
+    EmployeeInterviewListSerializer,
     EmployeeCVUpdateSerializer,
     PositionSerializer,
     EducationFieldSerializer,
@@ -237,6 +249,13 @@ class EightPerPagePagination(PageNumberPagination):
 
 class TenPerPagePagination(PageNumberPagination):
     page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class TwentyPerPagePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
@@ -244,7 +263,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    pagination_class = EightPerPagePagination
+    pagination_class = TwentyPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -253,7 +272,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
         "interview_state",
         "application_link",
     ]
-    search_fields = ["user__username", "phone"]
+    search_fields = ["user__username", "user__email", "phone"]
 
     def get_queryset(self):
         base_queryset = super().get_queryset()
@@ -502,7 +521,7 @@ class PublicApplicantsViewSet(ModelViewSet):
 
         if application_link.number_remaining_applicants_to_limit <= 0:
             return Response({"detail": "Limit of applicants exceeded"}, status=400)
-        
+
         filename = f"{email.replace('@', '_')}_cv.pdf"
         try:
             cv_url = upload_to_supabase("cvs", cv_file, filename)
@@ -646,11 +665,12 @@ class HRViewEmployeesViewSet(ModelViewSet):
     - Only accessible by HR role
     - Includes filters and search functionality
     - Optimized with prefetch_related and select_related to prevent N+1 queries
+    - Supports flexible pagination for both list and search operations
     """
 
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated, IsHR]
-    pagination_class = EightPerPagePagination
+    pagination_class = TwentyPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
         "region",
@@ -659,7 +679,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         "interview_state",
         "application_link",
     ]
-    search_fields = ["user__username", "phone"]
+    search_fields = ["user__username", "user__email", "phone"]
 
     def get_queryset(self):
         queryset = Employee.objects.select_related(
@@ -801,7 +821,6 @@ class HRViewEmployeesViewSet(ModelViewSet):
             "onlinedayweekday_set",
         )
 
-
     @action(detail=False, methods=["get"], url_path="my-scheduled")
     def my_scheduled_employees(self, request):
         try:
@@ -810,25 +829,30 @@ class HRViewEmployeesViewSet(ModelViewSet):
             return Response({"detail": "Only HRs can view this."}, status=403)
 
         queryset = self.get_base_queryset().filter(
-            scheduling_interviewer=hr,
-            interview_datetime__isnull=False
+            scheduling_interviewer=hr, interview_datetime__isnull=False
         )
-        
+
         # Apply filtering
         queryset = self.filter_queryset(queryset)
-        
+
         # Apply annotations and ordering
         queryset = queryset.annotate(
             time_diff=Case(
-                When(interview_datetime__gte=Now(), 
-                    then=ExpressionWrapper(F('interview_datetime') - Now(), 
-                    output_field=DurationField())),
-                When(interview_datetime__lt=Now(),
-                    then=ExpressionWrapper(Now() - F('interview_datetime'),
-                    output_field=DurationField())),
+                When(
+                    interview_datetime__gte=Now(),
+                    then=ExpressionWrapper(
+                        F("interview_datetime") - Now(), output_field=DurationField()
+                    ),
+                ),
+                When(
+                    interview_datetime__lt=Now(),
+                    then=ExpressionWrapper(
+                        Now() - F("interview_datetime"), output_field=DurationField()
+                    ),
+                ),
             )
-        ).order_by('time_diff')
-        
+        ).order_by("time_diff")
+
         # Force pagination even for empty results
         page = self.paginate_queryset(queryset)
         serializer = EmployeeInterviewListSerializer(page, many=True)
@@ -843,7 +867,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
 
         queryset = self.get_base_queryset().filter(interviewer=hr)
         queryset = self.filter_queryset(queryset)
-        
+
         # Force pagination even for empty results
         page = self.paginate_queryset(queryset)
         serializer = EmployeeListSerializer(page, many=True)
@@ -1421,14 +1445,14 @@ class TaskViewSet(ModelViewSet):
         task.is_refused = False  # Reset refusal if resubmitted
         task.save()
 
-        serializer = self.get_serializer(task, context={'request': request})
-        
+        serializer = self.get_serializer(task, context={"request": request})
+
         return Response(
             {
                 "message": "Task submitted successfully.",
-                "task": serializer.data, # Keep the files info if needed
+                "task": serializer.data,  # Keep the files info if needed
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
     # Accept Task (by creator/coordinator)
@@ -2371,13 +2395,14 @@ import jwt
 from datetime import datetime, timedelta
 from django.conf import settings
 
+
 def generate_reset_token(user):
     payload = {
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(minutes=120),
-        'type': 'password_reset',
+        "user_id": user.id,
+        "exp": datetime.utcnow() + timedelta(minutes=120),
+        "type": "password_reset",
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
 
 class ForgotPasswordView(APIView):
@@ -2399,6 +2424,7 @@ class ForgotPasswordView(APIView):
             return Response({"message": "Password reset link sent."})
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=404)
+
 
 class ResetPasswordView(APIView):
     def post(self, request):
@@ -2433,24 +2459,33 @@ class ChangePasswordView(APIView):
         new_password = request.data.get("new_password")
 
         if not old_password or not new_password:
-            return Response({"detail": "Both old and new passwords are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Both old and new passwords are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not user.check_password(old_password):
-            return Response({"detail": "Incorrect current password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Incorrect current password."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user.set_password(new_password)
         user.save()
-        return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Password changed successfully."}, status=status.HTTP_200_OK
+        )
 
 
-
-from openai import OpenAI  
+from openai import OpenAI
 from django.conf import settings
+
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
 
 class RAGViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
-    
+
     def _get_role_suffix(self, user):
         """Returns role-specific suffix message"""
         if IsHR().has_permission(self.request, self):
@@ -2462,18 +2497,22 @@ class RAGViewSet(ViewSet):
         else:
             return "\n\n[Responding to regular employee]"
 
-    @action(detail=False, methods=['post'], url_path='query')
+    @action(detail=False, methods=["post"], url_path="query")
     def handle_query(self, request):
-        question = request.data.get('question', '').strip()
-        username = request.user.basicinfo.username if hasattr(request.user, 'basicinfo') else "a user"
-        
+        question = request.data.get("question", "").strip()
+        username = (
+            request.user.basicinfo.username
+            if hasattr(request.user, "basicinfo")
+            else "a user"
+        )
+
         # Load context
         context = ""
-        data_path = os.path.join(settings.BASE_DIR, 'data.txt')
+        data_path = os.path.join(settings.BASE_DIR, "data.txt")
         if os.path.exists(data_path):
-            with open(data_path, 'r', encoding='utf-8') as f:
+            with open(data_path, "r", encoding="utf-8") as f:
                 context = f.read()
-        
+
         # Prepare system message with role context
         role_suffix = self._get_role_suffix(request.user)
         system_message = (
@@ -2484,22 +2523,21 @@ class RAGViewSet(ViewSet):
 
         try:
             response = client.chat.completions.create(
-            model="gpt-4o-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_message},
-                    {"role": "user", "content": question}
+                    {"role": "user", "content": question},
                 ],
-                temperature=0.7
+                temperature=0.7,
             )
-            
-            return Response({
-                'answer': response.choices[0].message.content,
-                'responded_as': role_suffix.strip('[]\n'),
-                'username': username
-            })
-            
+
+            return Response(
+                {
+                    "answer": response.choices[0].message.content,
+                    "responded_as": role_suffix.strip("[]\n"),
+                    "username": username,
+                }
+            )
+
         except Exception as e:
-            return Response({
-                'error': str(e),
-                'username': username
-            }, status=500)
+            return Response({"error": str(e), "username": username}, status=500)

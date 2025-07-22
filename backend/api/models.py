@@ -8,6 +8,7 @@ import pandas as pd
 from django.utils import timezone
 from .supabase_utils import upload_to_supabase
 
+
 class AttendanceRecord(models.Model):
     ATTENDANCE_TYPE_CHOICES = [
         ("physical", "Physical"),
@@ -159,7 +160,9 @@ class BasicInfo(models.Model):
 
     def save(self, *args, **kwargs):
         if self.temp_profile_image:
-            self.profile_image_url = upload_to_supabase("profile-images", self.temp_profile_image, self.temp_profile_image.name)
+            self.profile_image_url = upload_to_supabase(
+                "profile-images", self.temp_profile_image, self.temp_profile_image.name
+            )
         super().save(*args, **kwargs)
 
 
@@ -472,7 +475,9 @@ class Employee(models.Model):
     def save(self, *args, **kwargs):
         if self.temp_cv:
             # ارفع الملف على supabase
-            self.cv_url = upload_to_supabase("employee-cvs", self.temp_cv, self.temp_cv.name)
+            self.cv_url = upload_to_supabase(
+                "employee-cvs", self.temp_cv, self.temp_cv.name
+            )
         super().save(*args, **kwargs)
 
     @property
@@ -674,6 +679,7 @@ class CasualLeave(models.Model):
     )
     start_date = models.DateField()
     end_date = models.DateField()
+    duration = models.PositiveIntegerField(editable=False)
     reason = models.TextField(blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -686,9 +692,11 @@ class CasualLeave(models.Model):
     )
     rejection_reason = models.TextField(blank=True)
 
-    @property
-    def duration(self):
-        return (self.end_date - self.start_date).days + 1
+    def save(self, *args, **kwargs):
+        # Auto-calculate duration when saving
+        if self.start_date and self.end_date:
+            self.duration = (self.end_date - self.start_date).days + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.duration}-day leave for {self.employee.user.username} ({self.status})"

@@ -40,8 +40,8 @@
 }
 
 .sidebar .nav-link.active {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  background: rgba(44, 50, 60, 0.12);
+  color: #191c1f;
   font-weight: 500;
   border-left: #111827 3px solid;
 }

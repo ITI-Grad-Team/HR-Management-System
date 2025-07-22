@@ -84,10 +84,11 @@ const Login = () => {
           style={{ borderRadius: 20 }}
         >
           <div className="column-1">
-            <img src="/login.jpg" alt="login page image" />
+            <img src="/login.png" alt="login page image" />
           </div>
 
           <div className="card-body column-2">
+            <img src="/hera-logo.png" alt="logo" style={{ width: "60px", display:"flex", marginInline:"auto", marginBottom:"1rem", position:"absolute", top:"1rem", right:"0.5rem"}} />
             <h4 className="text-center mb-2">Welcome</h4>
             <p className="text-center text-secondary mb-4">
               Please login to your account

@@ -50,7 +50,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BasicInfoSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(
-        required=False, allow_null=True, max_length=None, write_only=True,
+        required=False,
+        allow_null=True,
+        max_length=None,
+        write_only=True,
     )
     profile_image_url = serializers.CharField(read_only=True)
     username = serializers.CharField(required=False, allow_blank=True, max_length=150)
@@ -88,7 +91,9 @@ class BasicInfoSerializer(serializers.ModelSerializer):
         # Delete old image if new one is provided or if null is explicitly set
         if profile_image:
             # ارفع الصورة على Supabase
-            url = upload_to_supabase("profile-images", profile_image, profile_image.name)
+            url = upload_to_supabase(
+                "profile-images", profile_image, profile_image.name
+            )
             instance.profile_image_url = url
 
         return super().update(instance, validated_data)
@@ -147,7 +152,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         cv_file = validated_data.pop("cv", None)
-        
+
         # باقي البيانات
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -158,7 +163,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
+
     def get_yearly_holidays(self, obj):
         return [{"month": h.month, "day": h.day} for h in obj.holidayyearday_set.all()]
 
@@ -226,8 +231,8 @@ class EmployeeForTaskSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.basicinfo.username", read_only=True)
     phone = serializers.CharField(source="user.basicinfo.phone", read_only=True)
     profile_image = serializers.CharField(
-    source="user.basicinfo.profile_image_url", read_only=True
-)
+        source="user.basicinfo.profile_image_url", read_only=True
+    )
     email = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
@@ -250,7 +255,6 @@ class FileSerializer(serializers.ModelSerializer):
         instance.temp_file = temp_file
         instance.save()
         return instance
-
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -280,7 +284,6 @@ class TaskSerializer(serializers.ModelSerializer):
             "profile_image_url": employee.user.basicinfo.profile_image_url,  # Supabase URL directly
             "email": employee.user.username,
         }
-
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -411,8 +414,6 @@ class EmployeeRejectingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = []
-
-
 
 
 # --- Salary & Attendance System Serializers ---
@@ -601,24 +602,26 @@ class SalaryRecordSerializer(serializers.ModelSerializer):
             "generated_at",
         ]
 
+
 class EmployeeInterviewListSerializer(EmployeeListSerializer):
     time_until_interview = serializers.SerializerMethodField()
     interview_datetime = serializers.DateTimeField()
 
     class Meta(EmployeeListSerializer.Meta):
         fields = EmployeeListSerializer.Meta.fields + [
-            'interview_datetime',
-            'time_until_interview'
+            "interview_datetime",
+            "time_until_interview",
         ]
 
     def get_time_until_interview(self, obj):
         # Access the annotated field if available
-        if hasattr(obj, 'time_until_interview'):
+        if hasattr(obj, "time_until_interview"):
             return str(obj.time_until_interview)
         if obj.interview_datetime:
             return str(obj.interview_datetime - timezone.now())
         return None
-    
+
+
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
@@ -708,6 +711,14 @@ class CasualLeaveSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Cannot request leave for a past date.")
 
         return data
+
+    def create(self, validated_data):
+        # Duration will be auto-calculated in the model's save method
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # Duration will be auto-calculated in the model's save method
+        return super().update(instance, validated_data)
 
 
 class EmployeeLeavePolicySerializer(serializers.ModelSerializer):

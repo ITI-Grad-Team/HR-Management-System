@@ -1,4 +1,19 @@
 .btn-primary {
-  background-color: black !important;
-  border: 1px solid black !important;
+  background-color: #222831 !important;
+  border: 1px solid #222831 !important;
+}
+
+.btn-outline-primary {
+  color: #222831 !important;
+  border: 1px solid #222831 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #222831 !important;
+  border: 1px solid #222831 !important;
+  color: #dfd0b8 !important;
+}
+
+.bio-card-info-icon {
+  color: #222831 !important;
 }
