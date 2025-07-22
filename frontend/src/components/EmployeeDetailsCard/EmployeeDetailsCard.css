@@ -18,3 +18,12 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional subtle shadow */
   border-radius: 20px;
 }
+
+.text-primary {
+  color: #948979 !important;
+}
+
+.promote {
+  background-color: #2c3e50 !important;
+  color: white !important;
+}

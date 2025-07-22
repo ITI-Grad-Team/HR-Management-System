@@ -136,7 +136,7 @@ export default function CandidateDetailsCard({
 
   useEffect(() => {
     document.title = `${candidate.basicinfo.username} | HERA`;
-    })
+  });
 
   useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
@@ -546,9 +546,9 @@ export default function CandidateDetailsCard({
       return (
         <div className="d-flex align-items-center gap-2 mt-4">
           <Button
-            variant="success"
             onClick={handlePromoteEmployee}
             disabled={loading}
+            className="Promote"
           >
             {loading ? (
               <Spinner
