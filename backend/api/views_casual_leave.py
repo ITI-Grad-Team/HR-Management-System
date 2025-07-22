@@ -7,11 +7,25 @@ from .serializers import CasualLeaveSerializer, EmployeeLeavePolicySerializer
 from .permissions import IsEmployee, IsHRorAdmin
 from django.db.models import Sum
 from django.utils import timezone
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+
+
+class CasualLeavePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class CasualLeaveViewSet(viewsets.ModelViewSet):
-    queryset = CasualLeave.objects.all()
     serializer_class = CasualLeaveSerializer
+    pagination_class = CasualLeavePagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["status", "employee__user__username"]
+    search_fields = ["employee__user__username", "employee__user__email", "reason"]
+    ordering_fields = ["created_at", "start_date", "end_date", "status"]
+    ordering = ["-created_at"]  # Default ordering
 
     def get_permissions(self):
         if self.action in ["create", "my_requests", "my_leave_balance"]:
@@ -21,32 +35,51 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
+        """
+        Optimize queryset with select_related and prefetch_related to prevent N+1 queries
+        """
         user = self.request.user
+
+        # Base queryset with optimized joins
+        base_queryset = CasualLeave.objects.select_related(
+            "employee__user",
+            "employee__user__basicinfo",
+            "employee__position",
+            "reviewed_by",
+        ).prefetch_related("employee__user__basicinfo")
+
         if user.basicinfo.role == "employee":
-            return CasualLeave.objects.filter(employee__user=user)
-        return CasualLeave.objects.all()
+            return base_queryset.filter(employee__user=user)
+
+        return base_queryset
 
     def perform_create(self, serializer):
         employee = self.request.user.employee
-        
+
         # Validation logic
-        start_date = serializer.validated_data['start_date']
-        end_date = serializer.validated_data['end_date']
+        start_date = serializer.validated_data["start_date"]
+        end_date = serializer.validated_data["end_date"]
         duration = (end_date - start_date).days + 1
-        
+
         policy, created = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
-        
+
         if duration > policy.max_days_per_request:
-            raise serializers.ValidationError(f"Request exceeds the maximum of {policy.max_days_per_request} days per request.")
-            
-        approved_leaves = CasualLeave.objects.filter(employee=employee, status='approved')
-        
+            raise serializers.ValidationError(
+                f"Request exceeds the maximum of {policy.max_days_per_request} days per request."
+            )
+
+        approved_leaves = CasualLeave.objects.filter(
+            employee=employee, status="approved"
+        )
+
         approved_days = 0
         for leave in approved_leaves:
             approved_days += leave.duration
-        
+
         if (approved_days + duration) > policy.yearly_quota:
-            raise serializers.ValidationError("Request exceeds your remaining leave quota.")
+            raise serializers.ValidationError(
+                "Request exceeds your remaining leave quota."
+            )
 
         serializer.save(employee=employee)
 
@@ -76,20 +109,34 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="my-requests")
     def my_requests(self, request):
-        leaves = self.get_queryset()
-        return Response(self.get_serializer(leaves, many=True).data)
+        """
+        Get current user's leave requests with optimized query
+        """
+        leaves = self.get_queryset().filter(employee__user=request.user)
+        page = self.paginate_queryset(leaves)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(leaves, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="my-leave-balance")
     def my_leave_balance(self, request):
+        """
+        Get current user's leave balance with optimized calculation
+        """
         employee = request.user.employee
         policy, created = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
 
-        approved_leaves = CasualLeave.objects.filter(
-            employee=employee, status="approved"
+        # Use database aggregation for better performance
+        approved_days = (
+            CasualLeave.objects.filter(employee=employee, status="approved").aggregate(
+                total_days=Sum("duration")
+            )["total_days"]
+            or 0
         )
-        approved_days = 0
-        for leave in approved_leaves:
-            approved_days += (leave.end_date - leave.start_date).days + 1
+
         remaining_days = policy.yearly_quota - approved_days
         return Response(
             {

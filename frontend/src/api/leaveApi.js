@@ -1,8 +1,11 @@
 import axiosInstance from "./config";
 
 // Employee actions
-export const getMyLeaveRequests = () => {
-    return axiosInstance.get('/casual-leave/my-requests/');
+export const getMyLeaveRequests = (page = 1, pageSize = 20) => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+    return axiosInstance.get(`/casual-leave/my-requests/?${params.toString()}`);
 };
 
 export const getMyLeaveBalance = () => {
@@ -14,8 +17,23 @@ export const createLeaveRequest = (data) => {
 };
 
 // HR/Admin actions
-export const getAllLeaveRequests = () => {
-    return axiosInstance.get('/casual-leave/');
+export const getAllLeaveRequests = (page = 1, pageSize = 20, filters = {}) => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('page_size', pageSize.toString());
+
+    // Add filters
+    if (filters.status) {
+        params.append('status', filters.status);
+    }
+    if (filters.search) {
+        params.append('search', filters.search);
+    }
+    if (filters.ordering) {
+        params.append('ordering', filters.ordering);
+    }
+
+    return axiosInstance.get(`/casual-leave/?${params.toString()}`);
 };
 
 export const approveLeaveRequest = (id) => {

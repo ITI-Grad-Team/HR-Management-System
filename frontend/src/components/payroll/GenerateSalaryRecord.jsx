@@ -13,8 +13,9 @@ import {
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
-import { fetchAllPages } from "../../api/pagination";
+import { searchEmployees } from "../../api/employeeApi";
 import { useAuth } from "../../hooks/useAuth";
+import { useDebounce } from "../../hooks/useDebounce";
 
 const GenerateSalaryRecord = ({
   show,
@@ -30,35 +31,53 @@ const GenerateSalaryRecord = ({
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const { role } = useAuth();
   const isEditMode = !!recordToEdit;
 
+  // Debounce search input to avoid excessive API calls
+  const debouncedSearch = useDebounce(search, 300);
+
+  // Fetch employees based on search term
+  useEffect(() => {
+    if (show && debouncedSearch.trim() && !isEditMode) {
+      const fetchEmployees = async () => {
+        try {
+          setSearchLoading(true);
+          const response = await searchEmployees(debouncedSearch, 1, 20, role);
+          setEmployees(response.data.results || []);
+        } catch (error) {
+          console.error("Error searching employees:", error);
+          setEmployees([]);
+        } finally {
+          setSearchLoading(false);
+        }
+      };
+
+      fetchEmployees();
+    } else if (!debouncedSearch.trim()) {
+      setEmployees([]);
+    }
+  }, [debouncedSearch, show, role, isEditMode]);
+
   useEffect(() => {
     if (show) {
-      const endpoint =
-        role === "admin" ? "/admin/employees/" : "/hr/employees/";
-      fetchAllPages(endpoint)
-        .then((allEmployees) => {
-          setEmployees(allEmployees);
-        })
-        .catch(() => {
-          setError("Could not fetch employees.");
-        });
-
       if (isEditMode) {
         setSelectedEmployee(recordToEdit.user.id);
         setYear(recordToEdit.year);
         setMonth(recordToEdit.month);
         setSearch(recordToEdit.user.username);
+        setEmployees([]);
       } else {
         // Reset form for new record
         setSelectedEmployee("");
         setYear(new Date().getFullYear());
         setMonth(new Date().getMonth() + 1);
         setSearch("");
+        setEmployees([]);
       }
     }
-  }, [show, role, recordToEdit, isEditMode]);
+  }, [show, recordToEdit, isEditMode]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -99,6 +118,29 @@ const GenerateSalaryRecord = ({
     setSelectedEmployee(emp.user.id);
     setSearch(emp.user.username);
     setShowDropdown(false);
+    setEmployees([]);
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    if (value.trim()) {
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+      setEmployees([]);
+    }
+  };
+
+  const handleSearchFocus = () => {
+    if (search.trim() && employees.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    // Delay hiding dropdown to allow for selection
+    setTimeout(() => setShowDropdown(false), 200);
   };
 
   const filteredEmployees = employees.filter((emp) =>
@@ -124,28 +166,58 @@ const GenerateSalaryRecord = ({
                 <FormControl
                   type="text"
                   value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setShowDropdown(true);
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-                  placeholder="Search for employee..."
+                  onChange={handleSearchInputChange}
+                  onFocus={handleSearchFocus}
+                  onBlur={handleSearchBlur}
+                  placeholder={isEditMode ? recordToEdit.user.username : "Type to search for employee..."}
                   disabled={isEditMode}
                 />
+                {searchLoading && (
+                  <InputGroup.Text>
+                    <Spinner as="span" size="sm" animation="border" />
+                  </InputGroup.Text>
+                )}
               </InputGroup>
-              {showDropdown && filteredEmployees.length > 0 && (
-                <ListGroup style={{ position: "absolute", zIndex: 1000 }}>
-                  {filteredEmployees.map((emp) => (
+              {showDropdown && filteredEmployees.length > 0 && !isEditMode && (
+                <ListGroup
+                  style={{
+                    position: "absolute",
+                    zIndex: 1000,
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    width: "100%",
+                    marginTop: "2px"
+                  }}
+                >
+                  {filteredEmployees.slice(0, 10).map((emp) => (
                     <ListGroup.Item
                       key={emp.user.id}
                       action
                       onClick={() => handleSelectEmployee(emp)}
+                      style={{ cursor: "pointer" }}
                     >
-                      {emp.user.username}
+                      <div>
+                        <strong>{emp.user.username}</strong>
+                        {emp.user.email && (
+                          <small className="text-muted d-block">{emp.user.email}</small>
+                        )}
+                        {emp.position && (
+                          <small className="text-muted d-block">{emp.position.name}</small>
+                        )}
+                      </div>
                     </ListGroup.Item>
                   ))}
+                  {employees.length > 10 && (
+                    <ListGroup.Item disabled className="text-center text-muted">
+                      <small>Showing first 10 results. Type more to narrow down...</small>
+                    </ListGroup.Item>
+                  )}
                 </ListGroup>
+              )}
+              {search.trim() && !searchLoading && filteredEmployees.length === 0 && debouncedSearch.trim() && !isEditMode && (
+                <div className="mt-2 text-muted small">
+                  No employees found matching "{search}"
+                </div>
               )}
             </Col>
           </Form.Group>
