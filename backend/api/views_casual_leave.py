@@ -54,7 +54,10 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
         return base_queryset
 
     def perform_create(self, serializer):
-        employee = self.request.user.employee
+        try:
+            employee = self.request.user.employee
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError("Employee record not found for this user")
 
         # Validation logic
         start_date = serializer.validated_data["start_date"]
@@ -126,7 +129,14 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
         """
         Get current user's leave balance with optimized calculation
         """
-        employee = request.user.employee
+        try:
+            employee = request.user.employee
+        except Employee.DoesNotExist:
+            return Response(
+                {"error": "Employee record not found for this user"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         policy, created = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
 
         # Use database aggregation for better performance

@@ -23,14 +23,13 @@ const AdminLeaveView = () => {
     const debouncedSearch = useDebounce(searchInput, 500);
     const pageSize = 20;
 
-    const fetchData = useCallback(async (page = 1, filterOverrides = {}) => {
+    const fetchData = useCallback(async (page = 1, searchTerm = '', status = '', ordering = '-created_at') => {
         try {
             setLoading(true);
-            const currentFilters = { ...filters, ...filterOverrides };
             const response = await getAllLeaveRequests(page, pageSize, {
-                status: currentFilters.status,
-                search: currentFilters.search,
-                ordering: currentFilters.ordering
+                status,
+                search: searchTerm,
+                ordering
             });
             setRequests(response.data);
             setCurrentPage(page);
@@ -41,15 +40,15 @@ const AdminLeaveView = () => {
         } finally {
             setLoading(false);
         }
-    }, [filters, pageSize]);
+    }, [pageSize]);
 
-    // Update search filter when debounced search changes
+    // Update search when debounced search changes
     useEffect(() => {
-        const newFilters = { ...filters, search: debouncedSearch };
-        setFilters(newFilters);
-        fetchData(1, newFilters);
-    }, [debouncedSearch, fetchData, filters]);
+        setFilters(prev => ({ ...prev, search: debouncedSearch }));
+        fetchData(1, debouncedSearch, filters.status, filters.ordering);
+    }, [debouncedSearch, fetchData, filters.status, filters.ordering]);
 
+    // Initial fetch
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -58,7 +57,7 @@ const AdminLeaveView = () => {
         try {
             await approveLeaveRequest(id);
             toast.success('Leave request approved.');
-            fetchData(currentPage);
+            fetchData(currentPage, filters.search, filters.status, filters.ordering);
         } catch {
             toast.error('Failed to approve request.');
         }
@@ -76,26 +75,24 @@ const AdminLeaveView = () => {
             toast.success('Leave request rejected.');
             setShowRejectModal(false);
             setRejectionReason('');
-            fetchData(currentPage);
+            fetchData(currentPage, filters.search, filters.status, filters.ordering);
         } catch {
             toast.error('Failed to reject request.');
         }
     };
 
     const handlePageChange = (page) => {
-        fetchData(page);
+        fetchData(page, filters.search, filters.status, filters.ordering);
     };
 
     const handleStatusFilter = (status) => {
-        const newFilters = { ...filters, status };
-        setFilters(newFilters);
-        fetchData(1, newFilters);
+        setFilters(prev => ({ ...prev, status }));
+        fetchData(1, filters.search, status, filters.ordering);
     };
 
     const handleSortChange = (ordering) => {
-        const newFilters = { ...filters, ordering };
-        setFilters(newFilters);
-        fetchData(1, newFilters);
+        setFilters(prev => ({ ...prev, ordering }));
+        fetchData(1, filters.search, filters.status, ordering);
     };
 
     const getStatusVariant = (status) => {
@@ -157,7 +154,7 @@ const AdminLeaveView = () => {
                                 onClick={() => {
                                     setSearchInput('');
                                     setFilters({ status: '', search: '', ordering: '-created_at' });
-                                    fetchData(1, { status: '', search: '', ordering: '-created_at' });
+                                    fetchData(1, '', '', '-created_at');
                                 }}
                             >
                                 Clear
