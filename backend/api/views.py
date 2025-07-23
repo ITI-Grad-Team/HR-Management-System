@@ -296,7 +296,7 @@ class TwentyPerPagePagination(PageNumberPagination):
 class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     pagination_class = EightPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = [
@@ -385,14 +385,14 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
 class AdminManageSkillsViewSet(ModelViewSet):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post"]
 
 
 class AdminManagePositionsViewSet(ModelViewSet):
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post"]
 
 
@@ -407,7 +407,7 @@ class AdminInviteHRViewSet(ModelViewSet):
 
     queryset = User.objects.none()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
 
     def create(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -449,7 +449,7 @@ class AdminInviteHRViewSet(ModelViewSet):
 
 
 class AdminViewHRsViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     pagination_class = EightPerPagePagination
     filter_backends = [SearchFilter]
     search_fields = ["user__username", "user__email"]
@@ -496,7 +496,7 @@ class AdminViewApplicationLinksViewSet(ReadOnlyModelViewSet):
 
     queryset = ApplicationLink.objects.all()
     serializer_class = ApplicationLinkSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["position", "is_coordinator"]
     search_fields = ["distinction_name"]
@@ -1669,7 +1669,7 @@ class TaskViewSet(ModelViewSet):
 class AdminPromoteEmployeeViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
 
     @action(detail=True, methods=["post"], url_path="promote")
     def promote(self, request, pk=None):
@@ -1828,7 +1828,7 @@ class HRManageRegionsViewSet(ModelViewSet):
 class AdminManageRegionsViewSet(ModelViewSet):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post", "patch"]
 
     @action(detail=True, methods=["patch"])
@@ -1861,7 +1861,7 @@ class HRManageEducationDegreesViewSet(ModelViewSet):
 class AdminManageEducationDegreesViewSet(ModelViewSet):
     queryset = EducationDegree.objects.all()
     serializer_class = EducationDegreeSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post"]
 
 
@@ -1875,7 +1875,7 @@ class HRManageEducationFieldsViewSet(ModelViewSet):
 class AdminManageEducationFieldsViewSet(ModelViewSet):
     queryset = EducationField.objects.all()
     serializer_class = EducationFieldSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post"]
 
 
@@ -2042,7 +2042,7 @@ class AdminStatsViewSet(ModelViewSet):
 
     queryset = CompanyStatistics.objects.all().order_by("-generated_at")
     serializer_class = CompanyStatisticsSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     http_method_names = ["get", "post"]
 
     def create(self, request, *args, **kwargs):
@@ -2118,7 +2118,7 @@ class HRStatsViewSet(ModelViewSet):
 
 
 class AdminRankViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     queryset = Employee.objects.none()  # Required by ModelViewSet, but unused
 
     @action(detail=False, methods=["post"], url_path="rank-employees")
@@ -2245,7 +2245,7 @@ class AdminRankViewSet(ModelViewSet):
 
 class AdminViewTopViewSet(ModelViewSet):
     queryset = Employee.objects.all()
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
     serializer_class = None
 
     @action(detail=False, methods=["get"], url_path="top-employees")
