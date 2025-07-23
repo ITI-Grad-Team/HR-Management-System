@@ -211,6 +211,7 @@ const ViewAllApplicationLinks = () => {
                     target="_blank"
                     rel="noreferrer"
                     className="text-decoration-none"
+                    style={{color: "#222831"}}
                   >
                     {link.url}
                   </a>
@@ -226,7 +227,7 @@ const ViewAllApplicationLinks = () => {
                   {link.skills?.map((sid) => {
                     const sk = skills.find((s) => s.value === sid);
                     return (
-                      <Badge bg="info" text="dark" key={sid} className="me-1">
+                      <Badge  text="light" key={sid} className="me-1 skills">
                         {sk ? sk.label : sid}
                       </Badge>
                     );
