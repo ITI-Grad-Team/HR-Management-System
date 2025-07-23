@@ -15,16 +15,29 @@ from .views import (
     TaskViewSet,
     ViewSelfViewSet,
     CoordinatorViewEmployeesViewSet,
-    AdminViewEmployeesViewSet,ViewProfileViewSet,
-    AdminManageSkillsViewSet,FilterOptionsViewSet,
-    AdminManagePositionsViewSet,RAGViewSet,
+    AdminViewEmployeesViewSet,
+    ViewProfileViewSet,
+    AdminManageSkillsViewSet,
+    FilterOptionsViewSet,
+    AdminManagePositionsViewSet,
+    RAGViewSet,
     AdminViewApplicationLinksViewSet,
-    AdminManageRegionsViewSet,EmployeeSalaryViewSet,
+    AdminManageRegionsViewSet,
+    EmployeeSalaryViewSet,
     AdminManageEducationDegreesViewSet,
-    AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,BasicInfoViewSet,
+    AdminManageEducationFieldsViewSet,
+    HRUpdateEmployeeCVDateViewSet,
+    BasicInfoViewSet,
+    AdminHeadquartersViewSet,
     HRManageRegionsViewSet,
-    HRManageEducationDegreesViewSet,AdminViewTopViewSet,
-    HRManageEducationFieldsViewSet,EmployeePredictionViewSet,AdminStatsViewSet,HRStatsViewSet,AdminRankViewSet
+    HRManageEducationDegreesViewSet,
+    AdminViewTopViewSet,
+    HRManageEducationFieldsViewSet,
+    EmployeePredictionViewSet,
+    AdminStatsViewSet,
+    HRStatsViewSet,
+    AdminRankViewSet,
+    AdminHeadquartersViewSet,
 )
 from .views_attendance import AttendanceViewSet
 from .views_salaryrecord import SalaryRecordViewSet
@@ -40,15 +53,15 @@ router = DefaultRouter()
 
 # Public
 router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
-router.register(r'rag', RAGViewSet, basename='rag')
+router.register(r"rag", RAGViewSet, basename="rag")
 
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
 
 router.register(r"view-profile", ViewProfileViewSet, basename="view-profile")
 
-router.register(r'employees', EmployeePredictionViewSet, basename='employee')
-router.register(r'filter-options', FilterOptionsViewSet, basename='filter-options')
+router.register(r"employees", EmployeePredictionViewSet, basename="employee")
+router.register(r"filter-options", FilterOptionsViewSet, basename="filter-options")
 
 # Employee
 router.register(
@@ -79,16 +92,19 @@ router.register(
 router.register(
     r"hr/reject-employee", HRRejectEmployeeViewSet, basename="hr-reject-employee"
 )
-router.register(r'hr/statistics', HRStatsViewSet, basename='hr-statistics')
-from .views import HRViewTopInterviewedEmployeesViewSet, ForgotPasswordView, ResetPasswordView, ChangePasswordView
-
-router.register(
-    r'hr/top-interviewed-employees',
+router.register(r"hr/statistics", HRStatsViewSet, basename="hr-statistics")
+from .views import (
     HRViewTopInterviewedEmployeesViewSet,
-    basename='hr-top-interviewed-employees'
+    ForgotPasswordView,
+    ResetPasswordView,
+    ChangePasswordView,
 )
 
-
+router.register(
+    r"hr/top-interviewed-employees",
+    HRViewTopInterviewedEmployeesViewSet,
+    basename="hr-top-interviewed-employees",
+)
 
 
 # Admin views
@@ -101,8 +117,15 @@ router.register(
     r"admin/positions", AdminManagePositionsViewSet, basename="admin-positions"
 )
 router.register(r"admin/regions", AdminManageRegionsViewSet, basename="admin-regions")
-router.register(r"admin/degrees", AdminManageEducationDegreesViewSet, basename="admin-degrees")
-router.register(r"admin/fields", AdminManageEducationFieldsViewSet, basename="admin-fields")
+router.register(
+    r"admin/headquarters", AdminHeadquartersViewSet, basename="admin-headquarters"
+)
+router.register(
+    r"admin/degrees", AdminManageEducationDegreesViewSet, basename="admin-degrees"
+)
+router.register(
+    r"admin/fields", AdminManageEducationFieldsViewSet, basename="admin-fields"
+)
 
 router.register(
     r"admin/application-links",
@@ -115,15 +138,17 @@ router.register(
     AdminPromoteEmployeeViewSet,
     basename="admin-promote-employee",
 )
-router.register(r'admin/company-statistics', AdminStatsViewSet, basename='company-statistics')
-router.register(r'admin/rank', AdminRankViewSet, basename='admin-rank')
-router.register(r'admin/top', AdminViewTopViewSet, basename='admin-top-employees')
+router.register(
+    r"admin/company-statistics", AdminStatsViewSet, basename="company-statistics"
+)
+router.register(r"admin/rank", AdminRankViewSet, basename="admin-rank")
+router.register(r"admin/top", AdminViewTopViewSet, basename="admin-top-employees")
 
 # Employee
 router.register(r"tasks", TaskViewSet, basename="tasks")
 
-#Both
-router.register(r'basic-info', BasicInfoViewSet, basename='basic-info')
+# Both
+router.register(r"basic-info", BasicInfoViewSet, basename="basic-info")
 
 
 # Attendance & Salary
@@ -134,16 +159,18 @@ router.register(
 router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
 router.register(r"casual-leave", CasualLeaveViewSet, basename="casual-leave")
 
-router.register(r'my-salaries', EmployeeSalaryViewSet, basename='employee-salaries')
+router.register(r"my-salaries", EmployeeSalaryViewSet, basename="employee-salaries")
 
 urlpatterns = [
     path("", include(router.urls)),
     path("auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path('basic-info/', BasicInfoViewSet.as_view({'patch': 'partial_update'}), name='basic-info'),
+    path(
+        "basic-info/",
+        BasicInfoViewSet.as_view({"patch": "partial_update"}),
+        name="basic-info",
+    ),
     path("auth/forgot-password/", ForgotPasswordView.as_view()),
     path("auth/reset-password/", ResetPasswordView.as_view()),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
 ]
-
-

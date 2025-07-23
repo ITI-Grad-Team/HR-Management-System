@@ -705,3 +705,36 @@ class CasualLeave(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class Headquarters(models.Model):
+    """
+    Single headquarters location configuration for attendance validation.
+    """
+
+    name = models.CharField(max_length=100, default="Cairo Headquarters")
+    latitude = models.FloatField(default=30.0500)
+    longitude = models.FloatField(default=31.2333)
+    allowed_radius_meters = models.IntegerField(default=150)
+
+    def __str__(self):
+        return f"{self.name} ({self.latitude}, {self.longitude})"
+
+    def save(self, *args, **kwargs):
+        # Ensure only one Headquarters instance exists
+        if not self.pk and Headquarters.objects.exists():
+            raise ValueError("Only one Headquarters instance is allowed.")
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_headquarters(cls):
+        """Get the headquarters instance, create default if none exists."""
+        headquarters, created = cls.objects.get_or_create(
+            defaults={
+                "name": "Cairo Headquarters",
+                "latitude": 30.0500,
+                "longitude": 31.2333,
+                "allowed_radius_meters": 150,
+            }
+        )
+        return headquarters

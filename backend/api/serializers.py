@@ -27,6 +27,7 @@ from .models import (
     EducationDegree,
     EducationField,
     CompanyStatistics,
+    Headquarters,
 )
 from .models import (
     Employee,
@@ -204,7 +205,8 @@ class HRSerializer(serializers.ModelSerializer):
             "interviewer_rating_to_absence_days_correlation",
             "interviewer_rating_to_avg_overtime_correlation",
             "accepted_employees_count",
-            "last_stats_calculation_time","rank"
+            "last_stats_calculation_time",
+            "rank",
         ]
         read_only_fields = fields
 
@@ -583,8 +585,10 @@ class EmployeeTakenListSerializer(serializers.ModelSerializer):
             "basic_info",
             "highest_education_field",
             "years_of_experience",
-            "application_link",'interview_state'
+            "application_link",
+            "interview_state",
         ]
+
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     position = serializers.CharField(source="position.name", read_only=True)
@@ -678,6 +682,12 @@ class EducationFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = EducationField
         fields = ["id", "name"]
+
+
+class HeadquartersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Headquarters
+        fields = ["id", "name", "latitude", "longitude", "allowed_radius_meters"]
 
 
 class CompanyStatisticsSerializer(serializers.ModelSerializer):

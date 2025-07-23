@@ -17,6 +17,7 @@ import axiosInstance from "../../api/config";
 import { updateRegionLocationAdmin } from "../../api/locationApi";
 import { getCurrentLocation } from "../../utils/geolocation";
 import SettingsFallback from "../DashboardFallBack/SettingsFallback";
+import HeadquartersSettings from "../HeadquartersSettings/HeadquartersSettings";
 
 export default function AdminSettings() {
   /* ----------------------------- STATE -------------------------------- */
@@ -282,6 +283,14 @@ export default function AdminSettings() {
   return (
     <>
       <Container fluid className="py-4">
+        {/* Headquarters Settings Section */}
+        <Row className="mb-4">
+          <Col xs={12}>
+            <HeadquartersSettings />
+          </Col>
+        </Row>
+
+        {/* Other Settings */}
         <Row className="g-4">
           {renderSection(
             "Manage Positions",

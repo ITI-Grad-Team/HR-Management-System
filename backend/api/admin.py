@@ -30,6 +30,7 @@ from .models import (
     File,
     EmployeeLeavePolicy,
     CasualLeave,
+    Headquarters,
 )
 from django import forms
 from .supabase_utils import upload_to_supabase
@@ -110,6 +111,22 @@ class RegionAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+@admin.register(Headquarters)
+class HeadquartersAdmin(admin.ModelAdmin):
+    list_display = ("name", "latitude", "longitude", "allowed_radius_meters")
+    fields = ("name", "latitude", "longitude", "allowed_radius_meters")
+
+    def has_add_permission(self, request):
+        # Only allow adding if no headquarters exists
+        from .models import Headquarters
+
+        return not Headquarters.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        # Never allow deletion
+        return False
+
+
 @admin.register(InterviewQuestion)
 class InterviewQuestionAdmin(admin.ModelAdmin):
     list_display = ("employee", "text", "grade")
@@ -140,7 +157,7 @@ class FileAdminForm(forms.ModelForm):
 
     class Meta:
         model = File
-        fields = ['task', 'upload']  # بنعرض الاتنين
+        fields = ["task", "upload"]  # بنعرض الاتنين
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -153,7 +170,8 @@ class FileAdminForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-    
+
+
 @admin.register(File)
 class FileAdmin(admin.ModelAdmin):
     form = FileAdminForm

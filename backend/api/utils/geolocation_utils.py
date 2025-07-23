@@ -50,26 +50,19 @@ def validate_attendance_location(
     user, employee_lat: Optional[float], employee_lon: Optional[float]
 ) -> Tuple[bool, str]:
     """
-    Validate if an employee's location allows for attendance check-in/out.
+    Validate if an employee's location allows for attendance check-in/out based on headquarters location.
     Returns (is_valid, message).
     """
+    from ..models import Headquarters
+
     if not hasattr(user, "employee") or not user.employee:
         return False, "Employee profile not found"
 
-    employee = user.employee
-    if not employee.region:
-        return False, "Employee region not configured"
-
-    region = employee.region
-
-    # If region doesn't have geolocation configured, allow attendance (backward compatibility)
-    # if region.latitude is None or region.longitude is None:
-    #     return True, "Geolocation validation not configured for your region"
-    if region.latitude is None or region.longitude is None:
-        return (
-            False,
-            "Your region doesn't have a configured office location. Attendance blocked. Contact HR.",
-        )
+    # Get the headquarters configuration
+    try:
+        headquarters = Headquarters.get_headquarters()
+    except Exception as e:
+        return False, "Headquarters location not configured. Contact administration."
 
     # If employee didn't provide location, reject
     if employee_lat is None or employee_lon is None:
@@ -78,19 +71,22 @@ def validate_attendance_location(
             "Location access is required for attendance. Please enable location services.",
         )
 
-    # Validate location
+    # Validate location against headquarters
     is_within, distance = is_within_allowed_location(
         employee_lat,
         employee_lon,
-        region.latitude,
-        region.longitude,
-        region.allowed_radius_meters,
+        headquarters.latitude,
+        headquarters.longitude,
+        headquarters.allowed_radius_meters,
     )
 
     if is_within:
-        return True, f"Location validated. You are {distance:.0f}m from the office."
+        return (
+            True,
+            f"Location validated. You are {distance:.0f}m from {headquarters.name}.",
+        )
     else:
         return (
             False,
-            f"You are {distance:.0f}m away from the office. You must be within {region.allowed_radius_meters}m to check in.",
+            f"You are {distance:.0f}m away from {headquarters.name}. You must be within {headquarters.allowed_radius_meters}m to check in.",
         )

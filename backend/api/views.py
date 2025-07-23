@@ -58,6 +58,7 @@ from .models import (
     Position,
     CompanyStatistics,
     SalaryRecord,
+    Headquarters,
 )
 
 from .serializers import (
@@ -66,7 +67,8 @@ from .serializers import (
     HRSerializer,
     EmployeeSerializer,
     EmployeeListSerializer,
-    EmployeeRejectingSerializer,EmployeeTakenListSerializer,
+    EmployeeRejectingSerializer,
+    EmployeeTakenListSerializer,
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
@@ -77,8 +79,10 @@ from .serializers import (
     EmployeeCVUpdateSerializer,
     PositionSerializer,
     EducationFieldSerializer,
-    RegionSerializer,SalaryRecordSerializer,
+    RegionSerializer,
+    SalaryRecordSerializer,
     EducationDegreeSerializer,
+    HeadquartersSerializer,
 )
 
 from .permissions import (
@@ -176,26 +180,35 @@ def calculate_statistics():
             ),
             "avg_salary": avg_salary,
         }
-    
 
     region_stats = {}
     regions = Region.objects.all()
-    
+
     for region in regions:
         region_employees = employees.filter(region=region)
         region_count = region_employees.count()
-        
+
         if region_count == 0:
             continue
-            
-        total_lateness = region_employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
-        total_non_holiday_days = region_employees.aggregate(
-            sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
-        
+
+        total_lateness = (
+            region_employees.aggregate(sum=Sum("total_lateness_hours"))["sum"] or 0
+        )
+        total_non_holiday_days = (
+            region_employees.aggregate(
+                sum=Sum("number_of_non_holiday_days_since_join")
+            )["sum"]
+            or 0
+        )
+
         region_stats[region.name] = {
-            'distance_to_work': region.distance_to_work,
-            'employee_count': region_count,
-            'avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None
+            "distance_to_work": region.distance_to_work,
+            "employee_count": region_count,
+            "avg_lateness": (
+                round(total_lateness / total_non_holiday_days, 2)
+                if total_non_holiday_days > 0
+                else None
+            ),
         }
 
     total_task_ratings = employees.aggregate(sum=Sum("total_task_ratings"))["sum"] or 0
@@ -257,7 +270,7 @@ def calculate_statistics():
         "total_employees": total_employees,
         "total_hrs": total_hrs,
         "position_stats": position_stats,
-        "region_stats": region_stats,  
+        "region_stats": region_stats,
         "monthly_salary_totals": monthly_salary_data,
         **overall_stats,
     }
@@ -887,19 +900,19 @@ class HRViewEmployeesViewSet(ModelViewSet):
             return Response({"detail": "Only HRs can view this."}, status=403)
 
         queryset = self.get_base_queryset().filter(interviewer=hr)
-        
+
         # Custom ordering based on interview_state priority
         queryset = queryset.annotate(
             state_order=Case(
-                When(interview_state='done', then=Value(1)),
-                When(interview_state='scheduled', then=Value(2)),
-                When(interview_state='pending', then=Value(3)),
-                When(interview_state='accepted', then=Value(4)),
+                When(interview_state="done", then=Value(1)),
+                When(interview_state="scheduled", then=Value(2)),
+                When(interview_state="pending", then=Value(3)),
+                When(interview_state="accepted", then=Value(4)),
                 default=Value(5),
                 output_field=IntegerField(),
             )
-        ).order_by('state_order') 
-        
+        ).order_by("state_order")
+
         queryset = self.filter_queryset(queryset)
 
         # Force pagination even for empty results
@@ -1311,7 +1324,10 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        if employee.interview_state != "done" and employee.interview_state != "accepted":
+        if (
+            employee.interview_state != "done"
+            and employee.interview_state != "accepted"
+        ):
             return Response(
                 {
                     "detail": f"Cannot accept employee with current interview status: '{employee.interview_state}'."
@@ -1863,6 +1879,32 @@ class AdminManageEducationFieldsViewSet(ModelViewSet):
     http_method_names = ["get", "post"]
 
 
+class AdminHeadquartersViewSet(ModelViewSet):
+    """ViewSet for managing headquarters settings."""
+
+    serializer_class = HeadquartersSerializer
+    permission_classes = [IsAdmin]
+    http_method_names = ["get", "patch"]
+
+    def get_object(self):
+        """Always return the single headquarters instance."""
+        return Headquarters.get_headquarters()
+
+    def list(self, request, *args, **kwargs):
+        """Return the single headquarters instance."""
+        headquarters = self.get_object()
+        serializer = self.get_serializer(headquarters)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Update headquarters settings."""
+        headquarters = self.get_object()
+        serializer = self.get_serializer(headquarters, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
 class EmployeePredictionViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
@@ -2019,7 +2061,7 @@ class AdminStatsViewSet(ModelViewSet):
             overall_avg_lateness=stats["overall_avg_lateness"],
             overall_avg_absent_days=stats["overall_avg_absent_days"],
             overall_avg_salary=stats["overall_avg_salary"],
-            region_stats = stats["region_stats"]
+            region_stats=stats["region_stats"],
         )
 
         serializer = self.get_serializer(company_stats)
@@ -2582,6 +2624,7 @@ class EmployeeSalaryViewSet(ReadOnlyModelViewSet):
     """
     ViewSet for employees to access ONLY their own salary records.
     """
+
     serializer_class = SalaryRecordSerializer
     permission_classes = [IsAuthenticated]
 
@@ -2591,15 +2634,15 @@ class EmployeeSalaryViewSet(ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        
+
         # Optional: Filter by month/year if query params exist
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
-        
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+
         if month:
             queryset = queryset.filter(month=month)
         if year:
             queryset = queryset.filter(year=year)
-            
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
