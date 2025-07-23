@@ -1,0 +1,10 @@
+/* Force #948979 color on all sub-icons */
+.sub-icon {
+  color: #948979 !important;
+}
+
+/* If you need to target specific icons */
+.sub-icon svg {
+  color: #948979 !important;
+  fill: #948979 !important;
+}

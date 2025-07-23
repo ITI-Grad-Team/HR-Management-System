@@ -19,7 +19,7 @@ from .views import (
     AdminManageSkillsViewSet,FilterOptionsViewSet,
     AdminManagePositionsViewSet,RAGViewSet,
     AdminViewApplicationLinksViewSet,
-    AdminManageRegionsViewSet,
+    AdminManageRegionsViewSet,EmployeeSalaryViewSet,
     AdminManageEducationDegreesViewSet,
     AdminManageEducationFieldsViewSet,HRUpdateEmployeeCVDateViewSet,BasicInfoViewSet,
     HRManageRegionsViewSet,
@@ -134,6 +134,7 @@ router.register(
 router.register(r"salary/calculate", SalaryRecordViewSet, basename="salary-calculate")
 router.register(r"casual-leave", CasualLeaveViewSet, basename="casual-leave")
 
+router.register(r'my-salaries', EmployeeSalaryViewSet, basename='employee-salaries')
 
 urlpatterns = [
     path("", include(router.urls)),

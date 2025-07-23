@@ -77,7 +77,7 @@ from .serializers import (
     EmployeeCVUpdateSerializer,
     PositionSerializer,
     EducationFieldSerializer,
-    RegionSerializer,
+    RegionSerializer,SalaryRecordSerializer,
     EducationDegreeSerializer,
 )
 
@@ -2576,3 +2576,30 @@ class RAGViewSet(ViewSet):
 
         except Exception as e:
             return Response({"error": str(e), "username": username}, status=500)
+
+
+class EmployeeSalaryViewSet(ReadOnlyModelViewSet):
+    """
+    ViewSet for employees to access ONLY their own salary records.
+    """
+    serializer_class = SalaryRecordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter by the logged-in user's ID (employee)
+        return SalaryRecord.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Optional: Filter by month/year if query params exist
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        
+        if month:
+            queryset = queryset.filter(month=month)
+        if year:
+            queryset = queryset.filter(year=year)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
