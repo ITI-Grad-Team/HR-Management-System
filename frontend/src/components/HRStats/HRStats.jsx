@@ -9,9 +9,10 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import "./HRStats.css";
 import axiosInstance from "../../api/config";
 import HrAdminUpperFallback from "../DashboardFallBack/HrAdminUpperFallback";
-
+import { FaCrown } from "react-icons/fa";
 const HRStats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,8 +41,7 @@ const HRStats = () => {
       .finally(() => setRecalculating(false));
   };
 
-  if (loading)
-    return <HrAdminUpperFallback />;
+  if (loading) return <HrAdminUpperFallback />;
   if (!stats)
     return <div className="text-center my-5">No HR statistics available</div>;
 
@@ -125,6 +125,67 @@ const HRStats = () => {
     <div className="container-fluid py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3>Your hires stats</h3>
+        {stats.rank && (
+          <div className="rank-container position-relative">
+            <div
+              className={`rank-badge ${
+                stats.rank === 1
+                  ? "rank-first"
+                  : stats.rank === 2
+                  ? "rank-second"
+                  : stats.rank === 3
+                  ? "rank-third"
+                  : "rank-other"
+              }`}
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title={
+                stats.rank === 2 || stats.rank === 1 || stats.rank === 3
+                  ? ""
+                  : stats.rank === 4
+                  ? "You rank 4th! Keep the great work!"
+                  : stats.rank === 5
+                  ? "You rank 5th! Keep pushing!"
+                  : `You rank ${stats.rank}th`
+              }
+            >
+              {stats.rank === 1 ? (
+                <>
+                  <FaCrown
+                    className="crown-icon"
+                    style={{ marginBottom: "2px" }}
+                  />
+                  <div>#{stats.rank}</div>
+                </>
+              ) : (
+                `#${stats.rank}`
+              )}
+            </div>
+
+            {/* Special hover effects for top 3 */}
+            {stats.rank <= 3 && (
+              <>
+                <div
+                  className={`rank-hover-message rank-message-${stats.rank}`}
+                >
+                  {stats.rank === 1
+                    ? "You're our TOP HR!"
+                    : stats.rank === 2
+                    ? "TOP 2 HR performer!"
+                    : "TOP 3 HR performer!"}
+                </div>
+                {/* Golden burst effect for #1 */}
+                {stats.rank === 1 && (
+                  <div className="gold-burst">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="burst-ray" style={{ "--i": i }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
         <div className="text-end">
           <Button
             variant="primary"
@@ -142,7 +203,6 @@ const HRStats = () => {
           )}
         </div>
       </div>
-
       {/* Key Metrics Row */}
       <Row className="g-4 mb-4">
         {metrics.map((metric, idx) => (
@@ -169,7 +229,6 @@ const HRStats = () => {
           </Col>
         ))}
       </Row>
-
       {/* Correlation Analysis Section */}
       <Row className="g-4">
         <Col lg={12}>
