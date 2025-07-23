@@ -916,8 +916,8 @@ export default function CandidateDetailsCard({
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
                 <FaFileAlt className="me-2" /> Resume
               </h6>
-              <Row className="g-4">
-                <Col md={3}>
+              <div className="g-4 d-flex gap-3">
+                <div md={3}>
                   <a
                     href={cv_url}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
@@ -927,26 +927,26 @@ export default function CandidateDetailsCard({
                   >
                     <FaDownload /> Download CV
                   </a>
-                </Col>
-                <Col md={4}>
+                </div>
+                <div md={4}>
                   <button
                     className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
                     onClick={() => setShowPredictionModal(true)}
                   >
                     <FaRobot /> View Predictions
                   </button>
-                </Col>
+                </div>
                 {role !== "employee" ? (
-                  <Col md={5}>
+                  <div md={5}>
                     <button
                       className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowCvEditModal(true)}
                     >
                       <FaEdit /> Update CV Extracted Info.
                     </button>
-                  </Col>
+                  </div>
                 ) : (
-                  <Col md={5}>
+                  <div md={5}>
                     <OverlayTrigger
                       placement="top"
                       overlay={
@@ -978,9 +978,9 @@ export default function CandidateDetailsCard({
                         </button>
                       </span>
                     </OverlayTrigger>
-                  </Col>
+                  </div>
                 )}
-              </Row>
+              </div>
             </div>
 
             {/* Interview Actions */}
