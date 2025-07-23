@@ -2646,3 +2646,46 @@ class EmployeeSalaryViewSet(ReadOnlyModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class AdminMarkUserAsDeletedViewSet(ModelViewSet):
+    """
+    Allows admin to mark users as deleted and remove their passwords
+    - Sets is_active=False to disable login
+    - Removes password (sets unusable password)
+    - Only accessible by admin role
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdmin]
+    http_method_names = ['patch']  # Only allow PATCH method
+
+    @action(detail=True, methods=['patch'], url_path='mark-deleted')
+    def mark_as_deleted(self, request, pk=None):
+        user = self.get_object()
+        
+        # Disable user login
+        user.is_active = False
+        
+        # Remove password (set unusable password)
+        user.set_unusable_password()
+        user.save()
+        
+        # Get the associated profile type and mark as deleted
+        profile_type = None
+        if hasattr(user, 'hr'):
+            profile_type = 'HR'
+            user.hr.is_deleted = True  # Assuming HR model has is_deleted
+            user.hr.save()
+        elif hasattr(user, 'employee'):
+            profile_type = 'Employee'
+            user.employee.is_deleted = True  # Assuming Employee model has is_deleted
+            user.employee.save()
+        
+        return Response({
+            'detail': f'{profile_type} user marked as deleted successfully',
+            'user_id': user.id,
+            'username': user.username,
+            'is_active': False,
+            'has_usable_password': user.has_usable_password()
+        }, status=status.HTTP_200_OK)
