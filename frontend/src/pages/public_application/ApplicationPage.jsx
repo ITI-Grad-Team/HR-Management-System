@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Form,
   Button,
@@ -14,7 +14,6 @@ import { FaUpload, FaCheck } from "react-icons/fa";
 import axiosInstance from "../../api/config";
 const ApplicationPage = () => {
   const { distinction_name } = useParams();
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -117,9 +116,6 @@ const ApplicationPage = () => {
                 and get back to you soon.
               </p>
             </div>
-            <Button variant="primary" onClick={() => navigate("/")}>
-              Return to Home
-            </Button>
           </Card.Body>
         </Card>
       </Container>

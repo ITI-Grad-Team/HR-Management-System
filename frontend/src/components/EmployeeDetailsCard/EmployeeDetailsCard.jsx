@@ -155,19 +155,23 @@ export default function CandidateDetailsCard({
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${
+                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
@@ -300,9 +304,10 @@ export default function CandidateDetailsCard({
       setLoading(true);
 
       // Determine endpoint based on user role
-      const endpoint = role === "admin"
-        ? `/admin/employees/${candidateId}/update-compensation/`
-        : `/hr/accept-employee/${candidateId}/update-compensation/`;
+      const endpoint =
+        role === "admin"
+          ? `/admin/employees/${candidateId}/update-compensation/`
+          : `/hr/accept-employee/${candidateId}/update-compensation/`;
 
       await axiosInstance.patch(endpoint, {
         ...formData,
@@ -314,7 +319,10 @@ export default function CandidateDetailsCard({
       setShowUpdateModal(false);
       onSchedule?.(); // Refresh the parent data
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Failed to update compensation and work schedule");
+      toast.error(
+        err.response?.data?.detail ||
+          "Failed to update compensation and work schedule"
+      );
       console.error(err);
     } finally {
       setLoading(false);
@@ -328,7 +336,7 @@ export default function CandidateDetailsCard({
       await axiosInstance.delete(`/hr/reject-employee/${candidateId}/`);
       toast.success("Candidate rejected successfully");
       setShowRejectModal(false);
-      navigate("/employees"); // Redirect to employees page
+      navigate("/dashboard/employees"); // Redirect to employees page
     } catch (err) {
       toast.error("Failed to reject candidate");
       console.error(err);
@@ -611,7 +619,8 @@ export default function CandidateDetailsCard({
         setPredictError(err.response.data.error);
         if (err.response.data.missing_fields) {
           setPredictError(
-            `${err.response.data.error
+            `${
+              err.response.data.error
             }: ${err.response.data.missing_fields.join(", ")}`
           );
         }
@@ -650,7 +659,8 @@ export default function CandidateDetailsCard({
       };
 
       const response = await axiosInstance.patch(
-        `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        `/${
+          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
         }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
@@ -834,8 +844,8 @@ export default function CandidateDetailsCard({
                   {has_position_related_high_education
                     ? "✓"
                     : has_position_related_high_education === false
-                      ? "✗"
-                      : "❔"}
+                    ? "✗"
+                    : "❔"}
                 </span>
               </h6>
               <div>
@@ -883,8 +893,7 @@ export default function CandidateDetailsCard({
                       <Badge
                         key={index}
                         pill
-                        bg="primary"
-                        className="px-3 py-2"
+                        className="px-3 py-2 bg-dark"
                         style={{ opacity: 0.9 }}
                       >
                         {skill}
@@ -907,8 +916,8 @@ export default function CandidateDetailsCard({
               <h6 className="text-uppercase text-primary fw-bold mb-3 d-flex align-items-center">
                 <FaFileAlt className="me-2" /> Resume
               </h6>
-              <Row className="g-4">
-                <Col md={3}>
+              <div className="g-4 d-flex gap-3">
+                <div md={3}>
                   <a
                     href={cv_url}
                     className="btn btn-outline-primary d-inline-flex align-items-center gap-2 rounded-pill px-4"
@@ -918,26 +927,26 @@ export default function CandidateDetailsCard({
                   >
                     <FaDownload /> Download CV
                   </a>
-                </Col>
-                <Col md={4}>
+                </div>
+                <div md={4}>
                   <button
                     className="btn btn-warning d-inline-flex align-items-center gap-2 rounded-pill px-4"
                     onClick={() => setShowPredictionModal(true)}
                   >
                     <FaRobot /> View Predictions
                   </button>
-                </Col>
+                </div>
                 {role !== "employee" ? (
-                  <Col md={5}>
+                  <div md={5}>
                     <button
                       className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
                       onClick={() => setShowCvEditModal(true)}
                     >
                       <FaEdit /> Update CV Extracted Info.
                     </button>
-                  </Col>
+                  </div>
                 ) : (
-                  <Col md={5}>
+                  <div md={5}>
                     <OverlayTrigger
                       placement="top"
                       overlay={
@@ -969,9 +978,9 @@ export default function CandidateDetailsCard({
                         </button>
                       </span>
                     </OverlayTrigger>
-                  </Col>
+                  </div>
                 )}
-              </Row>
+              </div>
             </div>
 
             {/* Interview Actions */}
@@ -1018,7 +1027,8 @@ export default function CandidateDetailsCard({
                 <Row className="g-4 mb-4">
                   <Row className="g-4 mb-0 mt-0">
                     <Col md={8}>
-                      {(role === "admin" || (role === "hr" && interviewer === loggedInHrId)) && (
+                      {(role === "admin" ||
+                        (role === "hr" && interviewer === loggedInHrId)) && (
                         <Button
                           variant="info"
                           onClick={() => setShowUpdateModal(true)}
@@ -1298,12 +1308,13 @@ export default function CandidateDetailsCard({
                               return (
                                 <div key={day} className="text-center">
                                   <div
-                                    className={`rounded-circle p-2 ${isHoliday
-                                      ? "bg-warning text-white"
-                                      : isOnline
+                                    className={`rounded-circle p-2 ${
+                                      isHoliday
+                                        ? "bg-warning text-white"
+                                        : isOnline
                                         ? "bg-info text-white"
                                         : "bg-light"
-                                      }`}
+                                    }`}
                                     style={{
                                       width: "32px",
                                       height: "32px",

@@ -31,3 +31,18 @@
   border-color: #222831 !important;
   box-shadow: 0 0 0 .20rem rgba(36, 37, 39, 0.25) !important;
 }
+
+.accordion-button:not(.collapsed){
+  background-color: #222831 !important;
+  color: #dfd0b8 !important;
+  box-shadow: none !important;
+}
+
+.accordion-butto:not(.collapsed)::after{
+  color: #dfd0b8 !important;
+}
+
+
+.accordion-button.collapsed{
+  box-shadow: none !important;
+}
