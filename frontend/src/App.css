@@ -23,26 +23,47 @@
   border: none !important;
 }
 
-.form-check-input:focus{
-  box-shadow: 0 0 0 .20rem rgba(36, 37, 39, 0.25) !important;
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(36, 37, 39, 0.25) !important;
 }
 
-.form-control:focus{
+.form-control:focus {
   border-color: #222831 !important;
-  box-shadow: 0 0 0 .20rem rgba(36, 37, 39, 0.25) !important;
+  box-shadow: 0 0 0 0.2rem rgba(36, 37, 39, 0.25) !important;
 }
 
-.accordion-button:not(.collapsed){
+.accordion-button:not(.collapsed) {
   background-color: #222831 !important;
   color: #dfd0b8 !important;
   box-shadow: none !important;
 }
 
-.accordion-butto:not(.collapsed)::after{
+.accordion-butto:not(.collapsed)::after {
   color: #dfd0b8 !important;
 }
 
-
-.accordion-button.collapsed{
+.accordion-button.collapsed {
   box-shadow: none !important;
+}
+
+.btn-outline-primary {
+  background-color: #222831 !important;
+  color: #dfd0b8 !important;
+}
+
+.text-primary {
+  color: #222831 !important;
+}
+
+.border-primary {
+  border-color: #222831 !important;
+}
+
+.icon-color {
+  color: #948979 !important;
+}
+
+.card-header {
+  background-color: #222831 !important;
+  color: #dfd0b8 !important;
 }

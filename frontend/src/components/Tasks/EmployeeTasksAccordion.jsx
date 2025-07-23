@@ -18,14 +18,10 @@ import {
   FaTimesCircle,
   FaInfoCircle,
   FaClock,
-  FaStar,
   FaExclamationCircle,
-  FaCalendarAlt,
   FaUser,
   FaFileAlt,
   FaHourglassStart,
-  FaThumbsUp,
-  FaThumbsDown,
   FaPhone,
   FaEnvelope,
   FaPaperclip,
@@ -33,7 +29,6 @@ import {
   FaExternalLinkAlt,
   FaUpload,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
 import axiosInstance from "../../api/config";
 import { toast } from "react-toastify";
 
@@ -114,7 +109,7 @@ const EmployeeTasksAccordion = () => {
       <div className="d-flex justify-content-center align-items-center flex-wrap gap-2 mt-4">
         {/* First Page Button */}
         <button
-          className="btn btn-outline-primary"
+          className="btn btn-outline-black"
           onClick={() => fetchMyAssignedTasks(firstPageUrl)}
           disabled={!previous || currentPage === 1}
           aria-label="Go to first page"
@@ -124,7 +119,7 @@ const EmployeeTasksAccordion = () => {
 
         {/* Previous Page Button */}
         <button
-          className="btn btn-outline-primary"
+          className="btn btn-outline-black"
           onClick={() => fetchMyAssignedTasks(previous)}
           disabled={!previous}
           aria-label="Go to previous page"
@@ -139,7 +134,7 @@ const EmployeeTasksAccordion = () => {
 
         {/* Next Page Button */}
         <button
-          className="btn btn-outline-primary"
+          className="btn btn-outline-black"
           onClick={() => fetchMyAssignedTasks(next)}
           disabled={!next}
           aria-label="Go to next page"
@@ -149,7 +144,7 @@ const EmployeeTasksAccordion = () => {
 
         {/* Last Page Button */}
         <button
-          className="btn btn-outline-primary"
+          className="btn btn-outline-black"
           onClick={() => fetchMyAssignedTasks(lastPageUrl)}
           disabled={!next || currentPage === totalPages}
           aria-label="Go to last page"
@@ -361,17 +356,17 @@ const EmployeeTasksAccordion = () => {
   if (loading) {
     return (
       <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-2 text-primary">Loading your tasks...</p>
+        <Spinner animation="border" variant="black" />
+        <p className="mt-2 text-black">Loading your tasks...</p>
       </div>
     );
   }
 
   if (tasks.length === 0) {
     return (
-      <Card className="border-primary">
+      <Card className="border-black">
         <Card.Body className="text-center py-5">
-          <FaClipboardList className="text-primary mb-3" size={48} />
+          <FaClipboardList className="text-black mb-3" size={48} />
           <h4>No Tasks Assigned Yet</h4>
           <p className="text-muted">
             You don't have any assigned tasks yet. When you do, they'll appear
@@ -384,8 +379,8 @@ const EmployeeTasksAccordion = () => {
 
   return (
     <div className="employee-tasks">
-      <Card className="border-primary mb-4">
-        <Card.Header className="bg-primary text-white">
+      <Card className="border-black mb-4">
+        <Card.Header className="card-header">
           <h4 className="mb-0">
             <FaClipboardList className="me-2" />
             My Assigned Tasks
@@ -398,7 +393,7 @@ const EmployeeTasksAccordion = () => {
                 <Accordion.Header>
                   <Row className="w-100 align-items-center">
                     <Col xs={7} className="d-flex align-items-center">
-                      <FaFileAlt className="text-primary me-2" />
+                      <FaFileAlt className="icon-color me-2" />
                       <span className="fw-bold">{task?.title}</span>
                     </Col>
                     <Col xs={5} className="text-end">
@@ -413,7 +408,7 @@ const EmployeeTasksAccordion = () => {
                     <Col md={6}>
                       <div className="mb-3">
                         <h6>
-                          <FaInfoCircle className="text-primary me-2" />
+                          <FaInfoCircle className="icon-color me-2" />
                           Description
                         </h6>
                         <p>{task.description}</p>
@@ -421,7 +416,7 @@ const EmployeeTasksAccordion = () => {
 
                       <div className="mb-3">
                         <h6>
-                          <FaUserTie className="text-primary me-2" />
+                          <FaUserTie className="icon-color me-2" />
                           Assigned By
                         </h6>
                         <div className={styles.assignedEmployeeContainer}>
@@ -433,7 +428,7 @@ const EmployeeTasksAccordion = () => {
                     <Col md={6}>
                       <div className="mb-3">
                         <h6>
-                          <FaClock className="text-primary me-2" />
+                          <FaClock className="icon-color me-2" />
                           Timeline
                         </h6>
                         <p>
@@ -468,7 +463,7 @@ const EmployeeTasksAccordion = () => {
                   {/* Task Status and Actions */}
                   <div className="mt-4">
                     {task.is_submitted && task.is_accepted && (
-                      <div className="alert alert-primary">
+                      <div className="alert alert-black">
                         <div className="d-flex align-items-center">
                           <FaCheckCircle className="me-2" size={20} />
                           <div>
@@ -492,8 +487,8 @@ const EmployeeTasksAccordion = () => {
                     )}
 
                     {!task.is_accepted && (
-                      <Card className="border-primary mt-3">
-                        <Card.Header className="bg-primary text-white py-2">
+                      <Card className="border-black mt-3">
+                        <Card.Header className="card-header py-2">
                           <FaUpload className="me-2" />
                           {task.is_refused ? "Resubmit Task" : "Submit Task"}
                         </Card.Header>
@@ -507,11 +502,11 @@ const EmployeeTasksAccordion = () => {
                               type="file"
                               multiple
                               onChange={handleFileChange}
-                              className="border-primary"
+                              className="border-black"
                             />
                           </Form.Group>
                           <Button
-                            variant="primary"
+                            variant="black"
                             className="w-100"
                             onClick={() => handleSubmitTask(task.id)}
                             disabled={submitting[task.id]}
