@@ -1,0 +1,206 @@
+/* Base rank styles */
+.rank-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 1.275rem;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.rank-first {
+  background: linear-gradient(135deg, #ffd700, #ffcc00);
+  color: #000;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.rank-second {
+  background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+  color: #000;
+  box-shadow: 0 0 8px rgba(192, 192, 192, 0.5);
+}
+
+.rank-third {
+  background: linear-gradient(135deg, #cd7f32, #b87333);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(205, 127, 50, 0.5);
+}
+
+.rank-other {
+  background: #f0f0f0;
+  color: #555;
+}
+
+/* Container for positioning */
+.rank-container {
+  display: inline-block;
+  position: relative;
+}
+
+/* Hover messages */
+.rank-hover-message {
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.rank-message-1 {
+  background: linear-gradient(135deg, #ffd700, #ff9900);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.rank-message-2 {
+  background: linear-gradient(135deg, #c0c0c0, #999999);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.3);
+}
+
+.rank-message-3 {
+  background: linear-gradient(135deg, #cd7f32, #995522);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3);
+}
+
+/* Hover effects */
+.rank-container:hover .rank-badge.rank-first {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+  animation: pulse-gold 1.5s infinite;
+}
+
+.rank-container:hover .rank-badge.rank-second {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(192, 192, 192, 0.7);
+}
+
+.rank-container:hover .rank-badge.rank-third {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(205, 127, 50, 0.7);
+}
+
+.rank-container:hover .rank-hover-message {
+  opacity: 1;
+  visibility: visible;
+  bottom: calc(100% + 32px);
+}
+
+/* Animation for gold rank */
+@keyframes pulse-gold {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+/* Crown Animation */
+.crown-icon {
+  transition: all 0.3s ease;
+}
+
+.rank-container:hover .crown-icon {
+  animation: crownFloat 2s infinite ease-in-out;
+}
+
+@keyframes crownFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(5deg);
+  }
+}
+
+/* Golden Burst Effect */
+.gold-burst {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.rank-container:hover .gold-burst {
+  opacity: 1;
+}
+
+.burst-ray {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(to bottom, #ffd700, transparent);
+  top: 35%;
+  left: 50%;
+  transform-origin: bottom center;
+  transform: translate(-50%, -50%) rotate(calc(var(--i) * 60deg))
+    translateY(-40px);
+  opacity: 0;
+}
+
+.rank-container:hover .burst-ray {
+  animation: rayAppear 0.5s forwards, rayPulse 1.5s infinite;
+  animation-delay: calc(var(--i) * 0.1s);
+}
+
+@keyframes rayAppear {
+  to {
+    opacity: 0.8;
+  }
+}
+
+@keyframes rayPulse {
+  0%,
+  100% {
+    height: 15px;
+  }
+  50% {
+    height: 25px;
+  }
+}
+
+/* Enhance pulse animation for gold */
+.rank-container:hover .rank-badge.rank-first {
+  animation: pulse-gold 1.5s infinite, gentleGlow 2s infinite alternate;
+}
+
+@keyframes gentleGlow {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.1);
+  }
+}
+.crown-wrapper {
+  line-height: 1; /* Tighter vertical spacing */
+}
+
+.crown-icon {
+  margin-bottom: 2px !important; /* Tiny gap below crown */
+}
