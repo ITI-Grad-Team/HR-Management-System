@@ -2502,13 +2502,13 @@ class RAGViewSet(ViewSet):
     def _get_role_suffix(self, user):
         """Returns role-specific suffix message"""
         if IsHR().has_permission(self.request, self):
-            return "\n\n[Responding to HR representative]"
+            return "\n\n[HR representative]"
         elif IsAdmin().has_permission(self.request, self):
-            return "\n\n[Responding to system administrator]"
+            return "\n\n[system administrator]"
         elif IsCoordinator().has_permission(self.request, self):
-            return "\n\n[Responding to coordinator employee]"
+            return "\n\n[coordinator employee]"
         else:
-            return "\n\n[Responding to regular employee]"
+            return "\n\n[regular employee]"
 
     @action(detail=False, methods=["post"], url_path="query")
     def handle_query(self, request):
@@ -2530,7 +2530,7 @@ class RAGViewSet(ViewSet):
         role_suffix = self._get_role_suffix(request.user)
         system_message = (
             f"Answer questions for user named ({username}) based on this context:\n{context}"
-            f"{role_suffix}\n"
+            f"role: {role_suffix}\n"
             "Keep responses professional and tailored to the user's role."
         )
 
