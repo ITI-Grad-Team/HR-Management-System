@@ -28,7 +28,6 @@ const Attendance = () => {
 
   return (
     <div className="container-fluid mt-4">
-      <h2 className="mb-4">Attendance & Leave</h2>
       {renderView()}
     </div>
   );
