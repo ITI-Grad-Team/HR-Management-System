@@ -6,9 +6,12 @@ import {
   FaBusinessTime,
   FaBed,
   FaStar,
+  FaCrown,
   FaMoneyBillWave,
   FaRunning,
 } from "react-icons/fa";
+import "./EmployeeStats.css";
+
 import { FiTrendingUp } from "react-icons/fi";
 
 import { useAuth } from "../../hooks/useAuth";
@@ -108,6 +111,70 @@ const EmployeeStats = () => {
 
   return (
     <div className="mb-4">
+      {employee.rank &&
+        !employee.is_coordinator && (
+          <div className="rank-container position-relative d-flex justify-content-center align-items-center">
+            {" "}
+            <div
+              className={`rank-badge ${
+                employee.rank === 1
+                  ? "rank-first"
+                  : employee.rank === 2
+                  ? "rank-second"
+                  : employee.rank === 3
+                  ? "rank-third"
+                  : "rank-other"
+              }`}
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title={
+                employee.rank === 2 ||
+                employee.rank === 1 ||
+                employee.rank === 3
+                  ? ""
+                  : employee.rank === 4
+                  ? "You rank 4th! Keep the great work!"
+                  : employee.rank === 5
+                  ? "You rank 5th! Keep pushing!"
+                  : `You rank ${employee.rank}th`
+              }
+            >
+              {employee.rank === 1 ? (
+                <>
+                  <FaCrown
+                    className="crown-icon"
+                    style={{ marginBottom: "2px" }}
+                  />
+                  <div>#{employee.rank}</div>
+                </>
+              ) : (
+                `#${employee.rank}`
+              )}
+            </div>
+            {/* Special hover effects for top 3 */}
+            {employee.rank <= 3 && (
+              <>
+                <div
+                  className={`rank-hover-message rank-message-${employee.rank}`}
+                >
+                  {employee.rank === 1
+                    ? "You're our TOP Tasker!"
+                    : employee.rank === 2
+                    ? "TOP 2 Tasker performer!"
+                    : "TOP 3 Tasker performer!"}
+                </div>
+                {/* Golden burst effect for #1 */}
+                {employee.rank === 1 && (
+                  <div className="gold-burst">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="burst-ray" style={{ "--i": i }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       <h4 className="mb-4 d-flex align-items-center">
         <FaChartLine
           className="me-2 text-primary sub-icon"
