@@ -336,7 +336,7 @@ export default function CandidateDetailsCard({
       await axiosInstance.delete(`/hr/reject-employee/${candidateId}/`);
       toast.success("Candidate rejected successfully");
       setShowRejectModal(false);
-      navigate("/employees"); // Redirect to employees page
+      navigate("/dashboard/employees"); // Redirect to employees page
     } catch (err) {
       toast.error("Failed to reject candidate");
       console.error(err);
