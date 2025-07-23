@@ -348,7 +348,7 @@ const CoordinatorTaskAccordion = () => {
               <FaUser className="text-secondary" size={14} />
             </div>
           )}
-          <div className="text-truncate" style={{ maxWidth: "150px" }}>
+          <div className="text-black" style={{ maxWidth: "150px" }}>
             <span className="fw-bold">{employee.username}</span>
           </div>
           <FaExternalLinkAlt className="text-muted" size={12} />
@@ -404,9 +404,9 @@ const CoordinatorTaskAccordion = () => {
 
   if (tasks.length === 0) {
     return (
-      <Card className="border-primary">
+      <Card className="border-black">
         <Card.Body className="text-center py-5">
-          <FaClipboardList className="text-primary mb-3" size={48} />
+          <FaClipboardList className="text-black mb-3" size={48} />
           <h4>No Tasks Created Yet</h4>
           <p className="text-muted">
             You haven't created any tasks yet. When you do, they'll appear here.
@@ -418,8 +418,8 @@ const CoordinatorTaskAccordion = () => {
 
   return (
     <div className="coordinator-tasks">
-      <Card className="border-primary mb-4">
-        <Card.Header className="bg-primary text-white">
+      <Card className="border-black mb-4">
+        <Card.Header className="bg-black text-white">
           <h4 className="mb-0">
             <FaClipboardList className="me-2" />
             My Created Tasks
@@ -520,8 +520,7 @@ const CoordinatorTaskAccordion = () => {
                         <div className="d-flex align-items-center">
                           <FaTimesCircle className="me-2" size={20} />
                           <div>
-                            <strong>Refused</strong> - c{" "}
-                            {task.refuse_reason}
+                            <strong>Refused</strong> - c {task.refuse_reason}
                           </div>
                         </div>
                       </div>
