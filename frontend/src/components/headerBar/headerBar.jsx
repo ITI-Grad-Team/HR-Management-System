@@ -13,6 +13,7 @@ const pageTitles = {
   "/dashboard/applications": "Applications",
   "/dashboard/settings": "Settings",
   "/dashboard/candidates/:id": "Candidate Details",
+  "/dashboard/leave" : "Casual Leave",
 };
 
 export default function HeaderBar() {

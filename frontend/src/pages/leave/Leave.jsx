@@ -32,7 +32,6 @@ const Leave = () => {
 
     return (
         <div className="container-fluid mt-4">
-            <h2 className="mb-4">Casual Leave</h2>
             {renderView()}
         </div>
     );
