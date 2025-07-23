@@ -641,6 +641,8 @@ class CompanyStatistics(models.Model):
     # Position-specific stats (stored as JSON)
     position_stats = models.JSONField(default=dict)
 
+    # Distance stats
+    region_stats = models.JSONField(default=dict)
     # Monthly salary totals (stored as JSON)
     monthly_salary_totals = models.JSONField(default=list)
 

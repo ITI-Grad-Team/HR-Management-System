@@ -8,8 +8,12 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
   Legend,
+  ScatterChart,
+  Scatter,
+  CartesianGrid,
+  YAxis,
+  Cell,
 } from "recharts";
 import axiosInstance from "../../api/config";
 import HrAdminUpperFallback from "../DashboardFallBack/HrAdminUpperFallback";
@@ -41,7 +45,6 @@ export default function AdminStats() {
       .finally(() => setLoading(false));
   }, []);
 
-
   const recalculateStats = () => {
     setRecalculating(true);
     axiosInstance
@@ -57,10 +60,7 @@ export default function AdminStats() {
       .finally(() => setRecalculating(false));
   };
 
-  if (loading || !snapshot)
-    return (
-      <HrAdminUpperFallback />
-    );
+  if (loading || !snapshot) return <HrAdminUpperFallback />;
 
   const positionStats = snapshot.position_stats || {};
 
@@ -285,6 +285,78 @@ export default function AdminStats() {
           6
         )}
       </Row>
+      <Col lg={12}>
+        <Card className="shadow-sm">
+          <Card.Body>
+            <h6 className="mb-3">Distance vs. Lateness by Region</h6>
+            <ResponsiveContainer width="100%" height={400}>
+              <ScatterChart
+                margin={{ top: 20, right: 20, bottom: 60, left: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  type="number"
+                  dataKey="distance_to_work"
+                  name="Distance"
+                  label={{
+                    value: "Distance to Work (km)",
+                    position: "bottom",
+                    offset: 20,
+                  }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="avg_lateness"
+                  name="Lateness"
+                  label={{
+                    value: "Average Lateness (hours)",
+                    angle: -90,
+                    position: "left",
+                    offset: 30,
+                    dy: -70,
+                  }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-2 border rounded shadow-sm">
+                        <p>
+                          <strong>{data.name}</strong>
+                        </p>
+                        <p>Distance: {data.distance_to_work} km</p>
+                        <p>Avg Lateness: {data.avg_lateness.toFixed(2)} hrs</p>
+                        <p>Employees: {data.employee_count}</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Scatter
+                  data={Object.entries(snapshot.region_stats).map(
+                    ([name, stats]) => ({
+                      name,
+                      ...stats,
+                    })
+                  )}
+                  fill="#3B82F6"
+                  shape={({ cx, cy, payload }) => (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={8 + payload.employee_count}
+                      fill="#3B82F6"
+                      fillOpacity={0.7}
+                      stroke="#1D4ED8"
+                      strokeWidth={1}
+                    />
+                  )}
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </Card.Body>
+        </Card>
+      </Col>
     </>
   );
 }

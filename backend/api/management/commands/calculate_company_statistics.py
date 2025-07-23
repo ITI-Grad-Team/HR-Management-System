@@ -24,5 +24,7 @@ class Command(BaseCommand):
             overall_avg_lateness=stats['overall_avg_lateness'],
             overall_avg_absent_days=stats['overall_avg_absent_days'],
             overall_avg_salary=stats['overall_avg_salary'],
+            region_stats = stats["region_stats"]
         )
+
         self.stdout.write(self.style.SUCCESS("Successfully generated the nightly company statistics snapshot."))

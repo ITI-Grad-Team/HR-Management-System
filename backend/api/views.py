@@ -176,6 +176,27 @@ def calculate_statistics():
             ),
             "avg_salary": avg_salary,
         }
+    
+
+    region_stats = {}
+    regions = Region.objects.all()
+    
+    for region in regions:
+        region_employees = employees.filter(region=region)
+        region_count = region_employees.count()
+        
+        if region_count == 0:
+            continue
+            
+        total_lateness = region_employees.aggregate(sum=Sum('total_lateness_hours'))['sum'] or 0
+        total_non_holiday_days = region_employees.aggregate(
+            sum=Sum('number_of_non_holiday_days_since_join'))['sum'] or 0
+        
+        region_stats[region.name] = {
+            'distance_to_work': region.distance_to_work,
+            'employee_count': region_count,
+            'avg_lateness': round(total_lateness / total_non_holiday_days, 2) if total_non_holiday_days > 0 else None
+        }
 
     total_task_ratings = employees.aggregate(sum=Sum("total_task_ratings"))["sum"] or 0
     total_accepted_tasks = (
@@ -232,11 +253,11 @@ def calculate_statistics():
         {"year": int(k.split("-")[0]), "month": int(k.split("-")[1]), "total_paid": v}
         for k, v in monthly_totals.items()
     ]
-
     return {
         "total_employees": total_employees,
         "total_hrs": total_hrs,
         "position_stats": position_stats,
+        "region_stats": region_stats,  
         "monthly_salary_totals": monthly_salary_data,
         **overall_stats,
     }
@@ -1998,6 +2019,7 @@ class AdminStatsViewSet(ModelViewSet):
             overall_avg_lateness=stats["overall_avg_lateness"],
             overall_avg_absent_days=stats["overall_avg_absent_days"],
             overall_avg_salary=stats["overall_avg_salary"],
+            region_stats = stats["region_stats"]
         )
 
         serializer = self.get_serializer(company_stats)
