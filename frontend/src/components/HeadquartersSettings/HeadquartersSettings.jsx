@@ -113,11 +113,11 @@ const HeadquartersSettings = () => {
 
     return (
         <Card className="shadow-sm">
-            <Card.Header className="bg-primary text-white">
+            <Card.Header className="bg-dark text-white py-3">
                 <h5 className="mb-0">Headquarters Location Settings</h5>
             </Card.Header>
             <Card.Body>
-                <Alert variant="info">
+                <Alert variant="info" className="py-2 px-2">
                     <small>
                         Configure the headquarters location for attendance validation.
                         All employees must be within the specified radius to check in/out.
