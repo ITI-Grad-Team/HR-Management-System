@@ -7,15 +7,10 @@ import {
   Form,
   Button,
   ListGroup,
-  Spinner,
   ToastContainer,
   Toast,
-  Modal,
-  Alert,
 } from "react-bootstrap";
 import axiosInstance from "../../api/config";
-import { updateRegionLocationAdmin } from "../../api/locationApi";
-import { getCurrentLocation } from "../../utils/geolocation";
 import SettingsFallback from "../DashboardFallBack/SettingsFallback";
 import HeadquartersSettings from "../HeadquartersSettings/HeadquartersSettings";
 
@@ -40,16 +35,6 @@ export default function AdminSettings() {
     message: "",
     variant: "success",
   });
-
-  // Location management state
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const [locationSettings, setLocationSettings] = useState({
-    latitude: "",
-    longitude: "",
-    allowed_radius_meters: 100,
-  });
-  const [locationLoading, setLocationLoading] = useState(false);
 
   /* ------------------------- HELPERS ---------------------------------- */
   const showToast = useCallback((message, variant = "success") => {
@@ -136,59 +121,6 @@ export default function AdminSettings() {
     setNewEducation
   );
 
-  // Location management handlers
-  const handleLocationSetup = (region) => {
-    setSelectedRegion(region);
-    setLocationSettings({
-      latitude: region.latitude || "",
-      longitude: region.longitude || "",
-      allowed_radius_meters: region.allowed_radius_meters || 100,
-    });
-    setShowLocationModal(true);
-  };
-
-  const handleGetCurrentLocation = async () => {
-    setLocationLoading(true);
-    try {
-      const location = await getCurrentLocation();
-      setLocationSettings(prev => ({
-        ...prev,
-        latitude: location.latitude,
-        longitude: location.longitude,
-      }));
-      showToast("Current location acquired successfully");
-    } catch (error) {
-      showToast(error.message, "danger");
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  const handleSaveLocation = async () => {
-    if (!selectedRegion) return;
-
-    setLocationLoading(true);
-    try {
-      const response = await updateRegionLocationAdmin(selectedRegion.id, locationSettings);
-
-      // Update the region in the local state
-      setRegions(prev =>
-        prev.map(region =>
-          region.id === selectedRegion.id
-            ? { ...region, ...response.data }
-            : region
-        )
-      );
-
-      setShowLocationModal(false);
-      showToast("Location settings updated successfully");
-    } catch (error) {
-      showToast(error.response?.data?.detail || "Failed to update location", "danger");
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
   /* --------------------------- RENDER --------------------------------- */
   if (loading) {
     return (
@@ -202,7 +134,6 @@ export default function AdminSettings() {
     value,
     valueSetter,
     addHandler,
-    showLocationButton = false
   ) => (
     <Col xs={12} md={6} lg={4} className="mb-4">
       <Card className="shadow-sm h-100">
@@ -253,24 +184,7 @@ export default function AdminSettings() {
                         </span>
                       )}
                     </div>
-                    {showLocationButton && (
-                      <small className="text-muted">
-                        {item.latitude && item.longitude
-                          ? `Location: ${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)} (${item.allowed_radius_meters}m)`
-                          : "No location set"
-                        }
-                      </small>
-                    )}
                   </div>
-                  {showLocationButton && (
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => handleLocationSetup(item)}
-                    >
-                      {item.latitude && item.longitude ? "Edit Location" : "Set Location"}
-                    </Button>
-                  )}
                 </ListGroup.Item>
               ))}
             </ListGroup>
@@ -326,114 +240,9 @@ export default function AdminSettings() {
             newRegion,
             setNewRegion,
             handleAddRegion,
-            true // Show location button for regions
           )}
         </Row>
 
-        {/* Location Setup Modal */}
-        <Modal show={showLocationModal} onHide={() => setShowLocationModal(false)} size="lg">
-          <Modal.Header closeButton>
-            <Modal.Title>
-              Set Location for {selectedRegion?.name}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Alert variant="info">
-              <small>
-                Configure the geolocation for attendance validation. Employees will need to be within
-                the specified radius to check in/out at this location.
-              </small>
-            </Alert>
-
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Latitude</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="e.g., 30.0444"
-                    value={locationSettings.latitude}
-                    onChange={(e) => setLocationSettings(prev => ({
-                      ...prev,
-                      latitude: e.target.value
-                    }))}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Longitude</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="e.g., 31.2357"
-                    value={locationSettings.longitude}
-                    onChange={(e) => setLocationSettings(prev => ({
-                      ...prev,
-                      longitude: e.target.value
-                    }))}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Allowed Radius (meters)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="10"
-                    max="1000"
-                    value={locationSettings.allowed_radius_meters}
-                    onChange={(e) => setLocationSettings(prev => ({
-                      ...prev,
-                      allowed_radius_meters: parseInt(e.target.value) || 100
-                    }))}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6} className="d-flex align-items-end">
-                <Button
-                  variant="outline-primary"
-                  onClick={handleGetCurrentLocation}
-                  disabled={locationLoading}
-                  className="mb-3"
-                >
-                  {locationLoading ? (
-                    <>
-                      <Spinner animation="border" size="sm" /> Getting Location...
-                    </>
-                  ) : (
-                    "Use Current Location"
-                  )}
-                </Button>
-              </Col>
-            </Row>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowLocationModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSaveLocation}
-              disabled={locationLoading || !locationSettings.latitude || !locationSettings.longitude}
-            >
-              {locationLoading ? (
-                <>
-                  <Spinner animation="border" size="sm" /> Saving...
-                </>
-              ) : (
-                "Save Location"
-              )}
-            </Button>
-          </Modal.Footer>
-        </Modal>
       </Container>
 
       {/* Toast */}

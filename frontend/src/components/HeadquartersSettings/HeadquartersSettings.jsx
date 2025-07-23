@@ -78,6 +78,31 @@ const HeadquartersSettings = () => {
         }
     };
 
+    const handleResetToDefaults = async () => {
+        setSaving(true);
+        try {
+            const defaultData = {
+                name: 'Cairo Headquarters',
+                latitude: 30.0500,
+                longitude: 31.2333,
+                allowed_radius_meters: 150
+            };
+
+            await updateHeadquarters(defaultData);
+            setHeadquarters({
+                ...defaultData,
+                latitude: defaultData.latitude.toString(),
+                longitude: defaultData.longitude.toString()
+            });
+            toast.success('Headquarters reset to default Cairo location');
+        } catch (error) {
+            console.error('Failed to reset headquarters:', error);
+            toast.error(error.response?.data?.detail || 'Failed to reset headquarters settings');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
@@ -183,7 +208,20 @@ const HeadquartersSettings = () => {
                         </Col>
                     </Row>
 
-                    <div className="d-flex justify-content-end">
+                    <div className="d-flex justify-content-between">
+                        <Button
+                            variant="outline-secondary"
+                            onClick={handleResetToDefaults}
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <>
+                                    <Spinner animation="border" size="sm" /> Resetting...
+                                </>
+                            ) : (
+                                'Reset to Defaults'
+                            )}
+                        </Button>
                         <Button
                             type="submit"
                             variant="primary"
