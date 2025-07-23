@@ -108,7 +108,7 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
       title: "Avg Task Rating",
       value: stats.accepted_employees_avg_task_rating,
       icon: <GiProgression className="text-muted" />,
-      unit: "/5",
+      unit: "%",
       description: "Average task rating of hires",
     },
     {
