@@ -293,7 +293,7 @@ class TwentyPerPagePagination(PageNumberPagination):
     max_page_size = 100
 
 
-class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
+class AdminViewEmployeesViewSet(ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
     permission_classes = [IsAdmin]
@@ -307,6 +307,7 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
         "application_link",
     ]
     search_fields = ["user__username", "user__email", "phone"]
+    http_method_names = ["get", "patch"]  # Only allow GET and PATCH methods
 
     def get_queryset(self):
         base_queryset = super().get_queryset()
@@ -348,6 +349,8 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
             return EmployeeListSerializer
         elif self.action == "update_cv_data":
             return EmployeeCVUpdateSerializer
+        elif self.action == "update_compensation":
+            return EmployeeAcceptingSerializer
         return EmployeeSerializer
 
     @action(detail=True, methods=["patch"], url_path="update-cv-data")
@@ -380,6 +383,87 @@ class AdminViewEmployeesViewSet(ReadOnlyModelViewSet):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["patch"], url_path="update-compensation")
+    def update_compensation(self, request, pk=None):
+        """
+        Admin endpoint to update employee compensation and work schedule
+        - Admin can update any employee's compensation details
+        - No restrictions based on interviewer
+        """
+        employee = self.get_object()
+
+        # Ensure the employee is in accepted state
+        if employee.interview_state != "accepted":
+            return Response(
+                {"detail": "Can only update compensation for accepted employees."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(employee, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Use the serializer's update method but skip password and email logic
+        # since this is for existing accepted employees
+        validated_data = serializer.validated_data.copy()
+
+        # Handle holiday days
+        holiday_weekdays = validated_data.pop("holiday_weekdays", None)
+        holiday_yeardays = validated_data.pop("holiday_yeardays", None)
+
+        # Handle online days
+        online_weekdays = validated_data.pop("online_weekdays", None)
+        online_yeardays = validated_data.pop("online_yeardays", None)
+
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(employee, attr, value)
+
+        employee.save()
+
+        # Handle holiday weekdays
+        if holiday_weekdays is not None:
+            from .models import HolidayWeekday
+
+            employee.holidayweekday_set.all().delete()
+            for day in holiday_weekdays:
+                obj, created = HolidayWeekday.objects.get_or_create(weekday=day)
+                obj.employees.add(employee)
+
+        # Handle holiday yeardays
+        if holiday_yeardays is not None:
+            from .models import HolidayYearday
+
+            employee.holidayyearday_set.all().delete()
+            for day_info in holiday_yeardays:
+                obj, created = HolidayYearday.objects.get_or_create(
+                    month=day_info["month"], day=day_info["day"]
+                )
+                obj.employees.add(employee)
+
+        # Handle online weekdays
+        if online_weekdays is not None:
+            from .models import OnlineDayWeekday
+
+            employee.onlinedayweekday_set.all().delete()
+            for day in online_weekdays:
+                obj, created = OnlineDayWeekday.objects.get_or_create(weekday=day)
+                obj.employees.add(employee)
+
+        # Handle online yeardays
+        if online_yeardays is not None:
+            from .models import OnlineDayYearday
+
+            employee.onlinedayyearday_set.all().delete()
+            for day_info in online_yeardays:
+                obj, created = OnlineDayYearday.objects.get_or_create(
+                    month=day_info["month"], day=day_info["day"]
+                )
+                obj.employees.add(employee)
+
+        # Return updated employee data
+        response_serializer = EmployeeSerializer(employee)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminManageSkillsViewSet(ModelViewSet):
@@ -1336,6 +1420,102 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
             )
 
         return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["patch"], url_path="update-compensation")
+    def update_compensation(self, request, pk=None):
+        """
+        HR endpoint to update employee compensation and work schedule
+        - HR can only update employees they accepted (interviewer restriction)
+        - Employee must be in accepted state
+        """
+        employee = self.get_object()
+
+        try:
+            hr = HR.objects.get(user=request.user)
+        except HR.DoesNotExist:
+            return Response(
+                {"detail": "Only HRs can perform this action."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if employee.interviewer != hr:
+            return Response(
+                {
+                    "detail": "You can only update compensation for employees you accepted."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if employee.interview_state != "accepted":
+            return Response(
+                {"detail": "Can only update compensation for accepted employees."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(employee, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Use the serializer's update method but skip password and email logic
+        # since this is for existing accepted employees
+        validated_data = serializer.validated_data.copy()
+
+        # Handle holiday days
+        holiday_weekdays = validated_data.pop("holiday_weekdays", None)
+        holiday_yeardays = validated_data.pop("holiday_yeardays", None)
+
+        # Handle online days
+        online_weekdays = validated_data.pop("online_weekdays", None)
+        online_yeardays = validated_data.pop("online_yeardays", None)
+
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(employee, attr, value)
+
+        employee.save()
+
+        # Handle holiday weekdays
+        if holiday_weekdays is not None:
+            from .models import HolidayWeekday
+
+            employee.holidayweekday_set.all().delete()
+            for day in holiday_weekdays:
+                obj, created = HolidayWeekday.objects.get_or_create(weekday=day)
+                obj.employees.add(employee)
+
+        # Handle holiday yeardays
+        if holiday_yeardays is not None:
+            from .models import HolidayYearday
+
+            employee.holidayyearday_set.all().delete()
+            for day_info in holiday_yeardays:
+                obj, created = HolidayYearday.objects.get_or_create(
+                    month=day_info["month"], day=day_info["day"]
+                )
+                obj.employees.add(employee)
+
+        # Handle online weekdays
+        if online_weekdays is not None:
+            from .models import OnlineDayWeekday
+
+            employee.onlinedayweekday_set.all().delete()
+            for day in online_weekdays:
+                obj, created = OnlineDayWeekday.objects.get_or_create(weekday=day)
+                obj.employees.add(employee)
+
+        # Handle online yeardays
+        if online_yeardays is not None:
+            from .models import OnlineDayYearday
+
+            employee.onlinedayyearday_set.all().delete()
+            for day_info in online_yeardays:
+                obj, created = OnlineDayYearday.objects.get_or_create(
+                    month=day_info["month"], day=day_info["day"]
+                )
+                obj.employees.add(employee)
+
+        # Return updated employee data
+        response_serializer = EmployeeSerializer(employee)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 class HRRejectEmployeeViewSet(ModelViewSet):
