@@ -59,8 +59,25 @@ export default function AdminStats() {
       .catch((err) => console.error(err))
       .finally(() => setRecalculating(false));
   };
+  if (loading) return <HrAdminUpperFallback />;
 
-  if (loading || !snapshot) return <HrAdminUpperFallback />;
+  if (!snapshot) {
+    return (
+      <div className="text-center py-5">
+        <div className="alert alert-info">
+          <h4>No Company Stats Available</h4>
+          <p>There are no company statistics recorded yet.</p>
+          <button
+            className="btn btn-primary"
+            onClick={recalculateStats}
+            disabled={recalculating}
+          >
+            {recalculating ? "Generating..." : "Generate Stats"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const positionStats = snapshot.position_stats || {};
 
