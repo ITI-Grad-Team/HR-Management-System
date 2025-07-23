@@ -78,7 +78,7 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
 
   useEffect(() => {
     document.title = `${basicinfo?.username} | HERA`;
-  })
+  });
   useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
       setBasicInfoFormData({
@@ -212,7 +212,7 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
                 }}
               />
               <Badge
-                bg={basicinfo?.role === "hr" ? "primary" : "secondary"}
+                bg={basicinfo?.role === "hr" ? "black" : "secondary"}
                 className="position-absolute top-0 end-0 rounded-pill"
                 style={{ transform: "translate(75%, 25%)" }}
               >
@@ -221,14 +221,14 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
               {isSelfView && (
                 <button
                   onClick={() => setShowBasicInfoModal(true)}
-                  className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 border-0"
+                  className="position-absolute bottom-0 end-0 bg-black text-white rounded-circle p-2 border-0"
                   style={{
                     transform: "translate(-10%, -10%)",
                     width: "40px",
                     height: "40px",
                   }}
                 >
-                  <FaEdit />
+                  <FaEdit className="d-flex m-auto" />
                 </button>
               )}
             </div>
