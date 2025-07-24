@@ -121,6 +121,40 @@ const HRStats = () => {
     },
   ];
 
+  const getGlobalRankMessage = (rank) => {
+    if (rank === 1) return "You're our TOP Tasker!";
+    if (rank === 2) return "TOP 2 Tasker!";
+    if (rank === 3) return "TOP 3 Tasker!";
+    if (rank === 4) return "Great Tasker!";
+    if (rank === 5) return "Excellent Tasker!";
+    return `Rank #${rank} in the company`;
+  };
+
+  const getPositionRankMessage = (rank, position) => {
+    if (rank === 1) return `You're our TOP ${position}!`;
+    if (rank === 2) return `TOP 2 ${position}!`;
+    if (rank === 3) return `TOP 3 ${position}!`;
+    if (rank === 4) return `Great ${position}!`;
+    if (rank === 5) return `Excellent ${position}!`;
+    return `Ranked #${rank} among ${position}s!`;
+  };
+
+  const getGlobalRankTooltip = (rank) => {
+    if ([1, 2, 3].includes(rank)) return "";
+    if (rank === 4) return "You rank 4th in the company! Keep the great work!";
+    if (rank === 5) return "You rank 5th in the company! Keep pushing!";
+    return `You rank ${rank}th in the company`;
+  };
+
+  const getPositionRankTooltip = (rank, position) => {
+    if ([1, 2, 3].includes(rank)) return "";
+    if (rank === 4)
+      return `You rank 4th in ${position} position! Keep the great work!`;
+    if (rank === 5)
+      return `You rank 5th in ${position} position! Keep pushing!`;
+    return `You rank ${rank}th in ${position} position`;
+  };
+
   return (
     <div className="container-fluid py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -139,15 +173,7 @@ const HRStats = () => {
               }`}
               data-bs-toggle="tooltip"
               data-bs-placement="top"
-              title={
-                stats.rank === 2 || stats.rank === 1 || stats.rank === 3
-                  ? ""
-                  : stats.rank === 4
-                  ? "You rank 4th! Keep the great work!"
-                  : stats.rank === 5
-                  ? "You rank 5th! Keep pushing!"
-                  : `You rank ${stats.rank}th`
-              }
+              title={getGlobalRankTooltip(stats.rank)}
             >
               {stats.rank === 1 ? (
                 <>
@@ -162,23 +188,28 @@ const HRStats = () => {
               )}
             </div>
 
-            {/* Special hover effects for top 3 */}
+            {/* Hover message for all ranks */}
+            <div
+              className={`rank-hover-message ${
+                stats.rank <= 3
+                  ? `rank-message-${stats.rank}`
+                  : "rank-message-other"
+              }`}
+            >
+              {getGlobalRankMessage(stats.rank)}
+            </div>
+
+            {/* Special effects for top 3 */}
             {stats.rank <= 3 && (
               <>
-                <div
-                  className={`rank-hover-message rank-message-${stats.rank}`}
-                >
-                  {stats.rank === 1
-                    ? "You're our TOP HR!"
-                    : stats.rank === 2
-                    ? "TOP 2 HR performer!"
-                    : "TOP 3 HR performer!"}
-                </div>
-                {/* Golden burst effect for #1 */}
                 {stats.rank === 1 && (
                   <div className="gold-burst">
                     {[...Array(6)].map((_, i) => (
-                      <div key={i} className="burst-ray" style={{ "--i": i }} />
+                      <div
+                        key={`global-ray-${i}`}
+                        className="burst-ray"
+                        style={{ "--i": i }}
+                      />
                     ))}
                   </div>
                 )}

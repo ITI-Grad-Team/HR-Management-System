@@ -62,6 +62,39 @@ const EmployeeStats = () => {
 
   if (!employee) return null;
 
+  const getGlobalRankMessage = (rank) => {
+    if (rank === 1) return "You're our TOP Tasker!";
+    if (rank === 2) return "TOP 2 Tasker!";
+    if (rank === 3) return "TOP 3 Tasker!";
+    if (rank === 4) return "Great Tasker!";
+    if (rank === 5) return "Excellent Tasker!";
+    return `Rank #${rank} in the company`;
+  };
+
+  const getPositionRankMessage = (rank, position) => {
+    if (rank === 1) return `You're our TOP ${position}!`;
+    if (rank === 2) return `TOP 2 ${position}!`;
+    if (rank === 3) return `TOP 3 ${position}!`;
+    if (rank === 4) return `Great ${position}!`;
+    if (rank === 5) return `Excellent ${position}!`;
+    return `Ranked #${rank} among ${position}s!`;
+  };
+
+  const getGlobalRankTooltip = (rank) => {
+    if ([1, 2, 3].includes(rank)) return "";
+    if (rank === 4) return "You rank 4th in the company! Keep the great work!";
+    if (rank === 5) return "You rank 5th in the company! Keep pushing!";
+    return `You rank ${rank}th in the company`;
+  };
+
+  const getPositionRankTooltip = (rank, position) => {
+    if ([1, 2, 3].includes(rank)) return "";
+    if (rank === 4)
+      return `You rank 4th in ${position} position! Keep the great work!`;
+    if (rank === 5)
+      return `You rank 5th in ${position} position! Keep pushing!`;
+    return `You rank ${rank}th in ${position} position`;
+  };
   const stats = [
     {
       title: "Avg Task Rating",
@@ -111,67 +144,133 @@ const EmployeeStats = () => {
 
   return (
     <div className="mb-4">
-      {employee.rank &&
-        !employee.is_coordinator && (
-          <div className="rank-container position-relative d-flex justify-content-center align-items-center">
-            {" "}
-            <div
-              className={`rank-badge ${
-                employee.rank === 1
-                  ? "rank-first"
-                  : employee.rank === 2
-                  ? "rank-second"
-                  : employee.rank === 3
-                  ? "rank-third"
-                  : "rank-other"
-              }`}
-              data-bs-toggle="tooltip"
-              data-bs-placement="top"
-              title={
-                employee.rank === 2 ||
-                employee.rank === 1 ||
-                employee.rank === 3
-                  ? ""
-                  : employee.rank === 4
-                  ? "You rank 4th! Keep the great work!"
-                  : employee.rank === 5
-                  ? "You rank 5th! Keep pushing!"
-                  : `You rank ${employee.rank}th`
-              }
-            >
-              {employee.rank === 1 ? (
-                <>
-                  <FaCrown
-                    className="crown-icon"
-                    style={{ marginBottom: "2px" }}
-                  />
-                  <div>#{employee.rank}</div>
-                </>
-              ) : (
-                `#${employee.rank}`
-              )}
-            </div>
-            {/* Special hover effects for top 3 */}
-            {employee.rank <= 3 && (
-              <>
+      {!employee.is_coordinator &&
+        (employee.rank || employee.position_rank) && (
+          <div className="d-flex gap-5 justify-content-center align-items-center ">
+            {/* Global Rank Badge */}
+            {employee.rank && (
+              <div className="rank-container position-relative me-4">
                 <div
-                  className={`rank-hover-message rank-message-${employee.rank}`}
+                  className={`rank-badge ${
+                    employee.rank === 1
+                      ? "rank-first"
+                      : employee.rank === 2
+                      ? "rank-second"
+                      : employee.rank === 3
+                      ? "rank-third"
+                      : "rank-other"
+                  }`}
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title={getGlobalRankTooltip(employee.rank)}
                 >
-                  {employee.rank === 1
-                    ? "You're our TOP Tasker!"
-                    : employee.rank === 2
-                    ? "TOP 2 Tasker performer!"
-                    : "TOP 3 Tasker performer!"}
+                  {employee.rank === 1 ? (
+                    <>
+                      <FaCrown
+                        className="crown-icon"
+                        style={{ marginBottom: "2px" }}
+                      />
+                      <div>#{employee.rank}</div>
+                    </>
+                  ) : (
+                    `#${employee.rank}`
+                  )}
                 </div>
-                {/* Golden burst effect for #1 */}
-                {employee.rank === 1 && (
-                  <div className="gold-burst">
-                    {[...Array(6)].map((_, i) => (
-                      <div key={i} className="burst-ray" style={{ "--i": i }} />
-                    ))}
-                  </div>
+
+                {/* Hover message for all ranks */}
+                <div
+                  className={`rank-hover-message ${
+                    employee.rank <= 3
+                      ? `rank-message-${employee.rank}`
+                      : "rank-message-other"
+                  }`}
+                >
+                  {getGlobalRankMessage(employee.rank)}
+                </div>
+
+                {/* Special effects for top 3 */}
+                {employee.rank <= 3 && (
+                  <>
+                    {employee.rank === 1 && (
+                      <div className="gold-burst">
+                        {[...Array(6)].map((_, i) => (
+                          <div
+                            key={`global-ray-${i}`}
+                            className="burst-ray"
+                            style={{ "--i": i }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
+              </div>
+            )}
+
+            {/* Position Rank Badge */}
+            {employee.position_rank && (
+              <div className="rank-container  gap-5 position-relative">
+                <div
+                  className={`rank-badge ${
+                    employee.position_rank === 1
+                      ? "rank-first"
+                      : employee.position_rank === 2
+                      ? "rank-second"
+                      : employee.position_rank === 3
+                      ? "rank-third"
+                      : "rank-other"
+                  }`}
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  title={getPositionRankTooltip(
+                    employee.position_rank,
+                    employee.position
+                  )}
+                >
+                  {employee.position_rank === 1 ? (
+                    <>
+                      <FaCrown
+                        className="crown-icon"
+                        style={{ marginBottom: "2px" }}
+                      />
+                      <div>#{employee.position_rank}</div>
+                    </>
+                  ) : (
+                    `#${employee.position_rank}`
+                  )}
+                </div>
+
+                {/* Hover message for all ranks */}
+                <div
+                  className={`rank-hover-message ${
+                    employee.position_rank <= 3
+                      ? `rank-message-${employee.position_rank}`
+                      : "rank-message-other"
+                  }`}
+                >
+                  {getPositionRankMessage(
+                    employee.position_rank,
+                    employee.position
+                  )}
+                </div>
+
+                {/* Special effects for top 3 */}
+                {employee.position_rank <= 3 && (
+                  <>
+                    {employee.position_rank === 1 && (
+                      <div className="gold-burst">
+                        {[...Array(6)].map((_, i) => (
+                          <div
+                            key={`position-ray-${i}`}
+                            className="burst-ray"
+                            style={{ "--i": i }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
         )}
