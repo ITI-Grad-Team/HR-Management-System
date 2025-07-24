@@ -37,7 +37,6 @@ const EmployeeAttendanceView = () => {
     // Get current date for default filters
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
 
     // Generate year options (from join year to current year + 1)
     const getYearOptions = () => {
@@ -51,21 +50,21 @@ const EmployeeAttendanceView = () => {
         return years;
     };
 
-    // Generate month options based on selected year and join date
+    // Generate month options based on selected year and join date (descending order)
     const getMonthOptions = () => {
         const months = [
-            { value: 1, label: 'January' },
-            { value: 2, label: 'February' },
-            { value: 3, label: 'March' },
-            { value: 4, label: 'April' },
-            { value: 5, label: 'May' },
-            { value: 6, label: 'June' },
-            { value: 7, label: 'July' },
-            { value: 8, label: 'August' },
-            { value: 9, label: 'September' },
-            { value: 10, label: 'October' },
+            { value: 12, label: 'December' },
             { value: 11, label: 'November' },
-            { value: 12, label: 'December' }
+            { value: 10, label: 'October' },
+            { value: 9, label: 'September' },
+            { value: 8, label: 'August' },
+            { value: 7, label: 'July' },
+            { value: 6, label: 'June' },
+            { value: 5, label: 'May' },
+            { value: 4, label: 'April' },
+            { value: 3, label: 'March' },
+            { value: 2, label: 'February' },
+            { value: 1, label: 'January' }
         ];
 
         if (!joinDate || !selectedYear) return months;
@@ -313,45 +312,46 @@ const EmployeeAttendanceView = () => {
                             </small>
                         </Col>
                         <Col md={6}>
-                            <Row className="g-2">
-                                <Col md={4}>
+                            <div className="d-flex gap-2 justify-content-end">
+                                <InputGroup style={{ width: "160px" }}>
+                                    <InputGroup.Text>Year</InputGroup.Text>
                                     <Form.Select
                                         size="sm"
                                         value={selectedYear}
                                         onChange={(e) => handleFilterChange(selectedMonth, e.target.value)}
                                         disabled={loadingFilters}
                                     >
-                                        <option value="">All Years</option>
+                                        <option value="">All</option>
                                         {getYearOptions().map(year => (
                                             <option key={year} value={year}>{year}</option>
                                         ))}
                                     </Form.Select>
-                                </Col>
-                                <Col md={4}>
+                                </InputGroup>
+
+                                <InputGroup style={{ width: "180px" }}>
+                                    <InputGroup.Text>Month</InputGroup.Text>
                                     <Form.Select
                                         size="sm"
                                         value={selectedMonth}
                                         onChange={(e) => handleFilterChange(e.target.value, selectedYear)}
                                         disabled={loadingFilters}
                                     >
-                                        <option value="">All Months</option>
+                                        <option value="">All</option>
                                         {getMonthOptions().map(month => (
                                             <option key={month.value} value={month.value}>{month.label}</option>
                                         ))}
                                     </Form.Select>
-                                </Col>
-                                <Col md={4}>
-                                    <Button
-                                        variant="outline-secondary"
-                                        size="sm"
-                                        onClick={handleClearFilters}
-                                        disabled={loadingFilters || (!selectedMonth && !selectedYear)}
-                                        className="w-100"
-                                    >
-                                        Clear
-                                    </Button>
-                                </Col>
-                            </Row>
+                                </InputGroup>
+
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
+                                    onClick={handleClearFilters}
+                                    disabled={loadingFilters || (!selectedMonth && !selectedYear)}
+                                >
+                                    Clear
+                                </Button>
+                            </div>
                         </Col>
                     </Row>
                 </Card.Header>

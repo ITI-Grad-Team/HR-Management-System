@@ -87,9 +87,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         """Special handling for can_request_overtime and get_join_date to bypass role filters"""
         if self.action in ["can_request_overtime", "get_join_date"]:
             # Bypass role filtering for these actions
-            return AttendanceRecord.objects.all()
-        # Normal role-based filtering for all other actions
-        return get_role_based_queryset(self.request.user, AttendanceRecord)
+            return AttendanceRecord.objects.all().order_by("-date")
+        # Normal role-based filtering for all other actions with proper ordering
+        return get_role_based_queryset(self.request.user, AttendanceRecord).order_by(
+            "-date"
+        )
 
     @action(detail=False, methods=["get"])
     def check_in_status(self, request):
