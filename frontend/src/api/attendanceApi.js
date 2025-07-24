@@ -31,6 +31,10 @@ export const getMyAttendance = (params) => {
     return axiosInstance.get('/attendance/', { params });
 };
 
+export const getJoinDate = () => {
+    return axiosInstance.get('/attendance/get_join_date/');
+};
+
 export const canRequestOvertime = () => {
     return axiosInstance.get('/attendance/can_request_overtime/');
 };

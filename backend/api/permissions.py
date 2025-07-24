@@ -74,8 +74,8 @@ class AttendancePermission(BasePermission):
         # Allow check-in/check-out for employees only on themselves
         if view.action in ["check_in", "check_out", "check_in_status"]:
             return role == "employee"
-        # Allow can_request_overtime for employees and coordinators
-        if view.action == "can_request_overtime":
+        # Allow can_request_overtime and get_join_date for employees and coordinators
+        if view.action in ["can_request_overtime", "get_join_date"]:
             return role == "employee" or (
                 hasattr(user, "employee") and user.employee.is_coordinator
             )
@@ -128,7 +128,6 @@ class OvertimeRequestPermission(BasePermission):
             return role in ["hr", "admin"]
 
         return False
-
 
 
 class IsHROrEmployee(BasePermission):
