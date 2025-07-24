@@ -42,8 +42,8 @@ const EmployeeAttendanceView = () => {
     const getYearOptions = () => {
         const years = [];
         const startYear = joinDate ? new Date(joinDate).getFullYear() : currentYear - 5;
-        const endYear = currentYear + 1;
-
+        // const endYear = currentYear + 1;
+        const endYear = currentYear;
         for (let year = endYear; year >= startYear; year--) {
             years.push(year);
         }
