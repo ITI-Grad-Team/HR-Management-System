@@ -82,6 +82,9 @@ class AttendancePermission(BasePermission):
         # Only admin/hr can create/update
         if view.action in ["create", "update", "partial_update"]:
             return role in ["admin", "hr"]
+        # Only admin/hr can convert attendance to leave
+        if view.action == "convert_to_leave":
+            return role in ["admin", "hr"]
         # Only admin can delete
         if view.action == "destroy":
             return role == "admin"

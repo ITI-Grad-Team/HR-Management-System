@@ -5,10 +5,11 @@ import {
     getPendingOvertimeRequests,
     approveOvertimeRequest,
     rejectOvertimeRequest,
+    convertAttendanceToLeave,
 } from '../../api/attendanceApi';
 import { toast } from 'react-toastify';
 import { formatTime, formatHoursToTime } from '../../utils/formatters';
-import { FaCheck, FaTimes } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaExchangeAlt } from 'react-icons/fa';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
 import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
@@ -23,7 +24,9 @@ const AdminAttendanceView = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
+    const [showConvertModal, setShowConvertModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [selectedAttendance, setSelectedAttendance] = useState(null);
     const [hrComment, setHrComment] = useState('');
     const recentRequestsRef = useRef();
 
@@ -125,6 +128,29 @@ const AdminAttendanceView = () => {
         fetchPendingRequests();
     }
 
+    const handleConvertToLeave = (record) => {
+        if (record.status !== 'absent') {
+            toast.error('Only absent days can be converted to casual leave.');
+            return;
+        }
+        setSelectedAttendance(record);
+        setShowConvertModal(true);
+    };
+
+    const handleConvertSubmit = async () => {
+        if (!selectedAttendance) return;
+
+        try {
+            await convertAttendanceToLeave(selectedAttendance.id);
+            toast.success('Attendance record converted to casual leave successfully.');
+            setShowConvertModal(false);
+            setSelectedAttendance(null);
+            fetchData(currentPage, filters); // Refresh data
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Failed to convert attendance record.');
+        }
+    };
+
     const renderStatus = (status) => {
         const variants = {
             present: 'success',
@@ -147,31 +173,31 @@ const AdminAttendanceView = () => {
                         <Card.Header className="bg-light"><h5 className="mb-0">Pending Overtime Requests</h5></Card.Header>
                         <Card.Body>
                             <div style={{ maxHeight: '300px', minHeight: '200px', overflowY: 'auto' }}>
-                            <Table responsive striped bordered hover>
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Date</th>
-                                        <th>Requested (hrs)</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {loading && overtimeRequests.length === 0 ? (
-                                        <tr><td colSpan="4" className="text-center"><Spinner size="sm" /></td></tr>
-                                    ) : overtimeRequests.length > 0 ? overtimeRequests.map(req => (
-                                        <tr key={req.id}>
-                                            <td>{req.user}</td>
-                                            <td>{req.date}</td>
-                                            <td>{req.requested_hours}</td>
-                                            <td>
-                                                <Button variant="outline-success" size="sm" onClick={() => handleApprove(req)}>Approve</Button>
-                                                <Button variant="outline-danger" size="sm" className="ms-2" onClick={() => handleReject(req)}>Reject</Button>
-                                            </td>
+                                <Table responsive striped bordered hover>
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Date</th>
+                                            <th>Requested (hrs)</th>
+                                            <th>Actions</th>
                                         </tr>
-                                    )) : <tr><td colSpan="4" className="text-center">No pending requests.</td></tr>}
-                                </tbody>
-                            </Table>
+                                    </thead>
+                                    <tbody>
+                                        {loading && overtimeRequests.length === 0 ? (
+                                            <tr><td colSpan="4" className="text-center"><Spinner size="sm" /></td></tr>
+                                        ) : overtimeRequests.length > 0 ? overtimeRequests.map(req => (
+                                            <tr key={req.id}>
+                                                <td>{req.user}</td>
+                                                <td>{req.date}</td>
+                                                <td>{req.requested_hours}</td>
+                                                <td>
+                                                    <Button variant="outline-success" size="sm" onClick={() => handleApprove(req)}>Approve</Button>
+                                                    <Button variant="outline-danger" size="sm" className="ms-2" onClick={() => handleReject(req)}>Reject</Button>
+                                                </td>
+                                            </tr>
+                                        )) : <tr><td colSpan="4" className="text-center">No pending requests.</td></tr>}
+                                    </tbody>
+                                </Table>
                             </div>
                         </Card.Body>
                     </Card>
@@ -200,44 +226,57 @@ const AdminAttendanceView = () => {
                         </Row>
                     </Form>
                     <div style={{ maxHeight: '500px', minHeight: '200px', overflowY: 'auto' }}>
-                    <Table responsive striped bordered hover>
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Date</th>
-                                <th>Check-In (HH:MM)</th>
-                                <th>Check-Out (HH:MM)</th>
-                                <th>Status</th>
-                                <th>Attendance Type</th>
-                                <th>Lateness (HH:MM)</th>
-                                <th>Overtime Hours (HH:MM)</th>
-                                <th>Overtime Approved</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading && attendance.results.length === 0 ? (
-                                <tr><td colSpan="9" className="text-center"><Spinner /></td></tr>
-                            ) : attendance.results.map(rec => (
-                                <tr key={rec.id}>
-                                    <td>{rec.user_email}</td>
-                                    <td width={"15%"}>{rec.date}</td>
-                                    <td>{formatTime(rec.check_in_time)}</td>
-                                    <td>{formatTime(rec.check_out_time)}</td>
-                                    <td>{renderStatus(rec.status)}</td>
-                                    <td>{rec.attendance_type}</td>
-                                    <td>{rec.lateness_hours > 0 ? formatHoursToTime(rec.lateness_hours) : '--'}</td>
-                                    <td>{rec.overtime_hours > 0 ? formatHoursToTime(rec.overtime_hours) : '--'}</td>
-                                    <td className="text-center">
-                                        {rec.overtime_hours > 0 ? (
-                                            rec.overtime_approved ?
-                                                <FaCheck className="text-success" title="Approved" /> :
-                                                <FaTimes className="text-danger" title="Not Approved" />
-                                        ) : '--'}
-                                    </td>
+                        <Table responsive striped bordered hover>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Check-In (HH:MM)</th>
+                                    <th>Check-Out (HH:MM)</th>
+                                    <th>Status</th>
+                                    <th>Attendance Type</th>
+                                    <th>Lateness (HH:MM)</th>
+                                    <th>Overtime Hours (HH:MM)</th>
+                                    <th>Overtime Approved</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+                            </thead>
+                            <tbody>
+                                {loading && attendance.results.length === 0 ? (
+                                    <tr><td colSpan="10" className="text-center"><Spinner /></td></tr>
+                                ) : attendance.results.map(rec => (
+                                    <tr key={rec.id}>
+                                        <td>{rec.user_email}</td>
+                                        <td width={"15%"}>{rec.date}</td>
+                                        <td>{formatTime(rec.check_in_time)}</td>
+                                        <td>{formatTime(rec.check_out_time)}</td>
+                                        <td>{renderStatus(rec.status)}</td>
+                                        <td>{rec.attendance_type}</td>
+                                        <td>{rec.lateness_hours > 0 ? formatHoursToTime(rec.lateness_hours) : '--'}</td>
+                                        <td>{rec.overtime_hours > 0 ? formatHoursToTime(rec.overtime_hours) : '--'}</td>
+                                        <td className="text-center">
+                                            {rec.overtime_hours > 0 ? (
+                                                rec.overtime_approved ?
+                                                    <FaCheck className="text-success" title="Approved" /> :
+                                                    <FaTimes className="text-danger" title="Not Approved" />
+                                            ) : '--'}
+                                        </td>
+                                        <td className="text-center">
+                                            {rec.status === 'absent' && (
+                                                <Button
+                                                    variant="outline-warning"
+                                                    size="sm"
+                                                    onClick={() => handleConvertToLeave(rec)}
+                                                    title="Convert to Casual Leave"
+                                                >
+                                                    <FaExchangeAlt />
+                                                </Button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
                     </div>
                     <div className="d-flex justify-content-center mt-4">
                         <Pagination
@@ -297,6 +336,35 @@ const AdminAttendanceView = () => {
                         <Button variant="danger" type="submit">Confirm Reject</Button>
                     </Modal.Footer>
                 </Form>
+            </Modal>
+
+            {/* Convert to Leave Modal */}
+            <Modal show={showConvertModal} onHide={() => setShowConvertModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Convert to Casual Leave</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>
+                        Convert the absent day on <strong>{selectedAttendance?.date}</strong> for{' '}
+                        <strong>{selectedAttendance?.user_email}</strong> to casual leave?
+                    </p>
+                    <Alert variant="info">
+                        This will:
+                        <ul className="mb-0 mt-2">
+                            <li>Create an approved casual leave record</li>
+                            <li>Reduce the employee's remaining leave days</li>
+                            <li>Update their salary calculation for this month</li>
+                        </ul>
+                    </Alert>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConvertModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="warning" onClick={handleConvertSubmit}>
+                        Convert to Leave
+                    </Button>
+                </Modal.Footer>
             </Modal>
         </>
     );

@@ -71,7 +71,8 @@ from .serializers import (
     EmployeeTakenListSerializer,
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
-    SkillSerializer,EmployeeNotScheduledOrNotTakenListSerializer,
+    SkillSerializer,
+    EmployeeNotScheduledOrNotTakenListSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
     HRListSerializer,
@@ -407,7 +408,36 @@ class AdminViewEmployeesViewSet(ModelViewSet):
         # since this is for existing accepted employees
         validated_data = serializer.validated_data.copy()
 
+        # Handle leave policy fields
+        yearly_leave_quota = validated_data.pop("yearly_leave_quota", None)
+        max_days_per_request = validated_data.pop("max_days_per_request", None)
+
         # Handle holiday days
+        holiday_weekdays = validated_data.pop("holiday_weekdays", None)
+        holiday_yeardays = validated_data.pop("holiday_yeardays", None)
+
+        # Handle online days
+        online_weekdays = validated_data.pop("online_weekdays", None)
+        online_yeardays = validated_data.pop("online_yeardays", None)
+
+        # Update basic fields
+        for attr, value in validated_data.items():
+            setattr(employee, attr, value)
+
+        employee.save()
+
+        # Handle leave policy updates
+        if yearly_leave_quota is not None or max_days_per_request is not None:
+            from .models import EmployeeLeavePolicy
+
+            policy, created = EmployeeLeavePolicy.objects.get_or_create(
+                employee=employee
+            )
+            if yearly_leave_quota is not None:
+                policy.yearly_quota = yearly_leave_quota
+            if max_days_per_request is not None:
+                policy.max_days_per_request = max_days_per_request
+            policy.save()
         holiday_weekdays = validated_data.pop("holiday_weekdays", None)
         holiday_yeardays = validated_data.pop("holiday_yeardays", None)
 
@@ -976,14 +1006,12 @@ class HRViewEmployeesViewSet(ModelViewSet):
         serializer = EmployeeInterviewListSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
-
-
     @action(detail=False, methods=["get"], url_path="not-scheduled-nor-taken")
     def not_scheduled_nor_taken_employees(self, request):
         queryset = self.get_queryset().filter(
             Q(interview_state="pending") | Q(interviewer__isnull=True)
         )
-        
+
         # Force pagination
         page = self.paginate_queryset(queryset)
         serializer = EmployeeNotScheduledOrNotTakenListSerializer(page, many=True)
@@ -1472,6 +1500,10 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
         # since this is for existing accepted employees
         validated_data = serializer.validated_data.copy()
 
+        # Handle leave policy fields
+        yearly_leave_quota = validated_data.pop("yearly_leave_quota", None)
+        max_days_per_request = validated_data.pop("max_days_per_request", None)
+
         # Handle holiday days
         holiday_weekdays = validated_data.pop("holiday_weekdays", None)
         holiday_yeardays = validated_data.pop("holiday_yeardays", None)
@@ -1485,6 +1517,19 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
             setattr(employee, attr, value)
 
         employee.save()
+
+        # Handle leave policy updates
+        if yearly_leave_quota is not None or max_days_per_request is not None:
+            from .models import EmployeeLeavePolicy
+
+            policy, created = EmployeeLeavePolicy.objects.get_or_create(
+                employee=employee
+            )
+            if yearly_leave_quota is not None:
+                policy.yearly_quota = yearly_leave_quota
+            if max_days_per_request is not None:
+                policy.max_days_per_request = max_days_per_request
+            policy.save()
 
         # Handle holiday weekdays
         if holiday_weekdays is not None:
@@ -2345,10 +2390,10 @@ class AdminRankViewSet(ModelViewSet):
                 )
 
         # Get all accepted employees with their position information
-        employees = Employee.objects.filter(
-            interview_state="accepted"
-        ).select_related('position')
-        
+        employees = Employee.objects.filter(interview_state="accepted").select_related(
+            "position"
+        )
+
         # Prepare data structures
         all_employees = []
         position_groups = {}
@@ -2376,7 +2421,7 @@ class AdminRankViewSet(ModelViewSet):
 
             # Store employee with score for global ranking
             all_employees.append((emp, score))
-            
+
             # Group by position for position-specific ranking
             if emp.position_id not in position_groups:
                 position_groups[emp.position_id] = []
@@ -2393,29 +2438,32 @@ class AdminRankViewSet(ModelViewSet):
         for position_id, emp_scores in position_groups.items():
             # Sort employees within this position
             emp_scores.sort(key=lambda x: x[1], reverse=True)
-            
+
             # Assign position ranks
             for position_rank, (emp, _) in enumerate(emp_scores, start=1):
                 emp.position_rank = position_rank
-            
+
             # Store position stats for response
             position = Position.objects.get(id=position_id)
             position_stats[position.name] = {
-                'count': len(emp_scores),
-                'top_performer': emp_scores[0][0].user.username if emp_scores else None
+                "count": len(emp_scores),
+                "top_performer": emp_scores[0][0].user.username if emp_scores else None,
             }
 
         # Bulk update all employees with both ranks
         Employee.objects.bulk_update(
-            [emp for emp, _ in all_employees],
-            ['rank', 'position_rank']
+            [emp for emp, _ in all_employees], ["rank", "position_rank"]
         )
 
-        return Response({
-            "detail": f"{len(all_employees)} employees ranked successfully.",
-            "global_top_performer": all_employees[0][0].user.username if all_employees else None,
-            "position_stats": position_stats
-        })
+        return Response(
+            {
+                "detail": f"{len(all_employees)} employees ranked successfully.",
+                "global_top_performer": (
+                    all_employees[0][0].user.username if all_employees else None
+                ),
+                "position_stats": position_stats,
+            }
+        )
 
     @action(detail=False, methods=["post"], url_path="rank-hrs")
     def rank_hrs(self, request):
@@ -2881,54 +2929,57 @@ class EmployeeSalaryViewSet(ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-
 class AdminUserActivationViewSet(ModelViewSet):
     """
     Allows admin to activate/deactivate users (toggle login access)
     - Sets is_active=True/False to enable/disable login
     - Only accessible by admin role
     """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
-    http_method_names = ['patch']  # Only allow PATCH method
+    http_method_names = ["patch"]  # Only allow PATCH method
 
-    @action(detail=True, methods=['patch'], url_path='deactivate')
+    @action(detail=True, methods=["patch"], url_path="deactivate")
     def deactivate(self, request, pk=None):
         user = self.get_object()
-        
+
         if not user.is_active:
             return Response(
-                {'detail': 'User is already deactivated'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "User is already deactivated"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         user.is_active = False
         user.save()
-        
-        return Response({
-            'detail': 'User deactivated successfully',
-            'user_id': user.id,
-            'username': user.username,
-            'is_active': user.is_active
-        })
 
-    @action(detail=True, methods=['patch'], url_path='activate')
+        return Response(
+            {
+                "detail": "User deactivated successfully",
+                "user_id": user.id,
+                "username": user.username,
+                "is_active": user.is_active,
+            }
+        )
+
+    @action(detail=True, methods=["patch"], url_path="activate")
     def activate(self, request, pk=None):
         user = self.get_object()
-        
+
         if user.is_active:
             return Response(
-                {'detail': 'User is already active'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "User is already active"}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         user.is_active = True
         user.save()
-        
-        return Response({
-            'detail': 'User activated successfully',
-            'user_id': user.id,
-            'username': user.username,
-            'is_active': user.is_active
-        })
+
+        return Response(
+            {
+                "detail": "User activated successfully",
+                "user_id": user.id,
+                "username": user.username,
+                "is_active": user.is_active,
+            }
+        )

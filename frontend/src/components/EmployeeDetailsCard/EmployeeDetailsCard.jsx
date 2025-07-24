@@ -112,6 +112,8 @@ export default function CandidateDetailsCard({
     absence_penalty: "",
     expected_attend_time: "09:00",
     expected_leave_time: "17:00",
+    yearly_leave_quota: "",
+    max_days_per_request: "",
     holiday_weekdays: [],
     holiday_yeardays: [],
     online_weekdays: [],
@@ -153,29 +155,45 @@ export default function CandidateDetailsCard({
     }
   }, [showBasicInfoModal, basicinfo]);
 
+  // Populate formData when modal opens
+  useEffect(() => {
+    if (candidate && showUpdateModal) {
+      setFormData({
+        basic_salary: candidate.basic_salary || "",
+        overtime_hour_salary: candidate.overtime_hour_salary || "",
+        shorttime_hour_penalty: candidate.shorttime_hour_penalty || "",
+        absence_penalty: candidate.absence_penalty || "",
+        expected_attend_time: candidate.expected_attend_time ? candidate.expected_attend_time.substring(0, 5) : "09:00",
+        expected_leave_time: candidate.expected_leave_time ? candidate.expected_leave_time.substring(0, 5) : "17:00",
+        yearly_leave_quota: candidate.yearly_leave_quota || candidate.leave_policy?.yearly_quota || 21,
+        max_days_per_request: candidate.max_days_per_request || candidate.leave_policy?.max_days_per_request || 5,
+        holiday_weekdays: [],
+        holiday_yeardays: [],
+        online_weekdays: [],
+        online_yeardays: [],
+      });
+    }
+  }, [candidate, showUpdateModal]);
+
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const [skillsRes, regionsRes, degreesRes, fieldsRes] =
           await Promise.all([
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/skills/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/regions/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/degrees/`
             ),
             axiosInstance.get(
-              `/${
-                role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+              `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
               }/fields/`
             ),
           ]);
@@ -278,9 +296,8 @@ export default function CandidateDetailsCard({
     } catch (error) {
       toast.error(
         error.response?.data?.detail ||
-          `Failed to ${
-            activationAction === "activate" ? "activate" : "deactivate"
-          } user`
+        `Failed to ${activationAction === "activate" ? "activate" : "deactivate"
+        } user`
       );
     } finally {
       setLoading(false);
@@ -356,7 +373,7 @@ export default function CandidateDetailsCard({
     } catch (err) {
       toast.error(
         err.response?.data?.detail ||
-          "Failed to update compensation and work schedule"
+        "Failed to update compensation and work schedule"
       );
       console.error(err);
     } finally {
@@ -654,8 +671,7 @@ export default function CandidateDetailsCard({
         setPredictError(err.response.data.error);
         if (err.response.data.missing_fields) {
           setPredictError(
-            `${
-              err.response.data.error
+            `${err.response.data.error
             }: ${err.response.data.missing_fields.join(", ")}`
           );
         }
@@ -694,8 +710,7 @@ export default function CandidateDetailsCard({
       };
 
       const response = await axiosInstance.patch(
-        `/${
-          role === "hr" ? "hr" : role === "admin" ? "admin" : ""
+        `/${role === "hr" ? "hr" : role === "admin" ? "admin" : ""
         }/employees/${candidateId}/update-cv-data/`,
         updateData
       );
@@ -871,10 +886,9 @@ export default function CandidateDetailsCard({
                   {loading ? (
                     <Spinner size="sm" animation="border" />
                   ) : (
-                    `Confirm ${
-                      activationAction === "activate"
-                        ? "Activation"
-                        : "Deactivation"
+                    `Confirm ${activationAction === "activate"
+                      ? "Activation"
+                      : "Deactivation"
                     }`
                   )}
                 </Button>
@@ -961,8 +975,8 @@ export default function CandidateDetailsCard({
                   {has_position_related_high_education
                     ? "✓"
                     : has_position_related_high_education === false
-                    ? "✗"
-                    : "❔"}
+                      ? "✗"
+                      : "❔"}
                 </span>
               </h6>
               <div>
@@ -1146,15 +1160,15 @@ export default function CandidateDetailsCard({
                     <Col md={8}>
                       {(role === "admin" ||
                         (role === "hr" && interviewer === loggedInHrId)) && (
-                        <Button
-                          variant="info"
-                          onClick={() => setShowUpdateModal(true)}
-                          className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
-                        >
-                          <FaEdit className="fs-6 align-baseline" />
-                          Update Compensation And Work Schedule
-                        </Button>
-                      )}
+                          <Button
+                            variant="info"
+                            onClick={() => setShowUpdateModal(true)}
+                            className="btn btn-info d-inline-flex align-items-center gap-2 rounded-pill px-4"
+                          >
+                            <FaEdit className="fs-6 align-baseline" />
+                            Update Compensation And Work Schedule
+                          </Button>
+                        )}
                     </Col>
                   </Row>
                   {/* Column 1 - Compensation */}
@@ -1425,13 +1439,12 @@ export default function CandidateDetailsCard({
                               return (
                                 <div key={day} className="text-center">
                                   <div
-                                    className={`rounded-circle p-2 ${
-                                      isHoliday
+                                    className={`rounded-circle p-2 ${isHoliday
                                         ? "bg-warning text-white"
                                         : isOnline
-                                        ? "bg-info text-white"
-                                        : "bg-light"
-                                    }`}
+                                          ? "bg-info text-white"
+                                          : "bg-light"
+                                      }`}
                                     style={{
                                       width: "32px",
                                       height: "32px",
@@ -1902,6 +1915,35 @@ export default function CandidateDetailsCard({
                     value={formData.absence_penalty}
                     onChange={handleInputChange}
                     placeholder="Enter absence penalty"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Yearly Leave Quota</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="yearly_leave_quota"
+                    value={formData.yearly_leave_quota}
+                    onChange={handleInputChange}
+                    placeholder="Enter yearly leave quota"
+                    min="0"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Max Days Per Leave Request</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="max_days_per_request"
+                    value={formData.max_days_per_request}
+                    onChange={handleInputChange}
+                    placeholder="Enter max days per request"
+                    min="1"
                   />
                 </Form.Group>
               </Col>

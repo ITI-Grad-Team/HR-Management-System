@@ -398,6 +398,147 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=["patch"], url_path="convert-to-leave")
+    def convert_to_leave(self, request, pk=None):
+        """Convert an attendance record to casual leave"""
+        from .models import CasualLeave, Employee, EmployeeLeavePolicy, SalaryRecord
+        from django.db import models
+
+        attendance_record = self.get_object()
+        user = request.user
+
+        # Check permissions - HR can only modify their employees, admin can modify any
+        if hasattr(user, "basicinfo") and user.basicinfo.role == "hr":
+            try:
+                employee = attendance_record.user.employee
+                hr = user.hr
+                if employee.interviewer != hr:
+                    return Response(
+                        {
+                            "detail": "You can only modify attendance for employees you are responsible for."
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            except Employee.DoesNotExist:
+                return Response(
+                    {"detail": "Employee record not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif not (hasattr(user, "basicinfo") and user.basicinfo.role == "admin"):
+            return Response(
+                {"detail": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Validate that the attendance record can be converted
+        if attendance_record.status != "absent":
+            return Response(
+                {"detail": "Only absent days can be converted to casual leave."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if casual leave already exists for this date
+        try:
+            employee = attendance_record.user.employee
+        except Employee.DoesNotExist:
+            return Response(
+                {"detail": "Employee record not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if CasualLeave.objects.filter(
+            employee=employee,
+            start_date=attendance_record.date,
+            end_date=attendance_record.date,
+        ).exists():
+            return Response(
+                {"detail": "Casual leave already exists for this date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            policy, created = EmployeeLeavePolicy.objects.get_or_create(
+                employee=employee
+            )
+
+            # Check if employee has remaining leave days
+            approved_days = (
+                CasualLeave.objects.filter(
+                    employee=employee, status="approved"
+                ).aggregate(total_days=models.Sum("duration"))["total_days"]
+                or 0
+            )
+
+            if approved_days >= policy.yearly_quota:
+                return Response(
+                    {"detail": "Employee has no remaining leave days."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Create casual leave record
+            casual_leave = CasualLeave.objects.create(
+                employee=employee,
+                start_date=attendance_record.date,
+                end_date=attendance_record.date,
+                duration=1,
+                reason=f"Converted from attendance record on {attendance_record.date}",
+                status="approved",
+                reviewed_by=user,
+            )
+
+            # Update attendance record status to present (or you can create a new status)
+            attendance_record.status = "present"
+            attendance_record.save()
+
+            # Update salary records if they exist for this month/year
+            month = attendance_record.date.month
+            year = attendance_record.date.year
+
+            salary_records = SalaryRecord.objects.filter(
+                user=attendance_record.user, month=month, year=year
+            )
+
+            for salary_record in salary_records:
+                # Recalculate salary - reduce absent days and absence penalty
+                details = salary_record.details
+                if details.get("absent_days", 0) > 0:
+                    details["absent_days"] -= 1
+                    absence_penalty = employee.absence_penalty or 0
+                    details["total_absence_penalty"] = max(
+                        0, (details.get("total_absence_penalty", 0) - absence_penalty)
+                    )
+                    details["total_deductions"] = (
+                        details.get("total_late_penalty", 0)
+                        + details.get("total_absence_penalty", 0)
+                        + details.get("tax_deduction", 0)
+                        + details.get("insurance_deduction", 0)
+                    )
+
+                    # Recalculate final salary
+                    salary_record.final_salary = (
+                        salary_record.base_salary
+                        + details.get("total_overtime_salary", 0)
+                        + details.get("bonus_amount", 0)
+                        + details.get("attendance_bonus", 0)
+                        - details.get("total_deductions", 0)
+                    )
+
+                    salary_record.details = details
+                    salary_record.save()
+
+            return Response(
+                {
+                    "detail": "Attendance record converted to casual leave successfully.",
+                    "casual_leave_id": casual_leave.id,
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {"detail": f"Error converting to casual leave: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
     @action(detail=False, methods=["get"])
     def get_join_date(self, request):
         """Get the join date of the current user for filtering validation"""

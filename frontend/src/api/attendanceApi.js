@@ -71,4 +71,8 @@ export const approveOvertimeRequest = (id, data) => {
 
 export const rejectOvertimeRequest = (id, data) => {
     return axiosInstance.patch(`/overtime-requests/${id}/reject/`, data);
+};
+
+export const convertAttendanceToLeave = (attendanceId) => {
+    return axiosInstance.patch(`/attendance/${attendanceId}/convert-to-leave/`);
 }; 

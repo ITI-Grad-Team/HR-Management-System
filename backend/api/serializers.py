@@ -46,7 +46,7 @@ from .supabase_utils import upload_to_supabase
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username","is_active"]
+        fields = ["id", "username", "is_active"]
 
 
 class BasicInfoSerializer(serializers.ModelSerializer):
@@ -130,6 +130,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
     avg_overtime_hours = serializers.FloatField(read_only=True)
     avg_lateness_hours = serializers.FloatField(read_only=True)
     avg_absent_days = serializers.FloatField(read_only=True)
+
+    # Leave policy fields
+    yearly_leave_quota = serializers.IntegerField(
+        source="leave_policy.yearly_quota", read_only=True
+    )
+    max_days_per_request = serializers.IntegerField(
+        source="leave_policy.max_days_per_request", read_only=True
+    )
 
     cv = serializers.FileField(write_only=True, required=False, allow_null=True)
     cv_url = serializers.CharField(read_only=True)
@@ -830,3 +838,35 @@ class EmployeeLeavePolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeLeavePolicy
         fields = "__all__"
+
+
+class EmployeeUpdateCompensationSerializer(serializers.ModelSerializer):
+    """Serializer for updating employee compensation and leave policy"""
+
+    yearly_leave_quota = serializers.IntegerField(required=False)
+    max_days_per_request = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = Employee
+        fields = [
+            "basic_salary",
+            "overtime_hour_salary",
+            "shorttime_hour_penalty",
+            "absence_penalty",
+            "expected_attend_time",
+            "expected_leave_time",
+            "yearly_leave_quota",
+            "max_days_per_request",
+        ]
+
+    def validate_yearly_leave_quota(self, value):
+        if value and value < 0:
+            raise serializers.ValidationError("Yearly leave quota must be positive")
+        return value
+
+    def validate_max_days_per_request(self, value):
+        if value and value < 1:
+            raise serializers.ValidationError(
+                "Maximum days per request must be at least 1"
+            )
+        return value
