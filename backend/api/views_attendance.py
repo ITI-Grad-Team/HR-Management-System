@@ -29,6 +29,10 @@ class AttendanceRecordFilter(DjangoFilterBackend):
     def filter_queryset(self, request, queryset, view):
         user_query = request.query_params.get("user", None)
         date_query = request.query_params.get("date", None)
+        month_query = request.query_params.get("month", None)
+        year_query = request.query_params.get("year", None)
+        date_from = request.query_params.get("date_from", None)
+        date_to = request.query_params.get("date_to", None)
 
         if user_query:
             if user_query.isdigit():
@@ -41,6 +45,28 @@ class AttendanceRecordFilter(DjangoFilterBackend):
 
         if date_query:
             queryset = queryset.filter(date=date_query)
+
+        # Month and Year filtering
+        if month_query and month_query.isdigit():
+            queryset = queryset.filter(date__month=int(month_query))
+
+        if year_query and year_query.isdigit():
+            queryset = queryset.filter(date__year=int(year_query))
+
+        # Date range filtering
+        if date_from:
+            try:
+                from_date = timezone.datetime.strptime(date_from, "%Y-%m-%d").date()
+                queryset = queryset.filter(date__gte=from_date)
+            except ValueError:
+                pass
+
+        if date_to:
+            try:
+                to_date = timezone.datetime.strptime(date_to, "%Y-%m-%d").date()
+                queryset = queryset.filter(date__lte=to_date)
+            except ValueError:
+                pass
 
         return queryset
 
@@ -58,12 +84,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     WORK_END = time(17, 0)
 
     def get_queryset(self):
-        """Special handling for can_request_overtime to bypass role filters"""
-        if self.action == "can_request_overtime":
-            # Bypass role filtering only for this action
-            return AttendanceRecord.objects.all()
-        # Normal role-based filtering for all other actions
-        return get_role_based_queryset(self.request.user, AttendanceRecord)
+        """Special handling for can_request_overtime and get_join_date to bypass role filters"""
+        if self.action in ["can_request_overtime", "get_join_date"]:
+            # Bypass role filtering for these actions
+            return AttendanceRecord.objects.all().order_by("-date")
+        # Normal role-based filtering for all other actions with proper ordering
+        return get_role_based_queryset(self.request.user, AttendanceRecord).order_by(
+            "-date"
+        )
 
     @action(detail=False, methods=["get"])
     def check_in_status(self, request):
@@ -365,6 +393,28 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         except AttendanceRecord.DoesNotExist:
             return Response(
                 {"detail": "No attendance record found for today"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["get"])
+    def get_join_date(self, request):
+        """Get the join date of the current user for filtering validation"""
+        try:
+            # Check if user has an employee profile
+            if not hasattr(request.user, "employee"):
+                return Response(
+                    {"detail": "User does not have an employee profile"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            employee = request.user.employee
+            join_date = employee.join_date
+            return Response({"join_date": join_date.isoformat() if join_date else None})
+        except AttributeError:
+            return Response(
+                {"detail": "User does not have an employee profile"},
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
