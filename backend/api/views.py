@@ -70,6 +70,7 @@ from .serializers import (
     EmployeeRejectingSerializer,
     EmployeeTakenListSerializer,
     EmployeeAcceptingSerializer,
+    EmployeeUpdateCompensationSerializer,
     ApplicationLinkSerializer,
     SkillSerializer,
     EmployeeNotScheduledOrNotTakenListSerializer,
@@ -351,7 +352,7 @@ class AdminViewEmployeesViewSet(ModelViewSet):
         elif self.action == "update_cv_data":
             return EmployeeCVUpdateSerializer
         elif self.action == "update_compensation":
-            return EmployeeAcceptingSerializer
+            return EmployeeUpdateCompensationSerializer
         return EmployeeSerializer
 
     @action(detail=True, methods=["patch"], url_path="update-cv-data")
@@ -438,18 +439,6 @@ class AdminViewEmployeesViewSet(ModelViewSet):
             if max_days_per_request is not None:
                 policy.max_days_per_request = max_days_per_request
             policy.save()
-        holiday_weekdays = validated_data.pop("holiday_weekdays", None)
-        holiday_yeardays = validated_data.pop("holiday_yeardays", None)
-
-        # Handle online days
-        online_weekdays = validated_data.pop("online_weekdays", None)
-        online_yeardays = validated_data.pop("online_yeardays", None)
-
-        # Update basic fields
-        for attr, value in validated_data.items():
-            setattr(employee, attr, value)
-
-        employee.save()
 
         # Handle holiday weekdays
         if holiday_weekdays is not None:
@@ -490,6 +479,9 @@ class AdminViewEmployeesViewSet(ModelViewSet):
                     month=day_info["month"], day=day_info["day"]
                 )
                 obj.employees.add(employee)
+
+        # Refresh employee from database to get updated relationships
+        employee = Employee.objects.select_related("leave_policy").get(pk=employee.pk)
 
         # Return updated employee data
         response_serializer = EmployeeSerializer(employee)
@@ -1432,6 +1424,11 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsHR]
     http_method_names = ["patch"]
 
+    def get_serializer_class(self):
+        if self.action == "update_compensation":
+            return EmployeeUpdateCompensationSerializer
+        return EmployeeAcceptingSerializer
+
     def partial_update(self, request, *args, **kwargs):
         employee = self.get_object()
 
@@ -1570,6 +1567,9 @@ class HRAcceptEmployeeViewSet(ModelViewSet):
                     month=day_info["month"], day=day_info["day"]
                 )
                 obj.employees.add(employee)
+
+        # Refresh employee from database to get updated relationships
+        employee = Employee.objects.select_related("leave_policy").get(pk=employee.pk)
 
         # Return updated employee data
         response_serializer = EmployeeSerializer(employee)

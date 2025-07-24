@@ -29,6 +29,7 @@ import {
   FaFileAlt,
   FaCalendarDay,
   FaCalendarAlt,
+  FaCalendar,
   FaUserClock,
   FaCheck,
   FaTimes,
@@ -328,7 +329,7 @@ export default function CandidateDetailsCard({
   /* ---------------- Accept Employee ---------------- */
   const handleAcceptSubmit = async () => {
     try {
-      console.log(formData);
+      // console.log(formData);
       setLoading(true);
       await axiosInstance.patch(`/hr/accept-employee/${candidateId}/`, {
         ...formData,
@@ -352,7 +353,7 @@ export default function CandidateDetailsCard({
   /* ---------------- Update Compensation and Work Schedule ---------------- */
   const handleUpdateCompensation = async () => {
     try {
-      console.log(formData);
+      // console.log(formData);
       setLoading(true);
 
       // Determine endpoint based on user role
@@ -838,7 +839,6 @@ export default function CandidateDetailsCard({
               )}
             </div>
             {renderPromoteEmployeeButton()}
-            {console.log(candidate)}
             <Modal
               show={showActivationModal}
               onHide={() => setShowActivationModal(false)}
@@ -1209,7 +1209,7 @@ export default function CandidateDetailsCard({
                             </div>
                           </div>
                         </div>
-                        <div className="d-flex align-items-center">
+                        <div className="d-flex align-items-center mb-2">
                           <FaCalendarTimes className="me-2 text-muted" />
                           <div>
                             <small className="text-muted">
@@ -1217,6 +1217,25 @@ export default function CandidateDetailsCard({
                             </small>
                             <div className="fw-semibold">
                               ${candidate?.absence_penalty || "N/A"}/day
+                            </div>
+                          </div>
+                        </div>
+                        <hr className="my-3" />
+                        <div className="d-flex align-items-center mb-2">
+                          <FaCalendarDay className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">Yearly Leave Quota</small>
+                            <div className="fw-semibold">
+                              {candidate?.yearly_leave_quota || "N/A"} days
+                            </div>
+                          </div>
+                        </div>
+                        <div className="d-flex align-items-center">
+                          <FaCalendar className="me-2 text-muted" />
+                          <div>
+                            <small className="text-muted">Max Days Per Request</small>
+                            <div className="fw-semibold">
+                              {candidate?.max_days_per_request || "N/A"} days
                             </div>
                           </div>
                         </div>
@@ -1440,10 +1459,10 @@ export default function CandidateDetailsCard({
                                 <div key={day} className="text-center">
                                   <div
                                     className={`rounded-circle p-2 ${isHoliday
-                                        ? "bg-warning text-white"
-                                        : isOnline
-                                          ? "bg-info text-white"
-                                          : "bg-light"
+                                      ? "bg-warning text-white"
+                                      : isOnline
+                                        ? "bg-info text-white"
+                                        : "bg-light"
                                       }`}
                                     style={{
                                       width: "32px",
