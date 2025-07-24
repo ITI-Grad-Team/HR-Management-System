@@ -193,7 +193,7 @@ class HR(models.Model):
     )
     last_stats_calculation_time = models.DateTimeField(null=True, blank=True)
 
-    is_deleted = models.BooleanField(default=False)
+    #is_deleted = models.BooleanField(default=False)
 
 
     @property
@@ -472,8 +472,8 @@ class Employee(models.Model):
         default=0
     )  # summed to at task accept .. (some other place in the code)
     rank = models.IntegerField(null=True, blank=True)
-    is_deleted = models.BooleanField(default=False)
-    position_rank =  models.IntegerField(null=True, blank=True)
+    #is_deleted = models.BooleanField(default=False)
+    #position_rank =  models.IntegerField(null=True, blank=True)
 
     temp_cv = None
 
