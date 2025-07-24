@@ -4,6 +4,7 @@ import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest } from '..
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
 import { useDebounce } from '../../hooks/useDebounce';
+import AdminLeaveFallback from '../DashboardFallBack/AdminLeaveFallback';
 
 const AdminLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });
@@ -133,7 +134,7 @@ const AdminLeaveView = () => {
     const pendingRequests = requests.results?.filter(req => req.status === 'pending') || [];
     const totalPages = Math.ceil(requests.count / pageSize);
 
-    if (loading && requests.results?.length === 0) return <Spinner animation="border" />;
+    if (loading && requests.results?.length === 0) return <AdminLeaveFallback />;
     if (error) return <Alert variant="danger">{error}</Alert>;
 
     return (
