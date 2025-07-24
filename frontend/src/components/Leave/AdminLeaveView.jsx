@@ -356,7 +356,7 @@ const AdminLeaveView = () => {
                 </Modal.Header>
                 <Form onSubmit={handleReject}>
                     <Modal.Body>
-                        <p>You are rejecting the leave for <strong>{selectedRequest?.employee.basic_info.username}</strong>.</p>
+                        <p>You are rejecting the leave for <strong>{selectedRequest?.employee?.basic_info.username}</strong>.</p>
                         <Form.Group>
                             <Form.Label>Rejection Reason</Form.Label>
                             <Form.Control
