@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Col, Row, Spinner, Alert, Table, Modal, Form, OverlayTrigger, Tooltip, InputGroup } from 'react-bootstrap';
+import { Button, Card, Col, Row, Spinner, Alert, Table, Modal, Form, OverlayTrigger, Tooltip, InputGroup, Dropdown } from 'react-bootstrap';
 import {
     getMyAttendance,
     checkIn,
@@ -313,41 +313,52 @@ const EmployeeAttendanceView = () => {
                         </Col>
                         <Col md={6}>
                             <div className="d-flex gap-2 justify-content-end">
-                                <InputGroup style={{ width: "160px" }}>
-                                    <InputGroup.Text>Year</InputGroup.Text>
-                                    <Form.Select
-                                        size="sm"
-                                        value={selectedYear}
-                                        onChange={(e) => handleFilterChange(selectedMonth, e.target.value)}
+                                <Dropdown onSelect={(year) => handleFilterChange(selectedMonth, year)} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-year"
+                                        className="w-100"
                                         disabled={loadingFilters}
                                     >
-                                        <option value="">All</option>
+                                        {selectedYear ? `Year: ${selectedYear}` : "Year"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
                                         {getYearOptions().map(year => (
-                                            <option key={year} value={year}>{year}</option>
+                                            <Dropdown.Item key={year} eventKey={year}>
+                                                {year}
+                                            </Dropdown.Item>
                                         ))}
-                                    </Form.Select>
-                                </InputGroup>
+                                    </Dropdown.Menu>
+                                </Dropdown>
 
-                                <InputGroup style={{ width: "180px" }}>
-                                    <InputGroup.Text>Month</InputGroup.Text>
-                                    <Form.Select
-                                        size="sm"
-                                        value={selectedMonth}
-                                        onChange={(e) => handleFilterChange(e.target.value, selectedYear)}
+                                <Dropdown onSelect={(month) => handleFilterChange(month, selectedYear)} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-month"
+                                        className="w-100"
                                         disabled={loadingFilters}
                                     >
-                                        <option value="">All</option>
+                                        {selectedMonth
+                                            ? `Month: ${getMonthOptions().find(m => m.value == selectedMonth)?.label}`
+                                            : "Month"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
                                         {getMonthOptions().map(month => (
-                                            <option key={month.value} value={month.value}>{month.label}</option>
+                                            <Dropdown.Item key={month.value} eventKey={month.value}>
+                                                {month.label}
+                                            </Dropdown.Item>
                                         ))}
-                                    </Form.Select>
-                                </InputGroup>
+                                    </Dropdown.Menu>
+                                </Dropdown>
 
                                 <Button
                                     variant="outline-secondary"
                                     size="sm"
                                     onClick={handleClearFilters}
                                     disabled={loadingFilters || (!selectedMonth && !selectedYear)}
+                                    className="w-25"
                                 >
                                     Clear
                                 </Button>
