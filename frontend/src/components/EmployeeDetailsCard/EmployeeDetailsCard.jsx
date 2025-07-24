@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import {
   FaPhone,
-  FaStarHalfAlt,
+  FaUserCheck,
   FaDownload,
   FaInfoCircle,
   FaChartLine,
@@ -25,6 +25,7 @@ import {
   FaMoneyBillWave,
   FaUser,
   FaCode,
+  FaUserSlash,
   FaFileAlt,
   FaCalendarDay,
   FaCalendarAlt,
@@ -86,6 +87,8 @@ export default function CandidateDetailsCard({
     user,
     id: candidateId,
   } = candidate;
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  const [activationAction, setActivationAction] = useState(null);
   const [localState, setLocalState] = useState(interview_state);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -95,6 +98,7 @@ export default function CandidateDetailsCard({
   const [scheduleDate, setScheduleDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+  const [showTerminateModal, setShowTerminateModal] = useState(false);
   const [taskFormData, setTaskFormData] = useState({
     title: "",
     description: "",
@@ -251,6 +255,37 @@ export default function CandidateDetailsCard({
       fetchDropdownData();
     }
   }, [showCvEditModal, candidate]);
+
+  // activate or deactive emp based on user.isactive
+  const handleActivationClick = (action) => {
+    setActivationAction(action);
+    setShowActivationModal(true);
+  };
+
+  const handleConfirmActivation = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.patch(
+        `/admin/activate-deactivate/${user.id}/${activationAction}/`
+      );
+
+      toast.success(response.data.detail);
+      // Update the user's active status in parent component
+      onPredictUpdate?.(); // Or use a more specific callback if available
+
+      // Close the modal
+      setShowActivationModal(false);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.detail ||
+          `Failed to ${
+            activationAction === "activate" ? "activate" : "deactivate"
+          } user`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ---------------- Schedule ---------------- */
   const handleScheduleSubmit = async () => {
@@ -561,7 +596,7 @@ export default function CandidateDetailsCard({
                 className="me-2"
               />
             ) : null}
-            <FiTrendingUp className="me-2" /> Promote Employee
+            <FiTrendingUp className="me-2" /> Promote
           </Button>
         </div>
       );
@@ -677,7 +712,11 @@ export default function CandidateDetailsCard({
     const { user } = useAuth();
     const isCoordinator =
       user.role === "employee" && user.employee?.is_coordinator === true;
-    if (isCoordinator && candidate.interview_state === "accepted") {
+    if (
+      isCoordinator &&
+      candidate.interview_state === "accepted" &&
+      !isSelfView
+    ) {
       return (
         <div className="d-flex align-items-center gap-2 mt-4">
           <Button
@@ -752,6 +791,84 @@ export default function CandidateDetailsCard({
               )}
             </div>
             {renderPromoteEmployeeButton()}
+            {console.log(candidate)}
+            <Modal
+              show={showActivationModal}
+              onHide={() => setShowActivationModal(false)}
+              centered
+            >
+              <Modal.Header closeButton className="border-0 pb-0">
+                <Modal.Title className="fw-bold">
+                  {activationAction === "activate" ? (
+                    <FaUserCheck className="me-2 text-success" />
+                  ) : (
+                    <FaUserSlash className="me-2 text-danger" />
+                  )}
+                  {activationAction === "activate" ? "Activate" : "Deactivate"}{" "}
+                  User
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body className="pt-4 text-center">
+                <h5 className="mb-4">
+                  Are you sure you want to{" "}
+                  {activationAction === "activate" ? "activate" : "deactivate"}{" "}
+                  {basicinfo?.username}?
+                </h5>
+                <p className="text-muted">
+                  {activationAction === "activate"
+                    ? "This will allow the user to log in to the system."
+                    : "This will prevent the user from logging in to the system."}
+                </p>
+              </Modal.Body>
+              <Modal.Footer className="border-0 justify-content-center">
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => setShowActivationModal(false)}
+                  className="px-4"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant={
+                    activationAction === "activate" ? "success" : "danger"
+                  }
+                  onClick={handleConfirmActivation}
+                  disabled={loading}
+                  className="px-4"
+                >
+                  {loading ? (
+                    <Spinner size="sm" animation="border" />
+                  ) : (
+                    `Confirm ${
+                      activationAction === "activate"
+                        ? "Activation"
+                        : "Deactivation"
+                    }`
+                  )}
+                </Button>
+              </Modal.Footer>
+            </Modal>
+            {role === "admin" && (
+              <div className="d-flex gap-2 mt-3">
+                {user.is_active ? (
+                  <Button
+                    variant="danger"
+                    onClick={() => handleActivationClick("deactivate")}
+                    className="d-flex align-items-center gap-1"
+                  >
+                    <FaUserSlash /> Deactivate Account
+                  </Button>
+                ) : (
+                  <Button
+                    variant="success"
+                    onClick={() => handleActivationClick("activate")}
+                    className="d-flex align-items-center gap-1"
+                  >
+                    <FaUserCheck /> Activate Account
+                  </Button>
+                )}
+              </div>
+            )}{" "}
             {renderAssignTaskButton()}
           </Col>
 

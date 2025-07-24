@@ -14,9 +14,11 @@ import {
   FaUser,
   FaEnvelope,
   FaChartLine,
+  FaUserSlash,
   FaClock,
   FaMoneyBillWave,
   FaUserClock,
+  FaUserCheck,
   FaEdit,
   FaCalendarTimes,
   FaUserPlus,
@@ -25,6 +27,7 @@ import {
   FaArrowDown, // ↓ (solid)
 } from "react-icons/fa";
 import { MdOutlineLockReset } from "react-icons/md";
+import { useAuth } from "../../hooks/useAuth";
 
 import { GiProgression } from "react-icons/gi";
 import { toast } from "react-toastify";
@@ -33,9 +36,45 @@ import "./HRDetailsCard.css";
 import { useNavigate } from "react-router-dom";
 
 const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
+  const { role } = useAuth();
   const { basicinfo, user, id: candidateId, ...stats } = candidate;
+  const [isActive, setIsActive] = useState(user.is_active);
+
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [activationAction, setActivationAction] = useState(null);
+
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  // activate or deactive emp based on user.isactive
+  const handleActivationClick = (action) => {
+    setActivationAction(action);
+    setShowActivationModal(true);
+  };
+
+  const handleConfirmActivation = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.patch(
+        `/admin/activate-deactivate/${user.id}/${activationAction}/`
+      );
+
+      toast.success(response.data.detail);
+      // Update the local state with the new active status
+      setIsActive(response.data.is_active);
+      setShowActivationModal(false);
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        error.response?.data?.detail ||
+          `Failed to ${
+            activationAction === "activate" ? "activate" : "deactivate"
+          } user`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBasicInfoUpdate = async () => {
     try {
       setLoading(true);
@@ -69,6 +108,7 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
       setLoading(false);
     }
   };
+
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [basicInfoFormData, setBasicInfoFormData] = useState({
     profile_image: null,
@@ -78,7 +118,7 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
 
   useEffect(() => {
     document.title = `${basicinfo?.username} | HERA`;
-  })
+  });
   useEffect(() => {
     if (showBasicInfoModal && basicinfo) {
       setBasicInfoFormData({
@@ -233,7 +273,83 @@ const HRDetailsCard = ({ candidate, loadingProp, isSelfView, onSchedule }) => {
               )}
             </div>
             <h5 className="mb-0 fw-bold text-dark">{basicinfo?.username}</h5>
+            {role === "admin" && (
+              <div className="d-flex gap-2 mt-3">
+                {isActive ? (
+                  <Button
+                    variant="danger"
+                    onClick={() => handleActivationClick("deactivate")}
+                    className="d-flex align-items-center gap-1"
+                  >
+                    <FaUserSlash /> Deactivate Account
+                  </Button>
+                ) : (
+                  <Button
+                    variant="success"
+                    onClick={() => handleActivationClick("activate")}
+                    className="d-flex align-items-center gap-1"
+                  >
+                    <FaUserCheck /> Activate Account
+                  </Button>
+                )}
+              </div>
+            )}
           </Col>
+          {console.log(candidate)}
+          <Modal
+            show={showActivationModal}
+            onHide={() => setShowActivationModal(false)}
+            centered
+          >
+            <Modal.Header closeButton className="border-0 pb-0">
+              <Modal.Title className="fw-bold">
+                {activationAction === "activate" ? (
+                  <FaUserCheck className="me-2 text-success" />
+                ) : (
+                  <FaUserSlash className="me-2 text-danger" />
+                )}
+                {activationAction === "activate" ? "Activate" : "Deactivate"}{" "}
+                User
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body className="pt-4 text-center">
+              <h5 className="mb-4">
+                Are you sure you want to{" "}
+                {activationAction === "activate" ? "activate" : "deactivate"}{" "}
+                {basicinfo?.username}?
+              </h5>
+              <p className="text-muted">
+                {activationAction === "activate"
+                  ? "This will allow the user to log in to the system."
+                  : "This will prevent the user from logging in to the system."}
+              </p>
+            </Modal.Body>
+            <Modal.Footer className="border-0 justify-content-center">
+              <Button
+                variant="outline-secondary"
+                onClick={() => setShowActivationModal(false)}
+                className="px-4"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant={activationAction === "activate" ? "success" : "danger"}
+                onClick={handleConfirmActivation}
+                disabled={loading}
+                className="px-4"
+              >
+                {loading ? (
+                  <Spinner size="sm" animation="border" />
+                ) : (
+                  `Confirm ${
+                    activationAction === "activate"
+                      ? "Activation"
+                      : "Deactivation"
+                  }`
+                )}
+              </Button>
+            </Modal.Footer>
+          </Modal>
 
           <Col md={8}>
             {/* Personal Info */}
