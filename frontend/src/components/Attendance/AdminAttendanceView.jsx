@@ -220,7 +220,7 @@ const AdminAttendanceView = () => {
                             ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
-                                    <td>{rec.date}</td>
+                                    <td width={"15%"}>{rec.date}</td>
                                     <td>{formatTime(rec.check_in_time)}</td>
                                     <td>{formatTime(rec.check_out_time)}</td>
                                     <td>{renderStatus(rec.status)}</td>
