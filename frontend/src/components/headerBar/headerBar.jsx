@@ -13,7 +13,7 @@ const pageTitles = {
   "/dashboard/applications": "Applications",
   "/dashboard/settings": "Settings",
   "/dashboard/candidates/:id": "Candidate Details",
-  "/dashboard/leave" : "Casual Leave",
+  "/dashboard/leave": "Casual Leave",
 };
 
 export default function HeaderBar() {
@@ -52,11 +52,6 @@ export default function HeaderBar() {
             />
           </InputGroup>
         </Form>
-
-        <Button variant="outline-secondary" size="sm">
-          <FaRegBell />
-        </Button>
-
         <img
           src={
             user?.basicinfo?.profile_image_url
