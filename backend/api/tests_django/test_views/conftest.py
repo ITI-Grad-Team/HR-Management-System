@@ -52,7 +52,8 @@ def application_link(db, position, skill):
     link = ApplicationLink.objects.create(
         distinction_name='dev-2024',
         position=position,
-        is_coordinator=False
+        is_coordinator=False,
+        number_remaining_applicants_to_limit=10  # Add this required field
     )
     link.skills.add(skill)
     return link
@@ -68,7 +69,7 @@ def employee_user(db, position, region, application_link):
         user=user,
         position=position,
         region=region,
-        application_link=application_link,  # Added this required field
+        application_link=application_link,   
         interview_state='accepted',
         is_coordinator=False
     )
@@ -85,7 +86,7 @@ def coordinator_user(db, position, region, application_link):
         user=user,
         position=position,
         region=region,
-        application_link=application_link,  # Added this required field
+        application_link=application_link,  
         interview_state='accepted',
         is_coordinator=True
     )

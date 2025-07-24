@@ -7,7 +7,7 @@ from django.urls import reverse
 class TestViewSelfViewSet:
     def test_view_self_as_employee(self, api_client, employee_user):
         api_client.force_authenticate(user=employee_user)
-        url = reverse('viewself-list')
+        url = reverse('view-self-list')  # Changed from 'viewself-list' to 'view-self-list'
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['role'] == 'employee'
@@ -15,7 +15,7 @@ class TestViewSelfViewSet:
 
     def test_view_self_as_hr(self, api_client, hr_user):
         api_client.force_authenticate(user=hr_user)
-        url = reverse('viewself-list')
+        url = reverse('view-self-list')  # Changed from 'viewself-list' to 'view-self-list'
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['role'] == 'hr'
@@ -23,7 +23,7 @@ class TestViewSelfViewSet:
 
     def test_view_self_as_admin(self, api_client, admin_user):
         api_client.force_authenticate(user=admin_user)
-        url = reverse('viewself-list')
+        url = reverse('view-self-list')  # Changed from 'viewself-list' to 'view-self-list'
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data['role'] == 'admin'

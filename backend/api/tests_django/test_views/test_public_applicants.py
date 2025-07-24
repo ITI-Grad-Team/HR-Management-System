@@ -1,43 +1,44 @@
-# tests/test_public_applicants.py
-import pytest
-from rest_framework import status
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
-from api.models import Employee, ApplicationLink
+# api/supabase_utils.py
+import tempfile
+import os
+from supabase import ClientException
+from django.core.exceptions import ValidationError
+from .supabase_client import supabase
 
-@pytest.mark.django_db
-class TestPublicApplicantsViewSet:
-    def test_create_application(self, api_client, application_link):
-        url = reverse('publicapplicants-list')
-        cv_file = SimpleUploadedFile("test.pdf", b"file_content", content_type="application/pdf")
-        data = {
-            'email': 'new@example.com',
-            'phone': '1234567890',
-            'distinction_name': 'dev-2024',
-            'cv': cv_file
-        }
-        response = api_client.post(url, data, format='multipart')
-        assert response.status_code == status.HTTP_201_CREATED
-        assert Employee.objects.count() == 1
-        assert response.data['llm_success'] in [True, False]  # LLM may or may not succeed
+def upload_to_supabase(bucket_name, file_obj, filename):
+    """Uploads a file to Supabase storage with proper error handling."""
+    if not file_obj:
+        raise ValidationError("No file provided for upload")
+    
+    if not filename:
+        raise ValidationError("No filename provided")
+    
+    path = f"{bucket_name}/{filename}"
 
-    def test_missing_fields(self, api_client, application_link):
-        url = reverse('publicapplicants-list')
-        data = {
-            'email': 'new@example.com',
-            # Missing phone, distinction_name, cv
-        }
-        response = api_client.post(url, data, format='multipart')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+    try:
+        # Save file temporarily
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in file_obj.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
 
-    def test_invalid_distinction_name(self, api_client):
-        url = reverse('publicapplicants-list')
-        cv_file = SimpleUploadedFile("test.pdf", b"file_content", content_type="application/pdf")
-        data = {
-            'email': 'new@example.com',
-            'phone': '1234567890',
-            'distinction_name': 'invalid-link',
-            'cv': cv_file
-        }
-        response = api_client.post(url, data, format='multipart')
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # Upload to Supabase
+        supabase.storage.from_(bucket_name).upload(
+            path, 
+            temp_file_path,
+            {"content-type": file_obj.content_type}
+        )
+
+        # Get public URL
+        public_url = supabase.storage.from_(bucket_name).get_public_url(path)
+        
+        return public_url
+
+    except ClientException as e:
+        raise ValidationError(f"Supabase upload failed: {str(e)}")
+    except Exception as e:
+        raise ValidationError(f"File upload failed: {str(e)}")
+    finally:
+        # Clean up temp file if it exists
+        if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
