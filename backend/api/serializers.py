@@ -46,7 +46,7 @@ from .supabase_utils import upload_to_supabase
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username"]
+        fields = ["id", "username","is_active"]
 
 
 class BasicInfoSerializer(serializers.ModelSerializer):

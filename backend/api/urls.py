@@ -22,7 +22,7 @@ from .views import (
     AdminManagePositionsViewSet,
     RAGViewSet,
     AdminViewApplicationLinksViewSet,
-    AdminManageRegionsViewSet,
+    AdminManageRegionsViewSet,AdminUserActivationViewSet,
     EmployeeSalaryViewSet,
     AdminManageEducationDegreesViewSet,
     AdminManageEducationFieldsViewSet,
@@ -143,8 +143,7 @@ router.register(
 )
 router.register(r"admin/rank", AdminRankViewSet, basename="admin-rank")
 router.register(r"admin/top", AdminViewTopViewSet, basename="admin-top-employees")
-
-# Employee
+router.register(r"admin/activate-deactivate", AdminUserActivationViewSet, basename="activate-deactivate-employee")
 router.register(r"tasks", TaskViewSet, basename="tasks")
 
 # Both
