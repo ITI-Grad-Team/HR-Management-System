@@ -2331,9 +2331,16 @@ class AdminRankViewSet(ModelViewSet):
                     {"detail": f"Weight {key} must be a number."}, status=400
                 )
 
-        employees = Employee.objects.filter(interview_state="accepted")
-        ranked = []
+        # Get all accepted employees with their position information
+        employees = Employee.objects.filter(
+            interview_state="accepted"
+        ).select_related('position')
+        
+        # Prepare data structures
+        all_employees = []
+        position_groups = {}
 
+        # First pass: calculate scores and group by position
         for emp in employees:
             num_tasks = emp.number_of_accepted_tasks
             num_days = emp.number_of_non_holiday_days_since_join
@@ -2354,15 +2361,48 @@ class AdminRankViewSet(ModelViewSet):
                 + avg_absent * float(weights["avg_absent"])
             )
 
-            ranked.append((emp, score))
+            # Store employee with score for global ranking
+            all_employees.append((emp, score))
+            
+            # Group by position for position-specific ranking
+            if emp.position_id not in position_groups:
+                position_groups[emp.position_id] = []
+            position_groups[emp.position_id].append((emp, score))
 
-        ranked.sort(key=lambda x: x[1], reverse=True)
+        # Global ranking
+        all_employees.sort(key=lambda x: x[1], reverse=True)
+        for global_rank, (emp, _) in enumerate(all_employees, start=1):
+            emp.rank = global_rank
+            # Don't save yet - we'll save both ranks together
 
-        for i, (emp, _) in enumerate(ranked, start=1):
-            emp.rank = i
-            emp.save(update_fields=["rank"])
+        # Position-specific ranking
+        position_stats = {}
+        for position_id, emp_scores in position_groups.items():
+            # Sort employees within this position
+            emp_scores.sort(key=lambda x: x[1], reverse=True)
+            
+            # Assign position ranks
+            for position_rank, (emp, _) in enumerate(emp_scores, start=1):
+                emp.position_rank = position_rank
+            
+            # Store position stats for response
+            position = Position.objects.get(id=position_id)
+            position_stats[position.name] = {
+                'count': len(emp_scores),
+                'top_performer': emp_scores[0][0].user.username if emp_scores else None
+            }
 
-        return Response({"detail": f"{len(ranked)} employees ranked successfully."})
+        # Bulk update all employees with both ranks
+        Employee.objects.bulk_update(
+            [emp for emp, _ in all_employees],
+            ['rank', 'position_rank']
+        )
+
+        return Response({
+            "detail": f"{len(all_employees)} employees ranked successfully.",
+            "global_top_performer": all_employees[0][0].user.username if all_employees else None,
+            "position_stats": position_stats
+        })
 
     @action(detail=False, methods=["post"], url_path="rank-hrs")
     def rank_hrs(self, request):
