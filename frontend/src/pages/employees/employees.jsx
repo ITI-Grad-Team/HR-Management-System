@@ -16,7 +16,14 @@ const Employees = () => {
   const { role, employee } = user;
   const isCoordinator =
     role === "employee" && employee?.is_coordinator === true;
-
+  const [freshEmployees, setFreshEmployees] = useState([]);
+  const [freshPagination, setFreshPagination] = useState({
+    count: 0,
+    next: null,
+    previous: null,
+    currentPage: 1,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState({
     regions: [],
@@ -84,6 +91,33 @@ const Employees = () => {
   });
 
   const [activeTab, setActiveTab] = useState("employees");
+
+  const fetchFreshEmployees = async (page = 1) => {
+    if (role !== "hr") return;
+
+    try {
+      setLoading(true);
+      let queryString = buildQueryString(filters);
+      if (queryString) queryString = `&${queryString}`;
+
+      const response = await axiosInstance.get(
+        `/hr/employees/not-scheduled-nor-taken/?page=${page}${queryString}`
+      );
+      setFreshEmployees(response.data.results);
+      setFreshPagination({
+        count: response.data.count,
+        next: response.data.next,
+        previous: response.data.previous,
+        currentPage: page,
+        totalPages: Math.ceil(response.data.count / 8),
+      });
+    } catch (error) {
+      toast.error("Failed to fetch fresh employees");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // useEffect(() => {
   //   if (activeTab === "employees") {
@@ -327,8 +361,10 @@ const Employees = () => {
       fetchEmployees(1);
     } else if (activeTab === "candidates") {
       fetchCandidates(1);
+    } else if (activeTab === "fresh") {
+      fetchFreshEmployees(1);
     }
-  }, [filters]);
+  }, [filters, activeTab]);
 
   const handlePageChange = (page, section) => {
     if (section === "hrs") {
@@ -341,6 +377,8 @@ const Employees = () => {
       fetchMyScheduled(page);
     } else if (section === "my-taken") {
       fetchMyTaken(page);
+    } else if (section === "fresh") {
+      fetchFreshEmployees(page);
     }
   };
 
@@ -350,7 +388,8 @@ const Employees = () => {
       (activeTab === "employees" ||
         activeTab === "candidates" ||
         activeTab === "my-scheduled" ||
-        activeTab === "my-taken")
+        activeTab === "my-taken" ||
+        activeTab === "fresh")
     ) {
       return (
         <div className="card mb-4">
@@ -494,7 +533,7 @@ const Employees = () => {
                       }`}
                       onClick={() => setActiveTab("my-scheduled")}
                     >
-                      My Scheduled
+                      My Schedule
                     </button>
                   </li>
                   <li className="nav-item">
@@ -504,10 +543,33 @@ const Employees = () => {
                       }`}
                       onClick={() => setActiveTab("my-taken")}
                     >
-                      My Taken
+                      My Responsibility
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button
+                      className={`nav-link ${
+                        activeTab === "fresh" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("fresh")}
+                    >
+                      Fresh Candidates
                     </button>
                   </li>
                 </>
+              )}
+
+              {(role === "admin" || role === "hr") && (
+                <li className="nav-item">
+                  <button
+                    className={`nav-link ${
+                      activeTab === "candidates" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("candidates")}
+                  >
+                    Candidates
+                  </button>
+                </li>
               )}
               {(role === "admin" || role === "hr" || isCoordinator) && (
                 <li className="nav-item">
@@ -521,24 +583,62 @@ const Employees = () => {
                   </button>
                 </li>
               )}
-              {(role === "admin" || role === "hr") && (
-                <li className="nav-item">
-                  <button
-                    className={`nav-link ${
-                      activeTab === "candidates" ? "active" : ""
-                    }`}
-                    onClick={() => setActiveTab("candidates")}
-                  >
-                    Candidates
-                  </button>
-                </li>
-              )}
             </ul>
           </div>
         )}
 
         {/* Render filters if applicable */}
         {renderFilters()}
+
+        {role === "hr" && activeTab === "fresh" && (
+          <SectionBlock title="Fresh Candidates">
+            {loading ? (
+              <EmployeesFallBack />
+            ) : freshEmployees.length === 0 ? (
+              <p>No fresh candidates found</p>
+            ) : (
+              <>
+                <div className="row">
+                  {freshEmployees.map((employee) => (
+                    <div key={employee.id} className="col-md-6 col-lg-3 mb-4">
+                      <Link
+                        to={`/dashboard/employeeDetails/${employee.id}`}
+                        className="text-decoration-none"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <BioCard
+                          name={employee.basic_info?.username}
+                          email={employee.user?.username}
+                          phone={employee.basic_info?.phone}
+                          avatar={
+                            employee.basic_info?.profile_image_url ||
+                            "/default.jpg"
+                          }
+                          department={employee.position}
+                          location={employee.region}
+                          education={employee.highest_education_field}
+                          isCoordinator={employee.is_coordinator}
+                          experience={employee.years_of_experience}
+                          role={employee.basic_info?.role}
+                          isScheduled={employee.interview_state === "scheduled"}
+                          isTaken={employee.interviewer !== null}
+                        />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+                <Pagination
+                  count={freshPagination.count}
+                  next={freshPagination.next}
+                  previous={freshPagination.previous}
+                  currentPage={freshPagination.currentPage}
+                  totalPages={freshPagination.totalPages}
+                  onPageChange={(page) => handlePageChange(page, "fresh")}
+                />
+              </>
+            )}
+          </SectionBlock>
+        )}
 
         {/* HR Section (only for admin) */}
         {role === "admin" && activeTab === "hrs" && (

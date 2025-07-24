@@ -71,7 +71,7 @@ from .serializers import (
     EmployeeTakenListSerializer,
     EmployeeAcceptingSerializer,
     ApplicationLinkSerializer,
-    SkillSerializer,
+    SkillSerializer,EmployeeNotScheduledOrNotTakenListSerializer,
     CompanyStatisticsSerializer,
     TaskSerializer,
     HRListSerializer,
@@ -890,6 +890,19 @@ class HRViewEmployeesViewSet(ModelViewSet):
         # Force pagination even for empty results
         page = self.paginate_queryset(queryset)
         serializer = EmployeeInterviewListSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+
+    @action(detail=False, methods=["get"], url_path="not-scheduled-nor-taken")
+    def not_scheduled_nor_taken_employees(self, request):
+        queryset = self.get_queryset().filter(
+            Q(interview_state="pending") | Q(interviewer__isnull=True)
+        )
+        
+        # Force pagination
+        page = self.paginate_queryset(queryset)
+        serializer = EmployeeNotScheduledOrNotTakenListSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="my-taken")

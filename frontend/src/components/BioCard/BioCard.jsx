@@ -8,8 +8,11 @@ import {
   FaBriefcase,
   FaCheckCircle,
   FaQuestionCircle,
-  FaUsers,FaRegClock ,
+  FaUsers,
+  FaRegClock,
   FaClock,
+  FaUserTimes,
+  FaRegTimesCircle,
 } from "react-icons/fa";
 // Add these utilities (or use date-fns/luxon)
 function formatInterviewTiming(timeUntilStr) {
@@ -67,6 +70,8 @@ export default function BioCard({
   status, // Added status in case you want to show candidate status
   interview_datetime, // Optional
   time_until_interview, // Optional
+  isScheduled,
+  isTaken,
 }) {
   const isEmployee = role === "employee";
 
@@ -78,7 +83,6 @@ export default function BioCard({
           <span>Coordinator</span> <FaUsers className="coordinator-icon" />
         </div>
       )}
-
       <div className="bio-card-header">
         <div className="bio-card-avatar">
           <img
@@ -102,12 +106,10 @@ export default function BioCard({
           )}
         </div>
       </div>
-
       <div className="bio-card-info-item">
         <FaEnvelope className="bio-card-info-icon" />
         <span className="bio-card-email-text">{email || "N/A"}</span>
       </div>
-
       <div className="bio-card-info-grid">
         <div className="bio-card-info-item">
           <FaPhone className="bio-card-info-icon" />
@@ -172,7 +174,6 @@ export default function BioCard({
           </div>
         </div>
       )}
-
       {status && (
         <div className="interview-timing">
           <div className="interview-status">
@@ -192,6 +193,22 @@ export default function BioCard({
             ) : (
               <span className="status-badge decision-pending">
                 <FaQuestionCircle className="status-icon" /> Awaiting decision
+              </span>
+            )}
+          </div>
+        </div>
+      )}{" "}
+      {(isScheduled === false || isTaken === false) && (
+        <div className="interview-timing">
+          <div className="interview-status">
+            {isScheduled === false && (
+              <span className="status-badge decision-pending me-1">
+                <FaRegTimesCircle className="status-icon" /> No Schedule
+              </span>
+            )}
+            {isTaken === false && (
+              <span className="status-badge decision-pending">
+                <FaUserTimes className="status-icon" /> No Responsible
               </span>
             )}
           </div>
