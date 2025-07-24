@@ -61,6 +61,7 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
                 <h5 className="mb-0">Recent Overtime Decisions (24h)</h5>
             </Card.Header>
             <Card.Body>
+                <div style={{ maxHeight: '300px', minHeight: '200px', overflowY: 'auto' }}>
                 <Table responsive hover striped>
                     <thead>
                         <tr>
@@ -105,6 +106,7 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
                         )}
                     </tbody>
                 </Table>
+                </div>
             </Card.Body>
         </Card>
     );
