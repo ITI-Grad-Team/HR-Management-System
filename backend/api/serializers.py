@@ -1,4 +1,3 @@
-
 import math
 from .models import (
     AttendanceRecord,
@@ -220,7 +219,6 @@ class HRSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-
     def to_representation(self, instance):
         """Replace NaN with None in all float fields."""
         data = super().to_representation(instance)
@@ -240,7 +238,11 @@ class HRSerializer(serializers.ModelSerializer):
         ]
 
         for field in float_fields:
-            if field in data and isinstance(data[field], float) and math.isnan(data[field]):
+            if (
+                field in data
+                and isinstance(data[field], float)
+                and math.isnan(data[field])
+            ):
                 data[field] = None
 
         return data

@@ -45,13 +45,17 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(pending_requests, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def recent(self, request):
         """Get recent approved/rejected requests (HR/Admin only)"""
-        recent_requests = self.get_queryset().filter(
-            Q(status="approved") | Q(status="rejected"),
-            reviewed_at__gte=timezone.now() - timezone.timedelta(days=1)
-        ).order_by('-reviewed_at')
+        recent_requests = (
+            self.get_queryset()
+            .filter(
+                Q(status="approved") | Q(status="rejected"),
+                reviewed_at__gte=timezone.now() - timezone.timedelta(days=1),
+            )
+            .order_by("-reviewed_at")
+        )
         serializer = self.get_serializer(recent_requests, many=True)
         return Response(serializer.data)
 
@@ -68,7 +72,7 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
 
         # Store old state
         was_approved = overtime_request.status == "approved"
-        
+
         # Revert request
         overtime_request.status = "pending"
         overtime_request.reviewed_at = None
@@ -116,12 +120,36 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
 
         # Update associated attendance record
         attendance_record = overtime_request.attendance_record
-        attendance_record.overtime_hours = overtime_request.requested_hours
+
+        # Calculate automatic overtime hours based on checkout vs expected leave time
+        from datetime import datetime
+
+        automatic_hours = 0.0
+        if (
+            attendance_record.check_out_time
+            and attendance_record.user.employee.expected_leave_time
+        ):
+            check_out_dt = datetime.combine(
+                attendance_record.date, attendance_record.check_out_time
+            )
+            expected_leave_dt = datetime.combine(
+                attendance_record.date,
+                attendance_record.user.employee.expected_leave_time,
+            )
+
+            if check_out_dt > expected_leave_dt:
+                overtime_delta = check_out_dt - expected_leave_dt
+                automatic_hours = round(overtime_delta.total_seconds() / 3600, 2)
+
+        # Use the smaller value between requested and automatic calculation
+        final_overtime_hours = min(overtime_request.requested_hours, automatic_hours)
+
+        attendance_record.overtime_hours = final_overtime_hours
         attendance_record.overtime_approved = True
         attendance_record.save()
 
         employee = attendance_record.user.employee
-        employee.total_overtime_hours += overtime_request.requested_hours
+        employee.total_overtime_hours += final_overtime_hours
         employee.save(update_fields=["total_overtime_hours"])
 
         response_serializer = OvertimeRequestSerializer(overtime_request)

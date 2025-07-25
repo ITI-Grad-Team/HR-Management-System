@@ -19,6 +19,8 @@ from .models import (
     BasicInfo,
     HR,
     Employee,
+    OnlineDayYearday,
+    OnlineDayWeekday,
     Position,
     ApplicationLink,
     Skill,
@@ -324,3 +326,63 @@ class SalaryRecordAdmin(admin.ModelAdmin):
         return obj.details.get("overtime_hours", 0)
 
     get_overtime_hours.short_description = "Overtime Hours"
+
+
+from .models import (
+    HolidayYearday,
+    HolidayWeekday,
+    OnlineDayYearday,
+    OnlineDayWeekday,
+)
+
+
+@admin.register(HolidayYearday)
+class HolidayYeardayAdmin(admin.ModelAdmin):
+    list_display = ("month", "day", "get_employees")
+    search_fields = ("month", "day", "employees__user__username")
+    filter_horizontal = ("employees",)
+    list_filter = ("month", "day")
+
+    def get_employees(self, obj):
+        return ", ".join([e.user.username for e in obj.employees.all()])
+
+    get_employees.short_description = "Employees"
+
+
+@admin.register(HolidayWeekday)
+class HolidayWeekdayAdmin(admin.ModelAdmin):
+    list_display = ("weekday", "get_employees")
+    search_fields = ("weekday", "employees__user__username")
+    filter_horizontal = ("employees",)
+    list_filter = ("weekday",)
+
+    def get_employees(self, obj):
+        return ", ".join([e.user.username for e in obj.employees.all()])
+
+    get_employees.short_description = "Employees"
+
+
+@admin.register(OnlineDayYearday)
+class OnlineDayYeardayAdmin(admin.ModelAdmin):
+    list_display = ("month", "day", "get_employees")
+    search_fields = ("month", "day", "employees__user__username")
+    filter_horizontal = ("employees",)
+    list_filter = ("month", "day")
+
+    def get_employees(self, obj):
+        return ", ".join([e.user.username for e in obj.employees.all()])
+
+    get_employees.short_description = "Employees"
+
+
+@admin.register(OnlineDayWeekday)
+class OnlineDayWeekdayAdmin(admin.ModelAdmin):
+    list_display = ("weekday", "get_employees")
+    search_fields = ("weekday", "employees__user__username")
+    filter_horizontal = ("employees",)
+    list_filter = ("weekday",)
+
+    def get_employees(self, obj):
+        return ", ".join([e.user.username for e in obj.employees.all()])
+
+    get_employees.short_description = "Employees"
