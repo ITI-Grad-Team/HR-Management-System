@@ -13,11 +13,12 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
     const fetchRecentRequests = useCallback(async () => {
         try {
             setLoading(true);
+            setError(null); // Clear any previous errors
             const res = await getRecentOvertimeRequests();
             setRequests(res.data);
-        } catch {
+        } catch (err) {
             setError('Failed to fetch recent requests.');
-            toast.error('Failed to fetch recent requests.');
+            console.error('Recent requests fetch error:', err);
         } finally {
             setLoading(false);
         }
@@ -25,6 +26,9 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
 
     useImperativeHandle(ref, () => ({
         fetchRecentRequests,
+        addNewRecentRequest: (newRequest) => {
+            setRequests(prev => [newRequest, ...prev]);
+        }
     }));
 
     useEffect(() => {
@@ -34,9 +38,25 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
     const handleRevert = async (id) => {
         try {
             await revertOvertimeRequest(id);
+
+            // Find the reverted request in current state
+            const revertedRequest = requests.find(req => req.id === id);
+
+            // Remove from recent requests immediately
+            setRequests(prev => prev.filter(req => req.id !== id));
+
+            // Notify parent to add back to pending with updated status
+            if (revertedRequest && props.onRevert) {
+                props.onRevert({
+                    ...revertedRequest,
+                    status: 'pending',
+                    reviewed_at: null,
+                    reviewed_by: null,
+                    hr_comment: ''
+                });
+            }
+
             toast.success('Request reverted to pending.');
-            fetchRecentRequests();
-            props.onRevert(); // Notify parent to refresh pending list
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Failed to revert request.');
         }
@@ -52,8 +72,27 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
         return new Date(dateTime).toLocaleString();
     };
 
-    if (loading) return <Spinner animation="border" size="sm" />;
-    if (error) return <Alert variant="danger">{error}</Alert>;
+    if (loading && requests.length === 0) return (
+        <Card className="attendance-card h-100 shadow-sm">
+            <Card.Header className="bg-light">
+                <h5 className="mb-0">Recent Overtime Decisions (24h)</h5>
+            </Card.Header>
+            <Card.Body className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+                <Spinner animation="border" size="sm" />
+            </Card.Body>
+        </Card>
+    );
+
+    if (error) return (
+        <Card className="attendance-card h-100 shadow-sm">
+            <Card.Header className="bg-light">
+                <h5 className="mb-0">Recent Overtime Decisions (24h)</h5>
+            </Card.Header>
+            <Card.Body>
+                <Alert variant="danger">{error}</Alert>
+            </Card.Body>
+        </Card>
+    );
 
     return (
         <Card className="attendance-card h-100 shadow-sm">
@@ -62,50 +101,50 @@ const RecentOvertimeRequests = forwardRef((props, ref) => {
             </Card.Header>
             <Card.Body>
                 <div style={{ maxHeight: '300px', minHeight: '200px', overflowY: 'auto' }}>
-                <Table responsive hover striped>
-                    <thead>
-                        <tr>
-                            <th>Employee</th>
-                            <th>Status</th>
-                            <th>Info</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {requests.length > 0 ? requests.map(req => (
-                            <tr key={req.id}>
-                                <td>{req.user}</td>
-                                <td>{renderStatusBadge(req.status)}</td>
-                                <td>
-                                    <OverlayTrigger
-                                        placement="left"
-                                        overlay={
-                                            <Tooltip id={`tooltip-${req.id}`}>
-                                                Requested: {req.requested_hours} hrs on {formatDateTime(req.requested_at)}<br />
-                                                Reviewed by: {formatText(req.reviewed_by_username, 'System')}<br />
-                                                Reviewed at: {formatDateTime(req.reviewed_at)}<br />
-                                                Comment: {req.hr_comment || 'None'}
-                                            </Tooltip>
-                                        }
-                                    >
-                                        <Button variant="link" className="p-0"><FaInfoCircle /></Button>
-                                    </OverlayTrigger>
-                                </td>
-                                <td>
-                                    <OverlayTrigger overlay={<Tooltip>Revert to Pending</Tooltip>}>
-                                        <Button variant="outline-warning" size="sm" onClick={() => handleRevert(req.id)}>
-                                            <FaUndo />
-                                        </Button>
-                                    </OverlayTrigger>
-                                </td>
-                            </tr>
-                        )) : (
+                    <Table responsive hover striped>
+                        <thead>
                             <tr>
-                                <td colSpan="4" className="text-center">No recent decisions.</td>
+                                <th>Employee</th>
+                                <th>Status</th>
+                                <th>Info</th>
+                                <th>Action</th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {requests.length > 0 ? requests.map(req => (
+                                <tr key={req.id}>
+                                    <td>{req.user}</td>
+                                    <td>{renderStatusBadge(req.status)}</td>
+                                    <td>
+                                        <OverlayTrigger
+                                            placement="left"
+                                            overlay={
+                                                <Tooltip id={`tooltip-${req.id}`}>
+                                                    Requested: {req.requested_hours} hrs on {formatDateTime(req.requested_at)}<br />
+                                                    Reviewed by: {formatText(req.reviewed_by_username, 'System')}<br />
+                                                    Reviewed at: {formatDateTime(req.reviewed_at)}<br />
+                                                    Comment: {req.hr_comment || 'None'}
+                                                </Tooltip>
+                                            }
+                                        >
+                                            <Button variant="link" className="p-0"><FaInfoCircle /></Button>
+                                        </OverlayTrigger>
+                                    </td>
+                                    <td>
+                                        <OverlayTrigger overlay={<Tooltip>Revert to Pending</Tooltip>}>
+                                            <Button variant="outline-warning" size="sm" onClick={() => handleRevert(req.id)}>
+                                                <FaUndo />
+                                            </Button>
+                                        </OverlayTrigger>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan="4" className="text-center">No recent decisions.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
                 </div>
             </Card.Body>
         </Card>

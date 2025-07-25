@@ -34,7 +34,8 @@ const AdminAttendanceView = () => {
         try {
             const res = await getPendingOvertimeRequests();
             setOvertimeRequests(res.data);
-        } catch {
+        } catch (err) {
+            console.error("Failed to fetch pending requests:", err);
             toast.error("Failed to fetch pending requests.");
         }
     }, []);
@@ -91,13 +92,33 @@ const AdminAttendanceView = () => {
         e.preventDefault();
         if (!selectedRequest) return;
         try {
-            await approveOvertimeRequest(selectedRequest.id, { hr_comment: hrComment });
+            const response = await approveOvertimeRequest(selectedRequest.id, { hr_comment: hrComment });
+
+            // Update pending requests immediately - remove the approved request
+            setOvertimeRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+
+            // Update recent requests immediately - add the approved request to recent
+            if (recentRequestsRef.current) {
+                recentRequestsRef.current.addNewRecentRequest({
+                    ...response.data,
+                    status: 'approved'
+                });
+            }
+
+            // Update attendance records to show the approved overtime
+            setAttendance(prev => ({
+                ...prev,
+                results: prev.results.map(record =>
+                    record.id === response.data.attendance_record ?
+                        { ...record, overtime_approved: true, overtime_hours: response.data.final_overtime_hours || record.overtime_hours } :
+                        record
+                )
+            }));
+
             toast.success('Overtime approved!');
             setShowApproveModal(false);
             setHrComment('');
             setSelectedRequest(null);
-            fetchPendingRequests();
-            if (recentRequestsRef.current) recentRequestsRef.current.fetchRecentRequests();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Approval failed.');
         }
@@ -112,20 +133,41 @@ const AdminAttendanceView = () => {
         e.preventDefault();
         if (!selectedRequest) return;
         try {
-            await rejectOvertimeRequest(selectedRequest.id, { hr_comment: hrComment });
+            const response = await rejectOvertimeRequest(selectedRequest.id, { hr_comment: hrComment });
+
+            // Update pending requests immediately - remove the rejected request
+            setOvertimeRequests(prev => prev.filter(req => req.id !== selectedRequest.id));
+
+            // Update recent requests immediately - add the rejected request to recent
+            if (recentRequestsRef.current) {
+                recentRequestsRef.current.addNewRecentRequest({
+                    ...response.data,
+                    status: 'rejected'
+                });
+            }
+
+            // Update attendance records to show the rejected overtime (remove overtime hours)
+            setAttendance(prev => ({
+                ...prev,
+                results: prev.results.map(record =>
+                    record.id === response.data.attendance_record ?
+                        { ...record, overtime_approved: false, overtime_hours: 0 } :
+                        record
+                )
+            }));
+
             toast.success('Overtime rejected.');
             setShowRejectModal(false);
             setHrComment('');
             setSelectedRequest(null);
-            fetchPendingRequests();
-            if (recentRequestsRef.current) recentRequestsRef.current.fetchRecentRequests();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Rejection failed.');
         }
     };
 
-    const handleRevert = () => {
-        fetchPendingRequests();
+    const handleRevert = (revertedRequest) => {
+        // Add the reverted request back to pending requests immediately
+        setOvertimeRequests(prev => [...prev, revertedRequest]);
     }
 
     const handleConvertToLeave = (record) => {
@@ -204,8 +246,23 @@ const AdminAttendanceView = () => {
                                                 <td>{req.date}</td>
                                                 <td>{req.requested_hours}</td>
                                                 <td>
-                                                    <Button variant="outline-success" size="sm" onClick={() => handleApprove(req)}>Approve</Button>
-                                                    <Button variant="outline-danger" size="sm" className="ms-2" onClick={() => handleReject(req)}>Reject</Button>
+                                                    <Button
+                                                        variant="outline-success"
+                                                        size="sm"
+                                                        onClick={() => handleApprove(req)}
+                                                        disabled={selectedRequest?.id === req.id}
+                                                    >
+                                                        {selectedRequest?.id === req.id ? <Spinner size="sm" animation="border" /> : '✅ Approve'}
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        className="ms-2"
+                                                        onClick={() => handleReject(req)}
+                                                        disabled={selectedRequest?.id === req.id}
+                                                    >
+                                                        {selectedRequest?.id === req.id ? <Spinner size="sm" animation="border" /> : '❌ Reject'}
+                                                    </Button>
                                                 </td>
                                             </tr>
                                         )) : <tr><td colSpan="4" className="text-center">No pending requests.</td></tr>}
@@ -270,8 +327,8 @@ const AdminAttendanceView = () => {
                                         <td className="text-center">
                                             {rec.overtime_hours > 0 ? (
                                                 rec.overtime_approved ?
-                                                    <FaCheck className="text-success" title="Approved" /> :
-                                                    <FaTimes className="text-danger" title="Not Approved" />
+                                                    <FaCheck className="text-success" title="Approved" size="16" /> :
+                                                    <FaTimes className="text-danger" title="Not Approved" size="16" />
                                             ) : '--'}
                                         </td>
                                         <td className="text-center">

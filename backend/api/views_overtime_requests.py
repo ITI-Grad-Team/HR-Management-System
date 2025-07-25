@@ -40,21 +40,49 @@ class OvertimeRequestViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def pending(self, request):
-        """Get all pending overtime requests (HR/Admin only)"""
-        pending_requests = self.get_queryset().filter(status="pending")
+        """Get all pending overtime requests (HR/Admin only) - OPTIMIZED"""
+        pending_requests = (
+            self.get_queryset()
+            .filter(status="pending")
+            .select_related("attendance_record__user")
+            .only(
+                "id",
+                "requested_hours",
+                "status",
+                "hr_comment",
+                "requested_at",
+                "reviewed_at",
+                "attendance_record__date",
+                "attendance_record__check_out_time",
+                "attendance_record__user__username",
+            )
+        )
         serializer = self.get_serializer(pending_requests, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def recent(self, request):
-        """Get recent approved/rejected requests (HR/Admin only)"""
+        """Get recent approved/rejected requests (HR/Admin only) - OPTIMIZED"""
         recent_requests = (
             self.get_queryset()
             .filter(
                 Q(status="approved") | Q(status="rejected"),
                 reviewed_at__gte=timezone.now() - timezone.timedelta(days=1),
             )
+            .select_related("attendance_record__user", "reviewed_by")
             .order_by("-reviewed_at")
+            .only(
+                "id",
+                "requested_hours",
+                "status",
+                "hr_comment",
+                "requested_at",
+                "reviewed_at",
+                "attendance_record__date",
+                "attendance_record__check_out_time",
+                "attendance_record__user__username",
+                "reviewed_by__username",
+            )
         )
         serializer = self.get_serializer(recent_requests, many=True)
         return Response(serializer.data)

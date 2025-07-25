@@ -46,6 +46,12 @@ class AttendanceRecord(models.Model):
 
     class Meta:
         unique_together = ("user", "date")
+        indexes = [
+            models.Index(fields=["user", "date"]),
+            models.Index(fields=["date", "status"]),
+            models.Index(fields=["overtime_approved", "overtime_hours"]),
+            models.Index(fields=["-date"]),
+        ]
 
     def __str__(self):
         return f"{self.user} - {self.date} ({self.status})"
@@ -99,6 +105,11 @@ class OvertimeRequest(models.Model):
 
     class Meta:
         ordering = ["-requested_at"]
+        indexes = [
+            models.Index(fields=["status", "reviewed_at"]),
+            models.Index(fields=["status", "-requested_at"]),
+            models.Index(fields=["-reviewed_at"]),
+        ]
 
 
 class SalaryRecord(models.Model):
@@ -192,8 +203,6 @@ class HR(models.Model):
         null=True, blank=True
     )
     last_stats_calculation_time = models.DateTimeField(null=True, blank=True)
-
-
 
     @property
     def accepted_employees(self):
@@ -471,7 +480,7 @@ class Employee(models.Model):
         default=0
     )  # summed to at task accept .. (some other place in the code)
     rank = models.IntegerField(null=True, blank=True)
-    position_rank =  models.IntegerField(null=True, blank=True)
+    position_rank = models.IntegerField(null=True, blank=True)
 
     temp_cv = None
 
