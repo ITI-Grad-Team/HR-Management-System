@@ -38,7 +38,6 @@ const AdminAttendanceView = () => {
 
     const fetchData = useCallback(async (page = 1, currentFilters = filters) => {
         try {
-            setLoading(true);
             const params = { ...currentFilters, page };
             const [attRes] = await Promise.all([
                 getAllAttendance(params),
@@ -144,9 +143,10 @@ const AdminAttendanceView = () => {
         <>
             <Row>
                 <Col xl={7}>
-                    <Card className="mb-4 attendance-card shadow-sm">
+                    <Card className="attendance-card shadow-sm">
                         <Card.Header className="bg-light"><h5 className="mb-0">Pending Overtime Requests</h5></Card.Header>
                         <Card.Body>
+                            <div style={{ maxHeight: '300px', minHeight: '200px', overflowY: 'auto' }}>
                             <Table responsive striped bordered hover>
                                 <thead>
                                     <tr>
@@ -172,6 +172,7 @@ const AdminAttendanceView = () => {
                                     )) : <tr><td colSpan="4" className="text-center">No pending requests.</td></tr>}
                                 </tbody>
                             </Table>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -198,6 +199,7 @@ const AdminAttendanceView = () => {
                             </Col>
                         </Row>
                     </Form>
+                    <div style={{ maxHeight: '500px', minHeight: '200px', overflowY: 'auto' }}>
                     <Table responsive striped bordered hover>
                         <thead>
                             <tr>
@@ -218,7 +220,7 @@ const AdminAttendanceView = () => {
                             ) : attendance.results.map(rec => (
                                 <tr key={rec.id}>
                                     <td>{rec.user_email}</td>
-                                    <td>{rec.date}</td>
+                                    <td width={"15%"}>{rec.date}</td>
                                     <td>{formatTime(rec.check_in_time)}</td>
                                     <td>{formatTime(rec.check_out_time)}</td>
                                     <td>{renderStatus(rec.status)}</td>
@@ -236,7 +238,8 @@ const AdminAttendanceView = () => {
                             ))}
                         </tbody>
                     </Table>
-                    <div className="d-flex justify-content-center">
+                    </div>
+                    <div className="d-flex justify-content-center mt-4">
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}

@@ -4,6 +4,7 @@ import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest } from '..
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
 import { useDebounce } from '../../hooks/useDebounce';
+import AdminLeaveFallback from '../DashboardFallBack/AdminLeaveFallback';
 
 const AdminLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });
@@ -133,7 +134,7 @@ const AdminLeaveView = () => {
     const pendingRequests = requests.results?.filter(req => req.status === 'pending') || [];
     const totalPages = Math.ceil(requests.count / pageSize);
 
-    if (loading && requests.results?.length === 0) return <Spinner animation="border" />;
+    if (loading && requests.results?.length === 0) return <AdminLeaveFallback />;
     if (error) return <Alert variant="danger">{error}</Alert>;
 
     return (
@@ -355,7 +356,7 @@ const AdminLeaveView = () => {
                 </Modal.Header>
                 <Form onSubmit={handleReject}>
                     <Modal.Body>
-                        <p>You are rejecting the leave for <strong>{selectedRequest?.employee.basic_info.username}</strong>.</p>
+                        <p>You are rejecting the leave for <strong>{selectedRequest?.employee?.basic_info.username}</strong>.</p>
                         <Form.Group>
                             <Form.Label>Rejection Reason</Form.Label>
                             <Form.Control
