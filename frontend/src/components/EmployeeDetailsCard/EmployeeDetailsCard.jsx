@@ -2224,7 +2224,7 @@ export default function CandidateDetailsCard({
                   {predictLoading ? (
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_avg_task_rating != null ? (
-                    candidate.predicted_avg_task_rating
+                    candidate.predicted_avg_task_rating.toFixed(2)
                   ) : (
                     "N/A"
                   )}
@@ -2239,7 +2239,9 @@ export default function CandidateDetailsCard({
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_avg_time_remaining_before_deadline !=
                     null ? (
-                    candidate.predicted_avg_time_remaining_before_deadline
+                    candidate.predicted_avg_time_remaining_before_deadline.toFixed(
+                      2
+                    )
                   ) : (
                     "N/A"
                   )}
@@ -2253,7 +2255,7 @@ export default function CandidateDetailsCard({
                   {predictLoading ? (
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_avg_lateness_hours != null ? (
-                    candidate.predicted_avg_lateness_hours
+                    candidate.predicted_avg_lateness_hours.toFixed(2)
                   ) : (
                     "N/A"
                   )}
@@ -2267,7 +2269,7 @@ export default function CandidateDetailsCard({
                   {predictLoading ? (
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_avg_absent_days != null ? (
-                    candidate.predicted_avg_absent_days
+                    candidate.predicted_avg_absent_days.toFixed(2)
                   ) : (
                     "N/A"
                   )}
@@ -2281,7 +2283,7 @@ export default function CandidateDetailsCard({
                   {predictLoading ? (
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_avg_overtime_hours != null ? (
-                    candidate.predicted_avg_overtime_hours
+                    candidate.predicted_avg_overtime_hours.toFixed(2)
                   ) : (
                     "N/A"
                   )}
@@ -2295,7 +2297,7 @@ export default function CandidateDetailsCard({
                   {predictLoading ? (
                     <Spinner as="span" size="sm" animation="border" />
                   ) : candidate.predicted_basic_salary != null ? (
-                    candidate.predicted_basic_salary
+                    candidate.predicted_basic_salary.toFixed(2)
                   ) : (
                     "N/A"
                   )}

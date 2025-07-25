@@ -1,3 +1,5 @@
+
+import math
 from .models import (
     AttendanceRecord,
     OvertimeRequest,
@@ -217,6 +219,31 @@ class HRSerializer(serializers.ModelSerializer):
             "rank",
         ]
         read_only_fields = fields
+
+
+    def to_representation(self, instance):
+        """Replace NaN with None in all float fields."""
+        data = super().to_representation(instance)
+        float_fields = [
+            "accepted_employees_avg_task_rating",
+            "accepted_employees_avg_time_remaining",
+            "accepted_employees_avg_lateness_hrs",
+            "accepted_employees_avg_absence_days",
+            "accepted_employees_avg_salary",
+            "accepted_employees_avg_overtime",
+            "accepted_employees_avg_interviewer_rating",
+            "interviewer_rating_to_task_rating_correlation",
+            "interviewer_rating_to_time_remaining_correlation",
+            "interviewer_rating_to_lateness_hrs_correlation",
+            "interviewer_rating_to_absence_days_correlation",
+            "interviewer_rating_to_avg_overtime_correlation",
+        ]
+
+        for field in float_fields:
+            if field in data and isinstance(data[field], float) and math.isnan(data[field]):
+                data[field] = None
+
+        return data
 
 
 class ApplicationLinkSerializer(serializers.ModelSerializer):
