@@ -36,10 +36,14 @@ const StatCard = ({ title, value, prediction, icon, color }) => {
 
               <div className="d-flex align-items-baseline">
                 <span className="fs-4 fw-bold me-2">
-                  {typeof value === "number" ? value.toFixed(2) : value}
+                  {console.log(value)}
+                  {value === null
+                    ? "--"
+                    : typeof value === "number"
+                    ? value.toFixed(2)
+                    : value}
                 </span>
-
-                {prediction !== undefined && (
+                {prediction !== null && (
                   <small className="text-muted ms-2">
                     <FiTrendingUp className="me-1" />
                     {typeof prediction === "number"
@@ -98,8 +102,8 @@ const EmployeeStats = () => {
   const stats = [
     {
       title: "Avg Task Rating",
-      value: `${employee.avg_task_ratings}/100`,
-      prediction: `${employee.predicted_avg_task_rating}/100`,
+      value: employee.avg_task_ratings,
+      prediction: employee.predicted_avg_task_rating,
       icon: <FaStar size={18} className="mt-3" />,
       color: "primary",
     },
