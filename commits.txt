@@ -1,0 +1,138 @@
+للبرزنتيشن 
+
+المقدمة 
+
+مجال البزنس زي اي مجال بيتاثر بالاخطاء بتاعة العامل البشري
+وأيا كنت انت مين في مجال البزنس فانت عرضة للتاثر بالاخطاء دي
+فمثلا لو موظف ممكن تعاني من قرار خاطئ تجاهك من مدير الشركة - قرار خاطئ من الانترفيور اللي شاف انك مش مؤهل بينما انت مؤهل
+ولو انت مدير شركة فانت بتبقى محتاج تعرف كل كبيرة وصغيرة فيها وإلا هتتخذ قرار خاطئ  ممكن يضر باقصاد الشركة
+ولو انت اتش ار فانت اكتر واحد لازم تاخد بالك من قراراتك لانها ممكن تضيع من موظف كفء او تخليك تقبل موظف مش كفء
+
+الاتش ار تحديدا 
+هو حلقة الوصل بين المدير والموظفين
+بالتالي هو اكتر دور بيعاني سواء من تشتت المعلومات وضيق وقت معاينة السيفيز والانترفيوز دا غيرالمرتبات والخصومات والاجازات اللي ممكن تكون من مهامه
+
+عشان كدا قررنا احنا نشيل العبء دا من على الاتش ار 
+ونقدمله سستم متكامل يكاد يشمل جميع ما يحتاجه في عمله اليومي
+
+انا جلال الدين - احمد الصباغ - عثمان - اسماء - ابراهيم - احمد هاني
+
+والنهاردا جايين نقدملهم
+هيرا
+
+عشان نعرف هيرا بيقدملنا ايه خلينا نعرف المشاكل الاول عشان نعرض على حضراتكم حلها
+
+
+
+(احمد ابراهيم)
+البرسونا
+Mohamod is hr .. he has management system but he is still overwhelmed
+
+Attendance Chaos
+
+Enforced to record attendance for each user himself to the system
+Lacks proof when approving/denying overtime claims ("Was Ahmed really in the company late?")
+
+Payroll Nightmares
+Spends time revising deductions/bonuses because they were set just based on recorded reasons
+No quick way to view salary adjustments ("Why was Sara's pay cut that big amount last month?")
+Prepares reports for admin on the system (new hires, salary raises and bonuses and deductions) and goes show him it!
+
+Recruitment Black Hole
+Job ads drown his inbox with unstructured CVs
+Uses ATS but finds no benefit, still a lot of time
+Interview scheduling conflicts plague his calendar ("Did I confirm Tuesday 2PM or 3PM?")
+Can miss which candidate had his interview scheduled .. and which has not .. and which is waiting his response! even though records are on his system
+
+Decision Paralysis
+Wastes days deliberating between candidates
+Loses track of which job post attracted which applicant
+
+Document Disasters
+Prepares unique questions per interview... then can't find them
+Last-minute cancellations force him to reorganize paper files
+
+
+Emotional Toll:
+"I spend more time fixing errors than developing our team!"
+"The CEO thinks I'm inefficient because our systems are prehistoric."
+"The best candidates slip through because we're too slow to respond."
+
+
+
+)اسماء(
+
+حقائق 
+
+60% of job applicants never receive responses from employers (LinkedIn Talent Trends 2024)
+
+HR teams spend 14 hours/week just scheduling interviews (Gartner 2023 Recruitment Tech Survey)
+
+1 in 3 mid-size companies lack centralized employee records (Deloitte Human Capital Trends 2024)
+
+
+
+هيرا بيحل كل المشاكل اللي قالها صاحبنا واكتر 
+
+من اول تجميع السيفيهات وفلترتها .. مرورا بجدولة الانترفيوز وعمل الانترفيوز .. ثم اتخاذ القرار بالرفض او القبول للموظف .. ثم ان الموظف نفسه مشترك في السستم لمتابعة حضوره وغيابه واداء شغله .. وبالتالي تسهيل حساب راتبه وخصوماته وحوافره .. وكمان القدرة على التنبؤ بأداء المتقدمين الجدد لمساعدة الاتش ار في اتخاذ القرار برفضهم او قبولب مهام الاتش ار إن لم يكن كلها
+فيلا بينا نشوف ازاي
+
+
+
+(الديمو)
+الملامح
+الادمن يعين
+الاتش ار يعين 
+الموظف يؤدي
+الموظف يرى النتائج
+الاتش ار يرى النتائج
+الادمن يرى النتائج
+
+
+عثمان والصباغ
+دا كان مشروعنا وكان من مميزاته اللي حرصنا عليها
+
+
+الاوتوميشن:
+السستم بتاعنا بيشيل عن الاتش ار اي شغل روتيني .. زي تجميع ومعاينة السيفيز .. وحساب الخصومات والحوافز والغياب بدون اييي تدخل من الاتش ار.. وغيرها
+
+الاعتماد على البيانات:
+السستم بتاعنا بيعتمد على البيانات المتجمعة فيه عشان يقدر يقدم معلومات ودلالات للموظف وللاتش ار ولمدير الشركة في الاخر
+
+
+التفاعلية:engagement
+السستم بتاعنا بيعتمد على متابعة اداء الموظف .. اولا لمساعدة الاتش ار في اتخاذ القرار .. وثانيا دا بيحدد اداء كل موظف وبالتالي اداء كل اتش ار
+وبيخلق نوع من التنافسية الصحية 
+وبيخلي المستخدم عايز دايما يتصفح ويشوف اداؤه وهو وصل لايه
+
+سهولة الاستخدام:
+فوق كل دا السستم بتاعنا واجهته شارحة نفسها وبالكاد مش محتاجة شرح
+
+المرونة:
+مافيش اجبار على طريقة استخدام معينة يمكن ما تنفعش مع الشركات
+
+
+
+
+الكلمة البراند (مش فاكر اسمها ايه)
+نحن نساعد الاتش ار لانه قلب الشركة فيطور اداء الشركة
+
+
+
+التطويرات (احمد هاني واسماء(
+سيشمل النظام اقسام
+سيشمل الدفع
+سيشمل ادمن يشترى لشركته وخطط دفع لما سيتناوله من سرفر
+سيتمكن الادمن من التحكم اكثر .. ربما يراجع طلب الاتش ار في اخذ انترفيو موظف ..او يفرض عليه واحدا
+نوتيفيكيشنز اكتر ع الميل .. لما ينسى مثلا يتشيك اوت .. او لما تتبعتله تاسك.. وغيرها
+الريبورتينج .. مثلا موظف تيم ليد بيبعت تاسكات لواحد وهو اصلا مش بيسلمها فيريبورت بالدليل للادمن
+نظام شات لحرية تواصل اكتر داخل السستم
+نظام حضور اكثر حرصا .. استخدام الكاميرا مع اللوكيشن .. 
+مراحل انترفيو اكتر تبدأ من سكريينينج بالذكاء الاصطناعي
+
+decision making + CRUD
+
+
+دا المحتوى .. 
+عايزك تخليه محتوى برزنتيشن 
+
