@@ -882,6 +882,20 @@ class EmployeeUpdateCompensationSerializer(serializers.ModelSerializer):
     yearly_leave_quota = serializers.IntegerField(required=False)
     max_days_per_request = serializers.IntegerField(required=False)
 
+    # Work Schedule & Holidays fields
+    holiday_weekdays = serializers.ListField(
+        child=serializers.CharField(max_length=10), required=False, allow_empty=True
+    )
+    holiday_yeardays = serializers.ListField(
+        child=serializers.DictField(), required=False, allow_empty=True
+    )
+    online_weekdays = serializers.ListField(
+        child=serializers.CharField(max_length=10), required=False, allow_empty=True
+    )
+    online_yeardays = serializers.ListField(
+        child=serializers.DictField(), required=False, allow_empty=True
+    )
+
     class Meta:
         model = Employee
         fields = [
@@ -893,6 +907,10 @@ class EmployeeUpdateCompensationSerializer(serializers.ModelSerializer):
             "expected_leave_time",
             "yearly_leave_quota",
             "max_days_per_request",
+            "holiday_weekdays",
+            "holiday_yeardays",
+            "online_weekdays",
+            "online_yeardays",
         ]
 
     def validate_yearly_leave_quota(self, value):
@@ -905,4 +923,78 @@ class EmployeeUpdateCompensationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Maximum days per request must be at least 1"
             )
+        return value
+
+    def validate_holiday_weekdays(self, value):
+        """Validate holiday weekdays"""
+        valid_weekdays = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        if value:
+            for weekday in value:
+                if weekday not in valid_weekdays:
+                    raise serializers.ValidationError(f"Invalid weekday: {weekday}")
+        return value
+
+    def validate_holiday_yeardays(self, value):
+        """Validate holiday yeardays"""
+        if value:
+            for day_info in value:
+                if not isinstance(day_info, dict):
+                    raise serializers.ValidationError(
+                        "Each holiday yearday must be a dictionary"
+                    )
+                if "month" not in day_info or "day" not in day_info:
+                    raise serializers.ValidationError(
+                        "Each holiday yearday must have 'month' and 'day' keys"
+                    )
+                month = day_info.get("month")
+                day = day_info.get("day")
+                if not (1 <= month <= 12):
+                    raise serializers.ValidationError("Month must be between 1 and 12")
+                if not (1 <= day <= 31):
+                    raise serializers.ValidationError("Day must be between 1 and 31")
+        return value
+
+    def validate_online_weekdays(self, value):
+        """Validate online weekdays"""
+        valid_weekdays = [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ]
+        if value:
+            for weekday in value:
+                if weekday not in valid_weekdays:
+                    raise serializers.ValidationError(f"Invalid weekday: {weekday}")
+        return value
+
+    def validate_online_yeardays(self, value):
+        """Validate online yeardays"""
+        if value:
+            for day_info in value:
+                if not isinstance(day_info, dict):
+                    raise serializers.ValidationError(
+                        "Each online yearday must be a dictionary"
+                    )
+                if "month" not in day_info or "day" not in day_info:
+                    raise serializers.ValidationError(
+                        "Each online yearday must have 'month' and 'day' keys"
+                    )
+                month = day_info.get("month")
+                day = day_info.get("day")
+                if not (1 <= month <= 12):
+                    raise serializers.ValidationError("Month must be between 1 and 12")
+                if not (1 <= day <= 31):
+                    raise serializers.ValidationError("Day must be between 1 and 31")
         return value
