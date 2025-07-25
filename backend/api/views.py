@@ -203,15 +203,18 @@ def calculate_statistics():
             or 0
         )
 
-        region_stats[region.name] = {
-            "distance_to_work": region.distance_to_work,
-            "employee_count": region_count,
-            "avg_lateness": (
-                round(total_lateness / total_non_holiday_days, 2)
-                if total_non_holiday_days > 0
-                else None
-            ),
-        }
+        if total_non_holiday_days > 0:
+            region_stats[region.name] = {
+                "distance_to_work": region.distance_to_work,
+                "employee_count": region_count,
+                "avg_lateness": (
+                    round(total_lateness / total_non_holiday_days, 2)
+                    if total_non_holiday_days > 0
+                    else None
+                ),
+            }
+
+        print(region_stats)
 
     total_task_ratings = employees.aggregate(sum=Sum("total_task_ratings"))["sum"] or 0
     total_accepted_tasks = (
