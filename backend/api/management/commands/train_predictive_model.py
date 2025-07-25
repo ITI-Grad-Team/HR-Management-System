@@ -72,19 +72,17 @@ class Command(BaseCommand):
             
             # For new employees who haven't completed any tasks/days, we might want to use 0 instead of None
             if employee.number_of_accepted_tasks == 0:
-                metrics["avg_task_ratings"] = 0
-                metrics["avg_time_remaining"] = 0
-                
+                skip_reasons.append("no completed tasks (0 tasks)")
+
+
             if employee.number_of_non_holiday_days_since_join == 0:
-                metrics["avg_overtime_hours"] = 0
-                metrics["avg_lateness_hours"] = 0
-                metrics["avg_absent_days"] = 0
+                skip_reasons.append("no work days recorded (0 days)")
             
             # If we still have None values (shouldn't happen with the above handling)
             missing_metrics = [metric for metric, value in metrics.items() if value is None]
             if missing_metrics:
                 skip_reasons.append(f"missing metrics: {', '.join(missing_metrics)}")
-            
+
             if skip_reasons:
                 skipped_employees.append({
                     "id": employee.id,

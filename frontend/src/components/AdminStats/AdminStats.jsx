@@ -183,7 +183,7 @@ export default function AdminStats() {
         {[
           {
             title: "Number of Employees",
-            value: snapshot.total_employees.tp,
+            value: snapshot.total_employees,
             description: "Total employees in you company",
           },
           {
@@ -235,8 +235,7 @@ export default function AdminStats() {
                   <div>
                     <h6 className="text-muted mb-1">{metric.title}</h6>
                     <h3 className="mb-0">
-                      {metric.value?.toFixed(metric.unit === "$" ? 2 : 1) ??
-                        "N/A"}
+                      {metric.value?.toFixed(2) ?? "N/A"}
                       {metric.unit && (
                         <small className="text-muted ms-1">{metric.unit}</small>
                       )}
