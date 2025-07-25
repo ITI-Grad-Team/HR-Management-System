@@ -812,10 +812,17 @@ class CasualLeaveSerializer(serializers.ModelSerializer):
         end_date = data.get("end_date")
 
         if start_date and end_date and start_date > end_date:
-            raise serializers.ValidationError("Start date cannot be after end date.")
+            raise serializers.ValidationError(
+                {"non_field_errors": ["Start date cannot be after end date."]}
+            )
 
         if start_date and start_date < timezone.now().date():
-            raise serializers.ValidationError("Cannot request leave for a past date.")
+            print(
+                "Cannot request leave for a past date. inside validate in CasualLeaveSerializer"
+            )
+            raise serializers.ValidationError(
+                {"non_field_errors": ["Cannot request leave for a past date."]}
+            )
 
         return data
 

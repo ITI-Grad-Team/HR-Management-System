@@ -158,7 +158,7 @@ export default function CandidateDetailsCard({
 
   // Populate formData when modal opens
   useEffect(() => {
-    if (candidate && showUpdateModal) {
+    if (candidate && (showUpdateModal || showAcceptModal)) {
       setFormData({
         basic_salary: candidate.basic_salary || "",
         overtime_hour_salary: candidate.overtime_hour_salary || "",
@@ -174,7 +174,7 @@ export default function CandidateDetailsCard({
         online_yeardays: [],
       });
     }
-  }, [candidate, showUpdateModal]);
+  }, [candidate, showUpdateModal, showAcceptModal]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -1679,6 +1679,35 @@ export default function CandidateDetailsCard({
                     value={formData.absence_penalty}
                     onChange={handleInputChange}
                     placeholder="Enter absence penalty"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Yearly Leave Quota</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="yearly_leave_quota"
+                    value={formData.yearly_leave_quota}
+                    onChange={handleInputChange}
+                    placeholder="Enter yearly leave quota"
+                    min="0"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Max Days Per Leave Request</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="max_days_per_request"
+                    value={formData.max_days_per_request}
+                    onChange={handleInputChange}
+                    placeholder="Enter max days per request"
+                    min="1"
                   />
                 </Form.Group>
               </Col>

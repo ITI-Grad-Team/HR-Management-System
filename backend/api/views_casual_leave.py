@@ -98,8 +98,15 @@ class CasualLeaveViewSet(viewsets.ModelViewSet):
         policy, created = EmployeeLeavePolicy.objects.get_or_create(employee=employee)
 
         if duration > policy.max_days_per_request:
+            print(
+                "duration > policy.max_days_per_request inside perform_create in CasualLeaveViewSet"
+            )
             raise serializers.ValidationError(
-                f"Request exceeds the maximum of {policy.max_days_per_request} days per request."
+                {
+                    "non_field_errors": [
+                        f"Request exceeds the maximum of {policy.max_days_per_request} days per request."
+                    ]
+                }
             )
 
         # OPTIMIZED: Use Sum on duration field instead of loop

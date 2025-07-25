@@ -151,13 +151,26 @@ const AdminAttendanceView = () => {
         }
     };
 
-    const renderStatus = (status) => {
+    const renderStatus = (record) => {
         const variants = {
             present: 'success',
             late: 'warning',
             absent: 'danger',
         };
-        return <span className={`badge bg-${variants[status]}`}>{status}</span>;
+
+        // Check if this is a converted attendance record (present status but no check-in/out times)
+        const isConverted = record.status === 'present' && !record.check_in_time && !record.check_out_time;
+
+        if (isConverted) {
+            return (
+                <span className="d-flex align-items-center">
+                    <span className={`badge bg-${variants[record.status]} me-1`}>present</span>
+                    <FaExchangeAlt className="text-info" title="Converted from absent to casual leave" size="12" />
+                </span>
+            );
+        }
+
+        return <span className={`badge bg-${variants[record.status]}`}>{record.status}</span>;
     };
 
     const totalPages = Math.ceil(attendance.count / 8);
@@ -250,7 +263,7 @@ const AdminAttendanceView = () => {
                                         <td width={"15%"}>{rec.date}</td>
                                         <td>{formatTime(rec.check_in_time)}</td>
                                         <td>{formatTime(rec.check_out_time)}</td>
-                                        <td>{renderStatus(rec.status)}</td>
+                                        <td>{renderStatus(rec)}</td>
                                         <td>{rec.attendance_type}</td>
                                         <td>{rec.lateness_hours > 0 ? formatHoursToTime(rec.lateness_hours) : '--'}</td>
                                         <td>{rec.overtime_hours > 0 ? formatHoursToTime(rec.overtime_hours) : '--'}</td>

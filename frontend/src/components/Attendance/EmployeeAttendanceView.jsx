@@ -11,6 +11,7 @@ import {
 import { getCurrentLocation } from '../../utils/geolocation';
 import { formatTime, formatHoursToTime } from '../../utils/formatters';
 import { toast } from 'react-toastify';
+import { FaExchangeAlt } from 'react-icons/fa';
 import DailyOvertimeStatus from './DailyOvertimeStatus';
 import EmployeeAttendanceFallback from '../DashboardFallBack/EmployeeAttendanceFallback';
 import Pagination from '../Pagination/Pagination';
@@ -245,13 +246,26 @@ const EmployeeAttendanceView = () => {
         }
     };
 
-    const renderStatus = (status) => {
+    const renderStatus = (record) => {
         const variants = {
             present: 'success',
             late: 'warning',
             absent: 'danger',
         };
-        return <span className={`badge bg-${variants[status]}`}>{status}</span>;
+
+        // Check if this is a converted attendance record (present status but no check-in/out times)
+        const isConverted = record.status === 'present' && !record.check_in_time && !record.check_out_time;
+
+        if (isConverted) {
+            return (
+                <span className="d-flex align-items-center">
+                    <span className={`badge bg-${variants[record.status]} me-1`}>present</span>
+                    <FaExchangeAlt className="text-info" title="Converted from absent to casual leave" size="12" />
+                </span>
+            );
+        }
+
+        return <span className={`badge bg-${variants[record.status]}`}>{record.status}</span>;
     };
 
     if (loading) return <EmployeeAttendanceFallback />;
@@ -393,7 +407,7 @@ const EmployeeAttendanceView = () => {
                                                 <td>{rec.date}</td>
                                                 <td>{formatTime(rec.check_in_time)}</td>
                                                 <td>{formatTime(rec.check_out_time)}</td>
-                                                <td>{renderStatus(rec.status)}</td>
+                                                <td>{renderStatus(rec)}</td>
                                                 <td>{rec.attendance_type}</td>
                                                 <td>{formatHoursToTime(rec.lateness_hours)}</td>
                                                 <td>{rec.overtime_approved ? formatHoursToTime(rec.overtime_hours || 0) : '--'}</td>
