@@ -183,7 +183,7 @@ export default function AdminStats() {
         {[
           {
             title: "Number of Employees",
-            value: snapshot.total_employees,
+            value: snapshot.total_employees.tp,
             description: "Total employees in you company",
           },
           {
