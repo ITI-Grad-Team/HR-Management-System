@@ -39,7 +39,7 @@ class TogetherCVProcessor:
             "experience": 2, /* integer years (If not found explicitly, just put 0) */
             "had_leadership": true, /* boolean */
             "skills": ["Python","Odoo"], /* Array ONLY from: {", ".join(choices['skills'])}... */
-            "has_position_related_high_education": false /* boolean (is the field of study of the degree related to the position being applied to? directly or indirectly) */
+            "has_position_related_high_education": false /* boolean (Set to true if the field of study of the degree is directly OR indirectly related to ${position.name}) */
         }}
 
         Position being applied to: {position.name}

@@ -311,7 +311,7 @@ class AdminViewEmployeesViewSet(ModelViewSet):
         "interview_state",
         "application_link",
     ]
-    search_fields = ["user__username", "user__email", "phone"]
+    search_fields = ["user__username", "user__basicinfo__username", "user__basicinfo__phone"]
     http_method_names = ["get", "patch"]  # Only allow GET and PATCH methods
 
     def get_queryset(self):
@@ -561,7 +561,7 @@ class AdminViewHRsViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
     pagination_class = EightPerPagePagination
     filter_backends = [SearchFilter]
-    search_fields = ["user__username", "user__email"]
+    search_fields = ["user__username", "user__basicinfo__username","user__basicinfo__phone"]
 
     def get_queryset(self):
         queryset = HR.objects.select_related("user", "user__basicinfo")
@@ -822,7 +822,7 @@ class HRViewEmployeesViewSet(ModelViewSet):
         "interview_state",
         "application_link",
     ]
-    search_fields = ["user__username", "user__email", "phone"]
+    search_fields = ["user__username", "user__basicinfo__username", "user__basicinfo__phone"]
 
     def get_queryset(self):
         queryset = Employee.objects.select_related(
@@ -2025,7 +2025,7 @@ class CoordinatorViewEmployeesViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsCoordinator]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["region"]
-    search_fields = ["user__username", "user__email", "user__basicinfo__username"]
+    search_fields = ["user__username","user__basicinfo__username","user__basicinfo__phone"]
     http_method_names = ["get"]
 
     def get_queryset(self):
