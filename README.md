@@ -109,10 +109,17 @@ npm run dev
 ```
 ---
 
-## Team Members
+## Authors
 - Galal El-Din Owais https://github.com/GalaluddinOwais
 - Ahmed Elsabbagh https://github.com/ahmed-elsabbagh778
 - Othman Ahmed https://github.com/OthmanAhmed7
 - Asmaa Tarek https://github.com/asamaatarek
 - Ahmed Ibrahim https://github.com/ahmed-yousef-dev
 - Ahmed Hani https://github.com/ahmedhani9007
+
+
+## License
+
+This project is **proprietary**. All rights reserved to the ITI-Grad-Team.
+
+No part of this project may be copied, distributed, or used without explicit permission.
