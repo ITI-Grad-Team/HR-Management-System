@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
 import { useDebounce } from '../../hooks/useDebounce';
 import AdminLeaveFallback from '../DashboardFallBack/AdminLeaveFallback';
+import '../Pagination/pagination.css';
 
 const AdminLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });

@@ -3,6 +3,7 @@ import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge, Pagi
 import { getMyLeaveRequests, getMyLeaveBalance, createLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
+import '../Pagination/pagination.css';
 
 const EmployeeLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });

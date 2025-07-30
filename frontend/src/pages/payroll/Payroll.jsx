@@ -31,6 +31,7 @@ import PayrollCharts from "../../components/payroll/PayrollCharts";
 import GenerateSalaryRecord from "../../components/payroll/GenerateSalaryRecord";
 import { fetchAllPages } from "../../api/pagination";
 import PayrolFallback from "../../components/DashboardFallBack/PayrolFallback";
+import "../../components/Pagination/pagination.css";
 
 const Payroll = () => {
   const [records, setRecords] = useState([]);
@@ -90,8 +91,8 @@ const Payroll = () => {
   };
 
   useEffect(() => {
-      document.title = "Payroll | HERA";
-    }, []);
+    document.title = "Payroll | HERA";
+  }, []);
 
   useEffect(() => {
     fetchRecords();
@@ -278,6 +279,11 @@ const Payroll = () => {
 
       <Card className="shadow-sm">
         <Card.Body>
+          <Row className="align-items-center mb-3">
+            <Col>
+              <h5 className="mb-0">Payroll Records</h5>
+            </Col>
+          </Row>
           <Row className="mb-3">
             <Col md={3}>
               <InputGroup>
