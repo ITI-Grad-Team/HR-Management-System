@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from api.models import AttendanceRecord, OvertimeRequest, SalaryRecord, Employee
@@ -10,15 +11,83 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsHRorAdmin
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from datetime import date
+
 User = get_user_model()
 
 
 class SalaryRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsHRorAdmin]
-    queryset = SalaryRecord.objects.select_related('user__employee__position').all()
+    queryset = SalaryRecord.objects.select_related("user__employee__position").all()
     serializer_class = SalaryRecordSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["user", "year", "month"]
+
+    @action(
+        detail=False, methods=["get"], url_path="available-periods/(?P<user_id>[^/.]+)"
+    )
+    def available_periods(self, request, user_id=None):
+        """
+        Get available year/month combinations for salary record generation
+        based on the employee's join date up to current date.
+        """
+        try:
+            user = User.objects.get(pk=user_id)
+            employee = getattr(user, "employee", None)
+
+            if not employee or not employee.join_date:
+                return Response(
+                    {"detail": "Employee join date not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            join_date = employee.join_date
+            current_date = date.today()
+
+            # Generate available periods from join date to current date
+            periods = []
+            current_year = join_date.year
+            current_month = join_date.month
+
+            while current_year < current_date.year or (
+                current_year == current_date.year
+                and current_month <= current_date.month
+            ):
+                periods.append(
+                    {
+                        "year": current_year,
+                        "month": current_month,
+                        "label": f"{current_year}-{current_month:02d}",
+                    }
+                )
+
+                current_month += 1
+                if current_month > 12:
+                    current_month = 1
+                    current_year += 1
+
+            # Get available years (unique from periods)
+            available_years = sorted(list(set(period["year"] for period in periods)))
+
+            return Response(
+                {
+                    "periods": periods,
+                    "years": available_years,
+                    "join_date": join_date,
+                    "current_date": current_date,
+                }
+            )
+
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Error retrieving available periods: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def create(self, request, *args, **kwargs):
         # Accept both "user" and "user_id" for compatibility
@@ -69,7 +138,9 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         if SalaryRecord.objects.filter(user=user, year=year, month=month).exists():
             # Delete existing records for this user/month/year
             SalaryRecord.objects.filter(user=user, year=year, month=month).delete()
-            print(f"Deleted existing salary record for {user.username} - {month}/{year}")
+            print(
+                f"Deleted existing salary record for {user.username} - {month}/{year}"
+            )
 
         records = AttendanceRecord.objects.filter(
             user=user, date__year=year, date__month=month
@@ -77,8 +148,9 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         absent_days = records.filter(status="absent").count()
         late_days = records.filter(status="late").count()
         lateness_hours = (
-            records.filter(status="late")
-                .aggregate(total=models.Sum("lateness_hours"))["total"] 
+            records.filter(status="late").aggregate(total=models.Sum("lateness_hours"))[
+                "total"
+            ]
             or 0
         )
         # Overtime: sum overtime_hours from AttendanceRecord where overtime_approved=True and overtime_hours > 0
@@ -115,9 +187,7 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
         # if you ever want to add short time, put it in dedcutions (short_time_penalty_total)
         total_deductions = absent_penalty_total + late_penalty_total
         final_salary = round(
-            base_salary
-            - total_deductions
-            + overtime_bonus_total,
+            base_salary - total_deductions + overtime_bonus_total,
             2,
         )
 

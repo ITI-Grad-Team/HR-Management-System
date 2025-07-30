@@ -32,11 +32,38 @@ const GenerateSalaryRecord = ({
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [availablePeriods, setAvailablePeriods] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [periodsLoading, setPeriodsLoading] = useState(false);
   const { role } = useAuth();
   const isEditMode = !!recordToEdit;
 
   // Debounce search input to avoid excessive API calls
   const debouncedSearch = useDebounce(search, 300);
+
+  // Fetch available periods for selected employee
+  const fetchAvailablePeriods = async (employeeId) => {
+    try {
+      setPeriodsLoading(true);
+      const response = await axiosInstance.get(`/salary/calculate/available-periods/${employeeId}/`);
+      setAvailablePeriods(response.data.periods || []);
+      setAvailableYears(response.data.years || []);
+
+      // Reset year and month to the most recent available period
+      if (response.data.periods && response.data.periods.length > 0) {
+        const latestPeriod = response.data.periods[response.data.periods.length - 1];
+        setYear(latestPeriod.year);
+        setMonth(latestPeriod.month);
+      }
+    } catch (error) {
+      console.error("Error fetching available periods:", error);
+      setAvailablePeriods([]);
+      setAvailableYears([]);
+      toast.error("Failed to fetch available periods for this employee.");
+    } finally {
+      setPeriodsLoading(false);
+    }
+  };
 
   // Fetch employees based on search term
   useEffect(() => {
@@ -68,6 +95,8 @@ const GenerateSalaryRecord = ({
         setMonth(recordToEdit.month);
         setSearch(recordToEdit.user.username);
         setEmployees([]);
+        // Fetch periods for edit mode as well to show available options
+        fetchAvailablePeriods(recordToEdit.user.id);
       } else {
         // Reset form for new record
         setSelectedEmployee("");
@@ -75,6 +104,8 @@ const GenerateSalaryRecord = ({
         setMonth(new Date().getMonth() + 1);
         setSearch("");
         setEmployees([]);
+        setAvailablePeriods([]);
+        setAvailableYears([]);
       }
     }
   }, [show, recordToEdit, isEditMode]);
@@ -114,11 +145,16 @@ const GenerateSalaryRecord = ({
       });
   };
 
-  const handleSelectEmployee = (emp) => {
+  const handleSelectEmployee = async (emp) => {
     setSelectedEmployee(emp.user.id);
     setSearch(emp.user.username);
     setShowDropdown(false);
     setEmployees([]);
+
+    // Fetch available periods for the selected employee
+    if (!isEditMode) {
+      await fetchAvailablePeriods(emp.user.id);
+    }
   };
 
   const handleSearchInputChange = (e) => {
@@ -219,6 +255,12 @@ const GenerateSalaryRecord = ({
                   No employees found matching "{search}"
                 </div>
               )}
+              {selectedEmployee && availablePeriods.length > 0 && (
+                <div className="mt-2 text-info small">
+                  <i className="bi bi-info-circle me-1"></i>
+                  Available periods are from the employee's join date to current month.
+                </div>
+              )}
             </Col>
           </Form.Group>
 
@@ -227,13 +269,38 @@ const GenerateSalaryRecord = ({
               Year
             </Form.Label>
             <Col sm={9}>
-              <Form.Control
-                type="number"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                required
-                disabled={isEditMode}
-              />
+              {selectedEmployee && availableYears.length > 0 ? (
+                <Form.Select
+                  value={year}
+                  onChange={(e) => {
+                    const selectedYear = parseInt(e.target.value);
+                    setYear(selectedYear);
+                    // Reset month to first available month for this year
+                    const firstMonthForYear = availablePeriods.find(p => p.year === selectedYear)?.month;
+                    if (firstMonthForYear) {
+                      setMonth(firstMonthForYear);
+                    }
+                  }}
+                  required
+                  disabled={isEditMode || periodsLoading}
+                >
+                  <option value="">Select Year</option>
+                  {availableYears.map((yearOption) => (
+                    <option key={yearOption} value={yearOption}>
+                      {yearOption}
+                    </option>
+                  ))}
+                </Form.Select>
+              ) : (
+                <Form.Control
+                  type="number"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  required
+                  disabled={isEditMode || !selectedEmployee}
+                  placeholder={selectedEmployee ? (periodsLoading ? "Loading..." : "Select an employee first") : "Select an employee first"}
+                />
+              )}
             </Col>
           </Form.Group>
 
@@ -242,15 +309,34 @@ const GenerateSalaryRecord = ({
               Month
             </Form.Label>
             <Col sm={9}>
-              <Form.Control
-                type="number"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                min="1"
-                max="12"
-                required
-                disabled={isEditMode}
-              />
+              {selectedEmployee && availablePeriods.length > 0 ? (
+                <Form.Select
+                  value={month}
+                  onChange={(e) => setMonth(parseInt(e.target.value))}
+                  required
+                  disabled={isEditMode || periodsLoading || !year}
+                >
+                  <option value="">Select Month</option>
+                  {availablePeriods
+                    .filter(period => period.year === parseInt(year))
+                    .map((period) => (
+                      <option key={`${period.year}-${period.month}`} value={period.month}>
+                        {new Date(period.year, period.month - 1).toLocaleString('default', { month: 'long' })} {period.year}
+                      </option>
+                    ))}
+                </Form.Select>
+              ) : (
+                <Form.Control
+                  type="number"
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  min="1"
+                  max="12"
+                  required
+                  disabled={isEditMode || !selectedEmployee}
+                  placeholder={selectedEmployee ? (periodsLoading ? "Loading..." : "Select a year first") : "Select an employee first"}
+                />
+              )}
             </Col>
           </Form.Group>
 
@@ -258,7 +344,7 @@ const GenerateSalaryRecord = ({
             <Button variant="secondary" onClick={onHide}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" disabled={loading}>
+            <Button variant="primary" type="submit" disabled={loading || (!selectedEmployee || !year || !month)}>
               {loading ? (
                 <Spinner as="span" animation="border" size="sm" />
               ) : isEditMode ? (
