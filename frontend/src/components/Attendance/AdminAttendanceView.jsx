@@ -13,6 +13,8 @@ import { FaCheck, FaTimes, FaExchangeAlt } from 'react-icons/fa';
 import RecentOvertimeRequests from './RecentOvertimeRequests';
 import Pagination from '../Pagination/Pagination';
 import AdminAttendanceFallback from '../DashboardFallBack/AdminAttendanceFallback';
+import './Attendance.css';
+
 
 const AdminAttendanceView = () => {
     const [attendance, setAttendance] = useState({ results: [], count: 0 });
@@ -21,7 +23,7 @@ const AdminAttendanceView = () => {
     const [error, setError] = useState(null);
     const [filters, setFilters] = useState({
         user: '',
-        date: new Date().toISOString().split('T')[0],
+        date: '',
         month: '',
         year: '',
         status: ''
@@ -119,7 +121,7 @@ const AdminAttendanceView = () => {
     const handleFilterChange = (e) => {
         const newSearchInput = e.target.value;
         setSearchInput(newSearchInput);
-        
+
         // Apply filter with slight delay to avoid too many API calls while typing
         clearTimeout(window.searchTimeout);
         window.searchTimeout = setTimeout(() => {
@@ -131,7 +133,7 @@ const AdminAttendanceView = () => {
     };
 
     const handleDateChange = (e) => {
-        const newFilters = { ...filters, date: e.target.value };
+        const newFilters = { ...filters, date: e.target.value, month: '', year: '' }; // Clear month/year when date is selected
         setFilters(newFilters);
         setCurrentPage(1);
         fetchData(1, newFilters);
@@ -140,7 +142,7 @@ const AdminAttendanceView = () => {
     const handleResetFilters = () => {
         const resetFilters = {
             user: '',
-            date: new Date().toISOString().split('T')[0],
+            date: '',
             month: '',
             year: '',
             status: ''
@@ -353,13 +355,17 @@ const AdminAttendanceView = () => {
                             <h5 className="mb-0">All Attendance Records</h5>
                             <small className="text-muted">
                                 {attendance.count} total records
-                                {(filters.month || filters.year || filters.status) && (
+                                {(filters.date || filters.month || filters.year || filters.status) && (
                                     <span>
                                         {' • Filtered by '}
+                                        {filters.date && `Date: ${filters.date}`}
+                                        {filters.date && (filters.month || filters.year || filters.status) && ', '}
                                         {filters.month && getMonthOptions().find(m => m.value == filters.month)?.label}
                                         {filters.month && filters.year && ' '}
-                                        {filters.year}
-                                        {filters.status && `, Status: ${filters.status}`}
+                                        {filters.year && !filters.month && `Year: ${filters.year}`}
+                                        {filters.year && filters.month && filters.year}
+                                        {(filters.month || filters.year || filters.date) && filters.status && ', '}
+                                        {filters.status && `Status: ${filters.status}`}
                                     </span>
                                 )}
                             </small>
@@ -368,6 +374,12 @@ const AdminAttendanceView = () => {
                 </Card.Header>
                 <Card.Body>
                     <div className="mb-3">
+                        <div className="mb-2">
+                            <small className="tip-text">
+                                <i className="bi bi-info-circle me-1"></i>
+                                Tip: Use specific date OR month/year filters (they work independently)
+                            </small>
+                        </div>
                         <Row className="g-2 mb-3">
                             <Col md={2}>
                                 <Form.Control
@@ -388,7 +400,7 @@ const AdminAttendanceView = () => {
                             </Col>
                             <Col md={2}>
                                 <Dropdown onSelect={(year) => {
-                                    const newFilters = { ...filters, year };
+                                    const newFilters = { ...filters, year, date: '' }; // Clear date when year is selected
                                     setFilters(newFilters);
                                     setCurrentPage(1);
                                     fetchData(1, newFilters);
@@ -412,7 +424,7 @@ const AdminAttendanceView = () => {
                             </Col>
                             <Col md={2}>
                                 <Dropdown onSelect={(month) => {
-                                    const newFilters = { ...filters, month };
+                                    const newFilters = { ...filters, month, date: '' }; // Clear date when month is selected
                                     setFilters(newFilters);
                                     setCurrentPage(1);
                                     fetchData(1, newFilters);

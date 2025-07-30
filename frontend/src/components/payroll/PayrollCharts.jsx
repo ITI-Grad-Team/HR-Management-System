@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Card, Row, Col, Dropdown } from "react-bootstrap";
 import {
   BarChart,
@@ -13,16 +13,14 @@ import {
 } from "recharts";
 
 const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilter }) => {
-  const [barChartYear, setBarChartYear] = useState(new Date().getFullYear());
-
   const monthlyTotals = useMemo(() => {
     // Start with the base records and apply Company-Wide Stats filters
     let filteredRecords = records;
-    
-    // Apply year filter from Company-Wide Stats if present, otherwise use barChartYear
-    const targetYear = statsYearFilter || barChartYear;
+
+    // Apply year filter from Company-Wide Stats - use current year if no filter is set
+    const targetYear = statsYearFilter || new Date().getFullYear();
     filteredRecords = filteredRecords.filter((r) => r.year == targetYear);
-    
+
     // Apply month filter from Company-Wide Stats if present
     if (statsMonthFilter) {
       filteredRecords = filteredRecords.filter((r) => r.month == statsMonthFilter);
@@ -40,12 +38,23 @@ const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilte
     });
 
     return totals;
-  }, [records, barChartYear, statsMonthFilter, statsYearFilter]);
+  }, [records, statsMonthFilter, statsYearFilter]);
 
   const salaryTrend = useMemo(() => {
-    const dataSet = selectedUser
+    // Apply Company-Wide Stats filters to salary trend data
+    let dataSet = selectedUser
       ? records.filter((r) => r.user.username === selectedUser)
       : records;
+
+    // Apply year filter from Company-Wide Stats if present
+    if (statsYearFilter) {
+      dataSet = dataSet.filter((r) => r.year == statsYearFilter);
+    }
+
+    // Apply month filter from Company-Wide Stats if present
+    if (statsMonthFilter) {
+      dataSet = dataSet.filter((r) => r.month == statsMonthFilter);
+    }
 
     if (dataSet.length === 0) return [];
 
@@ -71,7 +80,7 @@ const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilte
           (d.salaries.length || 1),
       }))
       .sort((a, b) => new Date(a.name) - new Date(b.name));
-  }, [records, selectedUser]);
+  }, [records, selectedUser, statsMonthFilter, statsYearFilter]);
 
   return (
     <Row className="g-4">
@@ -83,27 +92,10 @@ const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilte
                 Monthly Salary Totals
                 {(statsMonthFilter || statsYearFilter) && (
                   <small className="text-muted ms-2">
-                    (Filtered{statsYearFilter ? ` - ${statsYearFilter}` : ''}{statsMonthFilter ? ` - Month ${statsMonthFilter}` : ''})
+                    (Filtered{statsYearFilter ? ` - ${statsYearFilter}` : ` - ${new Date().getFullYear()}`}{statsMonthFilter ? ` - Month ${statsMonthFilter}` : ''})
                   </small>
                 )}
               </h5>
-              {!statsYearFilter && (
-                <Dropdown onSelect={(e) => setBarChartYear(e)}>
-                  <Dropdown.Toggle variant="outline-primary" size="sm">
-                    Year: {barChartYear}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    {[...Array(5).keys()].map((i) => (
-                      <Dropdown.Item
-                        key={new Date().getFullYear() - i}
-                        eventKey={new Date().getFullYear() - i}
-                      >
-                        {new Date().getFullYear() - i}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-              )}
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthlyTotals} barSize={20}>
@@ -124,6 +116,11 @@ const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilte
               <span className="text-primary">
                 {selectedUser || "Average"}
               </span>
+              {(statsMonthFilter || statsYearFilter) && (
+                <small className="text-muted ms-2">
+                  (Filtered{statsYearFilter ? ` - ${statsYearFilter}` : ''}{statsMonthFilter ? ` - Month ${statsMonthFilter}` : ''})
+                </small>
+              )}
             </h5>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={salaryTrend}>

@@ -256,7 +256,7 @@ const GenerateSalaryRecord = ({
                 </div>
               )}
               {selectedEmployee && availablePeriods.length > 0 && (
-                <div className="mt-2 text-info small">
+                <div className="mt-2 tip-text small">
                   <i className="bi bi-info-circle me-1"></i>
                   Available periods are from the employee's join date to current month.
                 </div>

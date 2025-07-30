@@ -1,3 +1,5 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Suspense } from "react";
 import "./App.css";
 import "slick-carousel/slick/slick.css";
@@ -13,6 +15,8 @@ import "react-toastify/dist/ReactToastify.css";
 import ForgotPassword from "./pages/PasswordReset/forgotPassword.jsx";
 import ResetPassword from "./pages/PasswordReset/resetPassword.jsx";
 import ChangePassword from "./pages/PasswordReset/ChangePassword.jsx";
+
+
 
 const Login = lazy(() => import("./pages/login/login"));
 const DashboardPage = lazy(() => import("./pages/dashboard/dashboard"));
