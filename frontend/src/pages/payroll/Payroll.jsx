@@ -281,7 +281,7 @@ const Payroll = () => {
         <Card.Body>
           <Row className="align-items-center mb-3">
             <Col>
-              <h5 className="mb-0">Payroll Records</h5>
+              <h5 className="mb-0">Payroll Records - Employee Salary Summary</h5>
             </Col>
           </Row>
           <Row className="mb-3">
