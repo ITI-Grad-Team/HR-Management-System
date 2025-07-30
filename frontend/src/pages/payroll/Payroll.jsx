@@ -272,7 +272,12 @@ const Payroll = () => {
 
       <Card className="shadow-sm mb-4">
         <Card.Body>
-          <PayrollCharts records={statsFilteredRecords} selectedUser={userFilter} />
+          <PayrollCharts 
+            records={records} 
+            selectedUser={userFilter} 
+            statsMonthFilter={statsMonthFilter}
+            statsYearFilter={statsYearFilter}
+          />
         </Card.Body>
       </Card>
 

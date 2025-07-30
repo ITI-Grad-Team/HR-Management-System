@@ -12,24 +12,35 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const PayrollCharts = ({ records, selectedUser }) => {
+const PayrollCharts = ({ records, selectedUser, statsMonthFilter, statsYearFilter }) => {
   const [barChartYear, setBarChartYear] = useState(new Date().getFullYear());
 
   const monthlyTotals = useMemo(() => {
-    const yearData = records.filter((r) => r.year == barChartYear);
+    // Start with the base records and apply Company-Wide Stats filters
+    let filteredRecords = records;
+    
+    // Apply year filter from Company-Wide Stats if present, otherwise use barChartYear
+    const targetYear = statsYearFilter || barChartYear;
+    filteredRecords = filteredRecords.filter((r) => r.year == targetYear);
+    
+    // Apply month filter from Company-Wide Stats if present
+    if (statsMonthFilter) {
+      filteredRecords = filteredRecords.filter((r) => r.month == statsMonthFilter);
+    }
+
     const monthNames = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
     const totals = monthNames.map((monthName, index) => {
-      const monthRecords = yearData.filter((r) => r.month === index + 1);
+      const monthRecords = filteredRecords.filter((r) => r.month === index + 1);
       const total = monthRecords.reduce((sum, r) => sum + r.final_salary, 0);
       return { name: monthName, total };
     });
 
     return totals;
-  }, [records, barChartYear]);
+  }, [records, barChartYear, statsMonthFilter, statsYearFilter]);
 
   const salaryTrend = useMemo(() => {
     const dataSet = selectedUser
@@ -68,22 +79,31 @@ const PayrollCharts = ({ records, selectedUser }) => {
         <Card className="shadow-sm h-100">
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0">Monthly Salary Totals</h5>
-              <Dropdown onSelect={(e) => setBarChartYear(e)}>
-                <Dropdown.Toggle variant="outline-primary" size="sm">
-                  Year: {barChartYear}
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  {[...Array(5).keys()].map((i) => (
-                    <Dropdown.Item
-                      key={new Date().getFullYear() - i}
-                      eventKey={new Date().getFullYear() - i}
-                    >
-                      {new Date().getFullYear() - i}
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
+              <h5 className="mb-0">
+                Monthly Salary Totals
+                {(statsMonthFilter || statsYearFilter) && (
+                  <small className="text-muted ms-2">
+                    (Filtered{statsYearFilter ? ` - ${statsYearFilter}` : ''}{statsMonthFilter ? ` - Month ${statsMonthFilter}` : ''})
+                  </small>
+                )}
+              </h5>
+              {!statsYearFilter && (
+                <Dropdown onSelect={(e) => setBarChartYear(e)}>
+                  <Dropdown.Toggle variant="outline-primary" size="sm">
+                    Year: {barChartYear}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    {[...Array(5).keys()].map((i) => (
+                      <Dropdown.Item
+                        key={new Date().getFullYear() - i}
+                        eventKey={new Date().getFullYear() - i}
+                      >
+                        {new Date().getFullYear() - i}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              )}
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthlyTotals} barSize={20}>

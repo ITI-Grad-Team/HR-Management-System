@@ -117,16 +117,21 @@ const AdminAttendanceView = () => {
     }, [fetchData, currentPage, fetchPendingRequests]);
 
     const handleFilterChange = (e) => {
-        setSearchInput(e.target.value);
+        const newSearchInput = e.target.value;
+        setSearchInput(newSearchInput);
+        
+        // Apply filter with slight delay to avoid too many API calls while typing
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(() => {
+            const newFilters = { ...filters, user: newSearchInput };
+            setFilters(newFilters);
+            setCurrentPage(1);
+            fetchData(1, newFilters);
+        }, 300);
     };
 
     const handleDateChange = (e) => {
-        setFilters({ ...filters, date: e.target.value });
-    };
-
-    const handleFilterSubmit = (e) => {
-        e.preventDefault();
-        const newFilters = { ...filters, user: searchInput };
+        const newFilters = { ...filters, date: e.target.value };
         setFilters(newFilters);
         setCurrentPage(1);
         fetchData(1, newFilters);
@@ -362,18 +367,18 @@ const AdminAttendanceView = () => {
                     </Row>
                 </Card.Header>
                 <Card.Body>
-                    <Form onSubmit={handleFilterSubmit} className="mb-3">
-                        <Row className="g-2 mb-2">
-                            <Col md={3}>
+                    <div className="mb-3">
+                        <Row className="g-2 mb-3">
+                            <Col md={2}>
                                 <Form.Control
                                     type="text"
                                     name="user"
                                     value={searchInput}
                                     onChange={handleFilterChange}
-                                    placeholder="Filter by Employee ID or Email"
+                                    placeholder="Employee ID or Email"
                                 />
                             </Col>
-                            <Col md={3}>
+                            <Col md={2}>
                                 <Form.Control
                                     type="date"
                                     name="date"
@@ -381,17 +386,22 @@ const AdminAttendanceView = () => {
                                     onChange={handleDateChange}
                                 />
                             </Col>
-                            <Col md={3}>
-                                <Dropdown onSelect={(year) => setFilters({ ...filters, year })} className="w-100">
+                            <Col md={2}>
+                                <Dropdown onSelect={(year) => {
+                                    const newFilters = { ...filters, year };
+                                    setFilters(newFilters);
+                                    setCurrentPage(1);
+                                    fetchData(1, newFilters);
+                                }} className="w-100">
                                     <Dropdown.Toggle
                                         variant="outline-primary"
                                         id="dropdown-year"
                                         className="w-100"
                                     >
-                                        {filters.year ? `Year: ${filters.year}` : "Year"}
+                                        {filters.year ? `${filters.year}` : "Year"}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu className="w-100">
-                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        <Dropdown.Item eventKey="">All Years</Dropdown.Item>
                                         {getYearOptions().map(year => (
                                             <Dropdown.Item key={year} eventKey={year}>
                                                 {year}
@@ -400,19 +410,24 @@ const AdminAttendanceView = () => {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Col>
-                            <Col md={3}>
-                                <Dropdown onSelect={(month) => setFilters({ ...filters, month })} className="w-100">
+                            <Col md={2}>
+                                <Dropdown onSelect={(month) => {
+                                    const newFilters = { ...filters, month };
+                                    setFilters(newFilters);
+                                    setCurrentPage(1);
+                                    fetchData(1, newFilters);
+                                }} className="w-100">
                                     <Dropdown.Toggle
                                         variant="outline-primary"
                                         id="dropdown-month"
                                         className="w-100"
                                     >
                                         {filters.month
-                                            ? `Month: ${getMonthOptions().find(m => m.value == filters.month)?.label}`
+                                            ? `${getMonthOptions().find(m => m.value == filters.month)?.label}`
                                             : "Month"}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu className="w-100">
-                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        <Dropdown.Item eventKey="">All Months</Dropdown.Item>
                                         {getMonthOptions().map(month => (
                                             <Dropdown.Item key={month.value} eventKey={month.value}>
                                                 {month.label}
@@ -421,19 +436,22 @@ const AdminAttendanceView = () => {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Col>
-                        </Row>
-                        <Row className="g-2">
-                            <Col md={3}>
-                                <Dropdown onSelect={(status) => setFilters({ ...filters, status })} className="w-100">
+                            <Col md={2}>
+                                <Dropdown onSelect={(status) => {
+                                    const newFilters = { ...filters, status };
+                                    setFilters(newFilters);
+                                    setCurrentPage(1);
+                                    fetchData(1, newFilters);
+                                }} className="w-100">
                                     <Dropdown.Toggle
                                         variant="outline-primary"
                                         id="dropdown-status"
                                         className="w-100"
                                     >
-                                        {filters.status ? `Status: ${filters.status}` : "Status"}
+                                        {filters.status ? `${filters.status}` : "Status"}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu className="w-100">
-                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        <Dropdown.Item eventKey="">All Status</Dropdown.Item>
                                         {getStatusOptions().map(status => (
                                             <Dropdown.Item key={status.value} eventKey={status.value}>
                                                 {status.label}
@@ -442,12 +460,11 @@ const AdminAttendanceView = () => {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Col>
-                            <Col md={9} className="d-flex">
-                                <Button type="submit" className="me-2">Apply Filters</Button>
-                                <Button variant="secondary" onClick={handleResetFilters}>Reset All</Button>
+                            <Col md={2} className="d-flex">
+                                <Button variant="secondary" onClick={handleResetFilters} className="w-100">Reset All</Button>
                             </Col>
                         </Row>
-                    </Form>
+                    </div>
                     <div style={{ maxHeight: '500px', minHeight: '200px', overflowY: 'auto' }}>
                         <Table responsive striped bordered hover>
                             <thead>
