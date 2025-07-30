@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge, Pagination } from 'react-bootstrap';
+import { Card, Button, Modal, Form, Table, Spinner, Alert, Row, Col, Badge } from 'react-bootstrap';
 import { getMyLeaveRequests, getMyLeaveBalance, createLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
-import '../Pagination/pagination.css';
+import Pagination from '../Pagination/Pagination';
 
 const EmployeeLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });
@@ -151,33 +151,11 @@ const EmployeeLeaveView = () => {
                     {/* Pagination */}
                     {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-3">
-                            <Pagination>
-                                <Pagination.Prev
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                />
-
-                                {[...Array(Math.min(5, totalPages))].map((_, index) => {
-                                    const pageNumber = Math.max(1, currentPage - 2) + index;
-                                    if (pageNumber <= totalPages) {
-                                        return (
-                                            <Pagination.Item
-                                                key={pageNumber}
-                                                active={pageNumber === currentPage}
-                                                onClick={() => handlePageChange(pageNumber)}
-                                            >
-                                                {pageNumber}
-                                            </Pagination.Item>
-                                        );
-                                    }
-                                    return null;
-                                })}
-
-                                <Pagination.Next
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                />
-                            </Pagination>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
                         </div>
                     )}
                 </Card.Body>

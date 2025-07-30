@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Spinner, Alert, Button, Badge, Modal, Form, Row, Col, InputGroup, FormControl, Pagination } from 'react-bootstrap';
+import { Card, Table, Spinner, Alert, Button, Badge, Modal, Form, Row, Col, InputGroup, FormControl } from 'react-bootstrap';
 import { getAllLeaveRequests, approveLeaveRequest, rejectLeaveRequest } from '../../api/leaveApi';
 import { toast } from 'react-toastify';
 import { formatText } from '../../utils/formatters';
 import { useDebounce } from '../../hooks/useDebounce';
 import AdminLeaveFallback from '../DashboardFallBack/AdminLeaveFallback';
-import '../Pagination/pagination.css';
+import Pagination from '../Pagination/Pagination';
 
 const AdminLeaveView = () => {
     const [requests, setRequests] = useState({ results: [], count: 0 });
@@ -309,41 +309,11 @@ const AdminLeaveView = () => {
                             {/* Pagination */}
                             {totalPages > 1 && (
                                 <div className="d-flex justify-content-center mt-3">
-                                    <Pagination>
-                                        <Pagination.First
-                                            onClick={() => handlePageChange(1)}
-                                            disabled={currentPage === 1}
-                                        />
-                                        <Pagination.Prev
-                                            onClick={() => handlePageChange(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                        />
-
-                                        {[...Array(Math.min(5, totalPages))].map((_, index) => {
-                                            const pageNumber = Math.max(1, currentPage - 2) + index;
-                                            if (pageNumber <= totalPages) {
-                                                return (
-                                                    <Pagination.Item
-                                                        key={pageNumber}
-                                                        active={pageNumber === currentPage}
-                                                        onClick={() => handlePageChange(pageNumber)}
-                                                    >
-                                                        {pageNumber}
-                                                    </Pagination.Item>
-                                                );
-                                            }
-                                            return null;
-                                        })}
-
-                                        <Pagination.Next
-                                            onClick={() => handlePageChange(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                        />
-                                        <Pagination.Last
-                                            onClick={() => handlePageChange(totalPages)}
-                                            disabled={currentPage === totalPages}
-                                        />
-                                    </Pagination>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
                                 </div>
                             )}
                         </>

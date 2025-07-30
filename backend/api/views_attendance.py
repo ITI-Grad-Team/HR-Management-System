@@ -31,6 +31,7 @@ class AttendanceRecordFilter(DjangoFilterBackend):
         date_query = request.query_params.get("date", None)
         month_query = request.query_params.get("month", None)
         year_query = request.query_params.get("year", None)
+        status_query = request.query_params.get("status", None)
         date_from = request.query_params.get("date_from", None)
         date_to = request.query_params.get("date_to", None)
 
@@ -52,6 +53,10 @@ class AttendanceRecordFilter(DjangoFilterBackend):
 
         if year_query and year_query.isdigit():
             queryset = queryset.filter(date__year=int(year_query))
+
+        # Status filtering
+        if status_query:
+            queryset = queryset.filter(status=status_query)
 
         # Date range filtering
         if date_from:

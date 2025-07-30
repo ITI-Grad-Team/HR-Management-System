@@ -9,7 +9,6 @@ import {
   InputGroup,
   FormControl,
   Button,
-  Pagination,
   Card,
   Dropdown,
   Modal,
@@ -31,7 +30,7 @@ import PayrollCharts from "../../components/payroll/PayrollCharts";
 import GenerateSalaryRecord from "../../components/payroll/GenerateSalaryRecord";
 import { fetchAllPages } from "../../api/pagination";
 import PayrolFallback from "../../components/DashboardFallBack/PayrolFallback";
-import "../../components/Pagination/pagination.css";
+import Pagination from "../../components/Pagination/Pagination";
 
 const Payroll = () => {
   const [records, setRecords] = useState([]);
@@ -464,17 +463,13 @@ const Payroll = () => {
                 </tbody>
               </Table>
               {totalPages > 1 && (
-                <Pagination className="justify-content-center">
-                  {[...Array(totalPages).keys()].map((number) => (
-                    <Pagination.Item
-                      key={number + 1}
-                      active={number + 1 === currentPage}
-                      onClick={() => setCurrentPage(number + 1)}
-                    >
-                      {number + 1}
-                    </Pagination.Item>
-                  ))}
-                </Pagination>
+                <div className="d-flex justify-content-center mt-3">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
               )}
             </>
           )}

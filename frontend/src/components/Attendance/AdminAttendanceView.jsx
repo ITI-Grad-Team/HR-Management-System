@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, Spinner, Alert, Table, Button, Form, Row, Col, Modal } from 'react-bootstrap';
+import { Card, Spinner, Alert, Table, Button, Form, Row, Col, Modal, Dropdown } from 'react-bootstrap';
 import {
     getAllAttendance,
     getPendingOvertimeRequests,
@@ -19,7 +19,13 @@ const AdminAttendanceView = () => {
     const [overtimeRequests, setOvertimeRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [filters, setFilters] = useState({ user: '', date: new Date().toISOString().split('T')[0] });
+    const [filters, setFilters] = useState({
+        user: '',
+        date: new Date().toISOString().split('T')[0],
+        month: '',
+        year: '',
+        status: ''
+    });
     const [searchInput, setSearchInput] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -29,6 +35,48 @@ const AdminAttendanceView = () => {
     const [selectedAttendance, setSelectedAttendance] = useState(null);
     const [hrComment, setHrComment] = useState('');
     const recentRequestsRef = useRef();
+
+    // Get current date for default filters
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+
+    // Generate year options (from 2020 to current year + 1)
+    const getYearOptions = () => {
+        const years = [];
+        const startYear = 2020;
+        const endYear = currentYear + 1;
+        for (let year = endYear; year >= startYear; year--) {
+            years.push(year);
+        }
+        return years;
+    };
+
+    // Generate month options (descending order)
+    const getMonthOptions = () => {
+        return [
+            { value: 12, label: 'December' },
+            { value: 11, label: 'November' },
+            { value: 10, label: 'October' },
+            { value: 9, label: 'September' },
+            { value: 8, label: 'August' },
+            { value: 7, label: 'July' },
+            { value: 6, label: 'June' },
+            { value: 5, label: 'May' },
+            { value: 4, label: 'April' },
+            { value: 3, label: 'March' },
+            { value: 2, label: 'February' },
+            { value: 1, label: 'January' }
+        ];
+    };
+
+    // Status options for filtering
+    const getStatusOptions = () => {
+        return [
+            { value: 'present', label: 'Present' },
+            { value: 'late', label: 'Late' },
+            { value: 'absent', label: 'Absent' }
+        ];
+    };
 
     const fetchPendingRequests = useCallback(async () => {
         try {
@@ -42,7 +90,15 @@ const AdminAttendanceView = () => {
 
     const fetchData = useCallback(async (page = 1, currentFilters = filters) => {
         try {
-            const params = { ...currentFilters, page };
+            const params = { page };
+
+            // Only include non-empty filters in the request
+            if (currentFilters.user) params.user = currentFilters.user;
+            if (currentFilters.date) params.date = currentFilters.date;
+            if (currentFilters.month) params.month = currentFilters.month;
+            if (currentFilters.year) params.year = currentFilters.year;
+            if (currentFilters.status) params.status = currentFilters.status;
+
             const [attRes] = await Promise.all([
                 getAllAttendance(params),
             ]);
@@ -70,13 +126,20 @@ const AdminAttendanceView = () => {
 
     const handleFilterSubmit = (e) => {
         e.preventDefault();
-        setFilters({ ...filters, user: searchInput });
+        const newFilters = { ...filters, user: searchInput };
+        setFilters(newFilters);
         setCurrentPage(1);
-        fetchData(1, { ...filters, user: searchInput });
+        fetchData(1, newFilters);
     };
 
     const handleResetFilters = () => {
-        const resetFilters = { user: '', date: new Date().toISOString().split('T')[0] };
+        const resetFilters = {
+            user: '',
+            date: new Date().toISOString().split('T')[0],
+            month: '',
+            year: '',
+            status: ''
+        };
         setFilters(resetFilters);
         setSearchInput('');
         setCurrentPage(1);
@@ -279,19 +342,109 @@ const AdminAttendanceView = () => {
 
 
             <Card className="attendance-card shadow-sm mt-4">
-                <Card.Header className="bg-light"><h5 className="mb-0">All Attendance Records</h5></Card.Header>
+                <Card.Header className="bg-light">
+                    <Row className="align-items-center">
+                        <Col md={6}>
+                            <h5 className="mb-0">All Attendance Records</h5>
+                            <small className="text-muted">
+                                {attendance.count} total records
+                                {(filters.month || filters.year || filters.status) && (
+                                    <span>
+                                        {' • Filtered by '}
+                                        {filters.month && getMonthOptions().find(m => m.value == filters.month)?.label}
+                                        {filters.month && filters.year && ' '}
+                                        {filters.year}
+                                        {filters.status && `, Status: ${filters.status}`}
+                                    </span>
+                                )}
+                            </small>
+                        </Col>
+                    </Row>
+                </Card.Header>
                 <Card.Body>
                     <Form onSubmit={handleFilterSubmit} className="mb-3">
+                        <Row className="g-2 mb-2">
+                            <Col md={3}>
+                                <Form.Control
+                                    type="text"
+                                    name="user"
+                                    value={searchInput}
+                                    onChange={handleFilterChange}
+                                    placeholder="Filter by Employee ID or Email"
+                                />
+                            </Col>
+                            <Col md={3}>
+                                <Form.Control
+                                    type="date"
+                                    name="date"
+                                    value={filters.date}
+                                    onChange={handleDateChange}
+                                />
+                            </Col>
+                            <Col md={3}>
+                                <Dropdown onSelect={(year) => setFilters({ ...filters, year })} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-year"
+                                        className="w-100"
+                                    >
+                                        {filters.year ? `Year: ${filters.year}` : "Year"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        {getYearOptions().map(year => (
+                                            <Dropdown.Item key={year} eventKey={year}>
+                                                {year}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Col>
+                            <Col md={3}>
+                                <Dropdown onSelect={(month) => setFilters({ ...filters, month })} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-month"
+                                        className="w-100"
+                                    >
+                                        {filters.month
+                                            ? `Month: ${getMonthOptions().find(m => m.value == filters.month)?.label}`
+                                            : "Month"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        {getMonthOptions().map(month => (
+                                            <Dropdown.Item key={month.value} eventKey={month.value}>
+                                                {month.label}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Col>
+                        </Row>
                         <Row className="g-2">
-                            <Col md={5}>
-                                <Form.Control type="text" name="user" value={searchInput} onChange={handleFilterChange} placeholder="Filter by Employee ID or Email" />
+                            <Col md={3}>
+                                <Dropdown onSelect={(status) => setFilters({ ...filters, status })} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-status"
+                                        className="w-100"
+                                    >
+                                        {filters.status ? `Status: ${filters.status}` : "Status"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        {getStatusOptions().map(status => (
+                                            <Dropdown.Item key={status.value} eventKey={status.value}>
+                                                {status.label}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
                             </Col>
-                            <Col md={5}>
-                                <Form.Control type="date" name="date" value={filters.date} onChange={handleDateChange} />
-                            </Col>
-                            <Col md={2} className="d-flex">
-                                <Button type="submit" className="flex-grow-1">Filter</Button>
-                                <Button variant="secondary" className="ms-2 flex-grow-1" onClick={handleResetFilters}>Reset</Button>
+                            <Col md={9} className="d-flex">
+                                <Button type="submit" className="me-2">Apply Filters</Button>
+                                <Button variant="secondary" onClick={handleResetFilters}>Reset All</Button>
                             </Col>
                         </Row>
                     </Form>

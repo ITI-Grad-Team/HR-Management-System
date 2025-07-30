@@ -12,17 +12,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Sum, F
 from django.db.models.functions import Extract
-
-
-class CasualLeavePagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = "page_size"
-    max_page_size = 100
+from .views import TwentyPerPagePagination
 
 
 class CasualLeaveViewSet(viewsets.ModelViewSet):
     serializer_class = CasualLeaveSerializer
-    pagination_class = CasualLeavePagination
+    pagination_class = TwentyPerPagePagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["status", "employee__user__username"]
     search_fields = ["employee__user__username", "employee__user__email", "reason"]

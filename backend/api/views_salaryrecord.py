@@ -12,6 +12,7 @@ from .permissions import IsHRorAdmin
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from datetime import date
+from .views import TenPerPagePagination
 
 User = get_user_model()
 
@@ -22,6 +23,7 @@ class SalaryRecordViewSet(viewsets.ModelViewSet):
     serializer_class = SalaryRecordSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["user", "year", "month"]
+    pagination_class = TenPerPagePagination
 
     @action(
         detail=False, methods=["get"], url_path="available-periods/(?P<user_id>[^/.]+)"

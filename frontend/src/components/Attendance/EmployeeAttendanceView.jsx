@@ -32,6 +32,7 @@ const EmployeeAttendanceView = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [selectedMonth, setSelectedMonth] = useState('');
     const [selectedYear, setSelectedYear] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState('');
     const [joinDate, setJoinDate] = useState(null);
     const [loadingFilters, setLoadingFilters] = useState(false);
 
@@ -87,6 +88,15 @@ const EmployeeAttendanceView = () => {
         return months;
     };
 
+    // Status options for filtering
+    const getStatusOptions = () => {
+        return [
+            { value: 'present', label: 'Present' },
+            { value: 'late', label: 'Late' },
+            { value: 'absent', label: 'Absent' }
+        ];
+    };
+
     const fetchJoinDate = useCallback(async () => {
         try {
             const response = await getJoinDate();
@@ -96,13 +106,14 @@ const EmployeeAttendanceView = () => {
         }
     }, []);
 
-    const fetchAttendanceData = useCallback(async (page = 1, month = '', year = '') => {
+    const fetchAttendanceData = useCallback(async (page = 1, month = '', year = '', status = '') => {
         try {
             setLoadingFilters(true);
             const params = { page };
 
             if (month) params.month = month;
             if (year) params.year = year;
+            if (status) params.status = status;
 
             const [attRes, statusRes] = await Promise.all([
                 getMyAttendance(params),
@@ -129,14 +140,14 @@ const EmployeeAttendanceView = () => {
     const fetchAllData = useCallback(async () => {
         try {
             setLoading(true);
-            await fetchAttendanceData(currentPage, selectedMonth, selectedYear);
+            await fetchAttendanceData(currentPage, selectedMonth, selectedYear, selectedStatus);
         } catch {
             setError('Failed to fetch attendance data.');
             toast.error('Failed to fetch attendance data.');
         } finally {
             setLoading(false);
         }
-    }, [fetchAttendanceData, currentPage, selectedMonth, selectedYear]);
+    }, [fetchAttendanceData, currentPage, selectedMonth, selectedYear, selectedStatus]);
 
     useEffect(() => {
         fetchJoinDate();
@@ -148,22 +159,24 @@ const EmployeeAttendanceView = () => {
         }
     }, [fetchAllData, joinDate]);
 
-    const handleFilterChange = (month = selectedMonth, year = selectedYear) => {
+    const handleFilterChange = (month = selectedMonth, year = selectedYear, status = selectedStatus) => {
         setSelectedMonth(month);
         setSelectedYear(year);
+        setSelectedStatus(status);
         setCurrentPage(1); // Reset to first page when filters change
-        fetchAttendanceData(1, month, year);
+        fetchAttendanceData(1, month, year, status);
     };
 
     const handlePageChange = (page) => {
-        fetchAttendanceData(page, selectedMonth, selectedYear);
+        fetchAttendanceData(page, selectedMonth, selectedYear, selectedStatus);
     };
 
     const handleClearFilters = () => {
         setSelectedMonth('');
         setSelectedYear('');
+        setSelectedStatus('');
         setCurrentPage(1);
-        fetchAttendanceData(1, '', '');
+        fetchAttendanceData(1, '', '', '');
     };
 
     const handleCheckIn = async () => {
@@ -320,14 +333,20 @@ const EmployeeAttendanceView = () => {
                             <h5 className="mb-0">My Attendance History</h5>
                             <small className="text-muted">
                                 {totalCount} total records
-                                {(selectedMonth || selectedYear) && (
-                                    <span> • Filtered by {selectedMonth && getMonthOptions().find(m => m.value == selectedMonth)?.label} {selectedYear}</span>
+                                {(selectedMonth || selectedYear || selectedStatus) && (
+                                    <span>
+                                        {' • Filtered by '}
+                                        {selectedMonth && getMonthOptions().find(m => m.value == selectedMonth)?.label}
+                                        {selectedMonth && selectedYear && ' '}
+                                        {selectedYear}
+                                        {selectedStatus && `, Status: ${selectedStatus}`}
+                                    </span>
                                 )}
                             </small>
                         </Col>
                         <Col md={6}>
                             <div className="d-flex gap-2 justify-content-end">
-                                <Dropdown onSelect={(year) => handleFilterChange(selectedMonth, year)} className="w-100">
+                                <Dropdown onSelect={(year) => handleFilterChange(selectedMonth, year, selectedStatus)} className="w-100">
                                     <Dropdown.Toggle
                                         variant="outline-primary"
                                         id="dropdown-year"
@@ -346,7 +365,7 @@ const EmployeeAttendanceView = () => {
                                     </Dropdown.Menu>
                                 </Dropdown>
 
-                                <Dropdown onSelect={(month) => handleFilterChange(month, selectedYear)} className="w-100">
+                                <Dropdown onSelect={(month) => handleFilterChange(month, selectedYear, selectedStatus)} className="w-100">
                                     <Dropdown.Toggle
                                         variant="outline-primary"
                                         id="dropdown-month"
@@ -367,11 +386,30 @@ const EmployeeAttendanceView = () => {
                                     </Dropdown.Menu>
                                 </Dropdown>
 
+                                <Dropdown onSelect={(status) => handleFilterChange(selectedMonth, selectedYear, status)} className="w-100">
+                                    <Dropdown.Toggle
+                                        variant="outline-primary"
+                                        id="dropdown-status"
+                                        className="w-100"
+                                        disabled={loadingFilters}
+                                    >
+                                        {selectedStatus ? `Status: ${selectedStatus}` : "Status"}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu className="w-100">
+                                        <Dropdown.Item eventKey="">All</Dropdown.Item>
+                                        {getStatusOptions().map(status => (
+                                            <Dropdown.Item key={status.value} eventKey={status.value}>
+                                                {status.label}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+
                                 <Button
                                     variant="outline-secondary"
                                     size="sm"
                                     onClick={handleClearFilters}
-                                    disabled={loadingFilters || (!selectedMonth && !selectedYear)}
+                                    disabled={loadingFilters || (!selectedMonth && !selectedYear && !selectedStatus)}
                                     className="w-25"
                                 >
                                     Clear
@@ -416,7 +454,7 @@ const EmployeeAttendanceView = () => {
                                     ) : (
                                         <tr>
                                             <td colSpan="7" className="text-center py-4">
-                                                {(selectedMonth || selectedYear) ?
+                                                {(selectedMonth || selectedYear || selectedStatus) ?
                                                     'No attendance records found for the selected period.' :
                                                     'No attendance history found.'
                                                 }
