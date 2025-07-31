@@ -540,7 +540,7 @@ const AdminAttendanceView = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showApproveModal} onHide={() => setShowApproveModal(false)}>
+            <Modal show={showApproveModal} onHide={() => { setShowApproveModal(false); setSelectedRequest(null); }}>
                 <Modal.Header closeButton>
                     <Modal.Title>Approve Overtime Request</Modal.Title>
                 </Modal.Header>
@@ -565,7 +565,7 @@ const AdminAttendanceView = () => {
                 </Form>
             </Modal>
 
-            <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
+            <Modal show={showRejectModal} onHide={() => { setShowRejectModal(false); setSelectedRequest(null); }}>
                 <Modal.Header closeButton>
                     <Modal.Title>Reject Overtime Request</Modal.Title>
                 </Modal.Header>
