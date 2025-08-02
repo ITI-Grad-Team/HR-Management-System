@@ -121,6 +121,8 @@ export default function CandidateDetails() {
                   setShowForm(false);
                   setCandidate(updatedCandidate);
                 }}
+                candidatePosition={candidate.position}
+                candidateSkills={candidate.skills}
               />
             </Card>
           </Col>

@@ -37,7 +37,7 @@ from .views import (
     EmployeePredictionViewSet,
     AdminStatsViewSet,
     HRStatsViewSet,
-    AdminRankViewSet,
+    AdminRankViewSet,InterviewQuestionGenerator,
     AdminHeadquartersViewSet,
 )
 from .views_attendance import AttendanceViewSet
@@ -55,7 +55,7 @@ router = DefaultRouter()
 # Public
 router.register(r"apply", PublicApplicantsViewSet, basename="public-apply")
 router.register(r"rag", RAGViewSet, basename="rag")
-
+router.register(r'interview-questions', InterviewQuestionGenerator, basename='interview-questions')
 # Authenticated
 router.register(r"view-self", ViewSelfViewSet, basename="view-self")
 

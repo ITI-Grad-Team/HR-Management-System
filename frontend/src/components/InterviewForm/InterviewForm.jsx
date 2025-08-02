@@ -12,7 +12,12 @@ import {
 import axiosInstance from "../../api/config";
 import { FaPlus, FaQuestionCircle, FaStar, FaTrash } from "react-icons/fa";
 
-const InterviewForm = ({ candidateId, onSubmitted }) => {
+const InterviewForm = ({
+  candidateId,
+  onSubmitted,
+  candidateSkills,
+  candidatePosition,
+}) => {
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,11 +26,34 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
   const [rating, setRating] = useState(0);
   const [avgGrade, setAvgGrade] = useState(0);
   const [gradeUpdates, setGradeUpdates] = useState({});
-
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
   // Fetch questions on component mount
   useEffect(() => {
     fetchQuestions();
   }, []);
+
+  const generateQuestions = async (isSoftSkill) => {
+    try {
+      setGeneratingQuestions(true);
+      const response = await axiosInstance.post(
+        "/interview-questions/generate-questions/",
+        {
+          skills: candidateSkills,
+          position: candidatePosition,
+          is_soft_skill: isSoftSkill,
+        }
+      );
+
+      // If we got questions, add the first one to the input field
+      if (response.data.question) {
+        setNewQuestion(response.data.question);
+      }
+    } catch (err) {
+      setError("Failed to generate questions");
+    } finally {
+      setGeneratingQuestions(false);
+    }
+  };
 
   const fetchQuestions = async () => {
     try {
@@ -146,6 +174,7 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
 
   return (
     <div>
+      {console.log(candidateSkills, candidatePosition)}
       {error && (
         <div className="alert alert-danger mb-3">
           {error}
@@ -159,7 +188,7 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
 
       <Form.Group className="mb-4">
         <Form.Label className="fw-bold">Add New Question</Form.Label>
-        <InputGroup>
+        <InputGroup className="mb-2">
           <Form.Control
             type="text"
             value={newQuestion}
@@ -174,6 +203,30 @@ const InterviewForm = ({ candidateId, onSubmitted }) => {
             Add
           </Button>
         </InputGroup>
+
+        <div className="d-flex gap-2">
+          <Button
+            variant="outline-primary"
+            onClick={() => generateQuestions(false)}
+            size="sm"
+          >
+            {generatingQuestions
+              ? "Generating..."
+              : "Suggest Technical Question"}
+          </Button>
+
+          <Button
+            variant="outline-secondary"
+            onClick={() => generateQuestions(true)}
+            disabled={generatingQuestions}
+            size="sm"
+          >
+            {generatingQuestions
+              ? "Generating..."
+              : "Suggest Soft Skill Question"}
+          </Button>
+        </div>
+
       </Form.Group>
 
       <div className="mb-4">
