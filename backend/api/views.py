@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.utils.dateformat import format as django_format
 from django.utils.timezone import localtime, make_aware, is_naive
 from django.utils.dateparse import parse_datetime
-import joblib
 import os
 
 from django.db.models import (
@@ -2986,3 +2985,53 @@ class AdminUserActivationViewSet(ModelViewSet):
                 "is_active": user.is_active,
             }
         )
+
+
+class InterviewQuestionGenerator(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=["post"], url_path="generate-questions")
+    def generate_questions(self, request):
+        skills = request.data.get("skills", [])
+        position = request.data.get("position", "")
+        is_soft_skill = request.data.get("is_soft_skill", False)
+        
+        if not skills and not position:
+            return Response({"error": "Skills or position required"}, status=400)
+        
+        try:
+            if is_soft_skill:
+                prompt = (
+                    f"Suggest any soft-skill interview question "
+                    f"for a {position} position."
+                    "RESPOND WITH THE QUESTION ONLY DIRECTLY"
+                )
+            elif skills:
+                prompt = (
+                    f"Suggest any technical interview question for a {position} "
+                    f"position around any of these skills: {', '.join(skills)}. "
+                    "Make it specific and practical."
+                    "RESPOND WITH THE QUESTION ONLY DIRECTLY"
+                )
+            else:
+                prompt = (
+                    f"Suggest any technical interview question for a {position} "
+                    "Make it specific and practical."
+                    "RESPOND WITH THE QUESTION ONLY DIRECTLY"
+                )
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",  
+                messages=[
+                    {"role": "system", "content": "You are an expert HR interviewer generating relevant interview questions."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.7,
+            )
+            print(prompt)
+            print( response.choices[0].message.content)
+
+            return Response({"question": response.choices[0].message.content})
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
