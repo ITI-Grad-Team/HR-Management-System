@@ -122,21 +122,12 @@ const HRStats = () => {
   ];
 
   const getGlobalRankMessage = (rank) => {
-    if (rank === 1) return "You're our TOP Tasker!";
-    if (rank === 2) return "TOP 2 Tasker!";
-    if (rank === 3) return "TOP 3 Tasker!";
-    if (rank === 4) return "Great Tasker!";
-    if (rank === 5) return "Excellent Tasker!";
+    if (rank === 1) return "You're our TOP HR!";
+    if (rank === 2) return "TOP 2 HR!";
+    if (rank === 3) return "TOP 3 HR!";
+    if (rank === 4) return "Great HR!";
+    if (rank === 5) return "Excellent HR!";
     return `Rank #${rank} in the company`;
-  };
-
-  const getPositionRankMessage = (rank, position) => {
-    if (rank === 1) return `You're our TOP ${position}!`;
-    if (rank === 2) return `TOP 2 ${position}!`;
-    if (rank === 3) return `TOP 3 ${position}!`;
-    if (rank === 4) return `Great ${position}!`;
-    if (rank === 5) return `Excellent ${position}!`;
-    return `Ranked #${rank} among ${position}s!`;
   };
 
   const getGlobalRankTooltip = (rank) => {
@@ -144,15 +135,6 @@ const HRStats = () => {
     if (rank === 4) return "You rank 4th in the company! Keep the great work!";
     if (rank === 5) return "You rank 5th in the company! Keep pushing!";
     return `You rank ${rank}th in the company`;
-  };
-
-  const getPositionRankTooltip = (rank, position) => {
-    if ([1, 2, 3].includes(rank)) return "";
-    if (rank === 4)
-      return `You rank 4th in ${position} position! Keep the great work!`;
-    if (rank === 5)
-      return `You rank 5th in ${position} position! Keep pushing!`;
-    return `You rank ${rank}th in ${position} position`;
   };
 
   return (
